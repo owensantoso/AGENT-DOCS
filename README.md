@@ -47,6 +47,18 @@ Use this for first-contact docs.
 
 These files should be skimmable. If one starts becoming a history journal, move the detail elsewhere.
 
+When architecture gets too dense for one overview, split it into an architecture hub plus area docs:
+
+```text
+docs/architecture/
+  README.md
+  areas/
+    AREA-MODEL.md
+    AREA-SYNC.md
+```
+
+Area IDs and filenames should match exactly. `AREA-SYNC` lives in `docs/architecture/areas/AREA-SYNC.md`. Use those IDs in plan frontmatter, session logs, commit trailers, PR paper trails, and issue bodies. A change can touch multiple areas.
+
 ### Product
 
 ```text
@@ -176,6 +188,10 @@ docs/
     ONBOARDING.md
     ROADMAP.md
     ARCHITECTURE.md
+  architecture/
+    README.md
+    areas/
+      AREA-<NAME>.md
   product/
     specs/
     plans/
@@ -251,6 +267,8 @@ Use templates as starting points, not as mandatory paperwork. Copy only what the
 - [templates/CURRENT_STATE.template.md](templates/CURRENT_STATE.template.md) - compact truth page and fanout
 - [templates/ROADMAP.template.md](templates/ROADMAP.template.md) - ordered sequence and rationale
 - [templates/ARCHITECTURE.template.md](templates/ARCHITECTURE.template.md) - system shape and decision provenance
+- [templates/architecture/README.template.md](templates/architecture/README.template.md) - split architecture hub and area registry
+- [templates/architecture/area-template.md](templates/architecture/area-template.md) - `AREA-*` boundary doc template
 - [templates/codebase-map.template.md](templates/codebase-map.template.md) - current module map and entry points
 - [templates/data-seams.template.md](templates/data-seams.template.md) - canonical seams, compatibility layers, and extension rules
 - [templates/testing-guide.template.md](templates/testing-guide.template.md) - real verification commands and limits

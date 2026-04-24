@@ -8,14 +8,16 @@ Map of the documentation system.
 2. `<orientation/ONBOARDING.md>` - non-code walkthrough
 3. `<orientation/ROADMAP.md>` - sequence and rationale
 4. `<orientation/ARCHITECTURE.md>` - architecture and decision provenance
-5. `<product/specs/>` - product or system specs
-6. `<domain>/plans/` - plan folders and implementation briefs
+5. `<architecture/README.md>` - architecture area registry and boundary map, if split out
+6. `<product/specs/>` - product or system specs
+7. `<domain>/plans/` - plan folders and implementation briefs
 
 ## Top-Level Areas
 
 | Area | Purpose |
 |---|---|
 | `orientation/` | Current state, onboarding, roadmap, architecture |
+| `architecture/` | Split architecture hub and `areas/AREA-*.md` boundary docs when one overview is too dense |
 | `product/` | Product specs, product plans, future ideas |
 | `decisions/` | ADRs, learnings, execution-readiness notes |
 | `repo-health/` | Docs/workflow plans, session logs, state history, CI/test hygiene |
@@ -30,3 +32,4 @@ Map of the documentation system.
 - Give each meaningful plan its own folder.
 - Use session logs for per-session receipts.
 - Use ADRs for durable cross-plan decisions.
+- If architecture is split, make `AREA-*` IDs match `docs/architecture/areas/AREA-*.md` filenames exactly.

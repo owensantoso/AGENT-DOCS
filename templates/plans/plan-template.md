@@ -15,6 +15,7 @@ planned_execution_end:
 actual_execution_start:
 actual_execution_end:
 owner:
+areas: []
 related_specs: []
 related_adrs: []
 related_sessions: []
@@ -27,6 +28,8 @@ related_sessions: []
 **Architecture:** <Why this plan exists, what shape the solution should have, and what layer it belongs to.>
 
 **Tech Stack:** <Relevant stack for this plan only.>
+
+**Architecture Areas:** <List `AREA-*` IDs from `docs/architecture/areas/`, if the repo uses area docs.>
 
 ---
 

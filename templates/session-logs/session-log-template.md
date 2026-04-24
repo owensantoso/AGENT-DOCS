@@ -40,7 +40,7 @@ commits: []
 
 ## Changes
 
-- Product/code/docs areas touched:
+- Product/code/docs areas touched, preferably `AREA-*` IDs when the repo uses architecture area docs:
 - Commits produced:
   - `<hash>` - commit subject
 - Files or directories most relevant to future archaeology:

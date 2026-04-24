@@ -17,6 +17,7 @@ actual_execution_end:
 parent_plan:
 task_refs: []
 owner:
+areas: []
 depends_on: []
 parallel_with: []
 related_specs: []

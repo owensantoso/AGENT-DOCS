@@ -2,6 +2,8 @@
 
 System overview for <repo or product>. This document describes the intended forward architecture. For what is actually built today, see `docs/CURRENT_STATE.md`.
 
+Keep this file as the architecture hub or short overview. Put stable subsystem boundaries in `docs/architecture/areas/AREA-*.md` files when the architecture is large enough to split.
+
 ## Product
 
 <one or two paragraphs describing the product and major surfaces>
@@ -25,6 +27,25 @@ Use this section as the map from architecture claims to the docs that explain wh
 | Approved product or system baseline | `<spec-path>` |
 | Durable architecture decisions | `<adr-folder>` |
 | Session-to-commit traceability | `<session-logs-path>` |
+
+## Architecture areas
+
+Area docs are stable boundary docs. The area ID and Markdown filename should match exactly.
+
+```text
+docs/architecture/
+  README.md
+  areas/
+    AREA-MODEL.md
+    AREA-SYNC.md
+    AREA-SURFACES.md
+```
+
+| Area ID | Doc | Owns |
+|---|---|---|
+| `AREA-<NAME>` | `docs/architecture/areas/AREA-<NAME>.md` | <boundary, subsystem, or long-lived responsibility> |
+
+Use these IDs in plan frontmatter, session logs, commit trailers, PR paper trails, and issue bodies. A change can touch multiple areas.
 
 ## Tech stack
 
@@ -82,3 +103,7 @@ These layers should change the least:
 ```text
 <high-level folder layout>
 ```
+
+## Related area docs
+
+- `docs/architecture/areas/AREA-<NAME>.md`

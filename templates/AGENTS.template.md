@@ -36,6 +36,7 @@ Short index. Read the file for your task.
 - Keep `docs/CURRENT_STATE.md` short; move detailed history to state snapshots.
 - Add a timestamped session log for meaningful implementation, planning, or debugging sessions.
 - Use commit trailers for meaningful commits: `Plan:`, `Brief:`, `Spec:`, `ADR:`, `Session:`, `Area:`, and `Verification:` as applicable.
+- If the repo uses `docs/architecture/areas/AREA-*.md`, use those exact `AREA-*` IDs in plan frontmatter, session logs, PRs, issues, and `Area:` commit trailers.
 - Planning doc hierarchy matters.
   - Parent `plan-*` docs define scope, architecture, invariants, and non-goals.
   - `impl-*` briefs define task-level execution details for one bounded task or grouped task.
