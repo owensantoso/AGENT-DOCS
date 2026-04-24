@@ -23,6 +23,7 @@ parallel_with: []
 related_specs: []
 related_adrs: []
 related_sessions: []
+related_issues: []
 ---
 
 # Implementation Brief - <Plan/Task Title>
@@ -32,6 +33,12 @@ related_sessions: []
 - [plan.md](plan.md)
 
 <Optional note if this brief intentionally groups multiple parent-plan tasks.>
+
+## Tracking issue
+
+- <GitHub sub-issue link, if created>
+
+The issue tracks this execution slice. This brief owns the execution detail.
 
 ## Task goal
 

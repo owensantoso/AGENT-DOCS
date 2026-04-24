@@ -1,9 +1,10 @@
 # Planning Docs Guide
 
-This repo uses two planning layers on purpose.
+This repo uses specs, plans, and implementation briefs on purpose.
 
 Starter templates live here:
 
+- `docs/specs/feature-spec-template.md` or equivalent
 - `docs/plans/templates/plan-template.md`
 - `docs/plans/templates/implementation-brief-template.md`
 
@@ -31,9 +32,43 @@ Each meaningful plan should get its own folder:
 
 Use the old flat file convention only when the repo intentionally chooses simpler docs.
 
-## The two layers
+## Source-of-truth stack
 
-### 1. Architecture or milestone plans
+Use this hierarchy:
+
+```text
+SPEC -> PLAN -> IMPL -> Issues / PRs
+```
+
+- `SPEC` owns product or system requirements: what should exist and why.
+- `PLAN` owns intent, architecture, scope, sequencing, dependencies, and validation strategy.
+- `IMPL` owns bounded execution detail for one task or grouped slice.
+- GitHub issues track approved work. They should link to specs, plans, and implementation briefs rather than replace them.
+- PRs deliver one reviewable change and link back to the relevant issue/docs.
+
+## The planning layers
+
+### 1. Feature specs
+
+Feature specs define product or system requirements before implementation planning.
+
+They define:
+
+- the user/system problem
+- goals and non-goals
+- user stories and primary flows
+- requirements and edge behavior
+- open questions
+- architecture or data implications
+- test expectations
+
+They should answer:
+
+> What should exist, for whom, and why?
+
+They should not define task sequencing or become a pseudo-plan.
+
+### 2. Architecture or milestone plans
 
 These are the main plan docs.
 
@@ -53,7 +88,7 @@ They should answer:
 
 They should not try to fully pre-author every code edit or turn into a pseudo-patch.
 
-### 2. Implementation briefs
+### 3. Implementation briefs
 
 Files named like:
 
@@ -81,14 +116,15 @@ They should answer:
 
 The important rule is:
 
-> The main `plan-*` doc defines intent and boundaries. The `impl-*` brief defines execution details for one bounded slice.
+> The spec defines product truth. The main `plan-*` doc defines intent and boundaries. The `impl-*` brief defines execution details for one bounded slice.
 
 If both exist:
 
+- spec wins on product requirements, user promises, and feature behavior
 - plan wins on product intent, scope, architecture, and non-goals
 - implementation brief wins on execution order and verification details
 
-If they disagree, the implementation brief should be updated.
+If they disagree, update the lower-level artifact or explicitly revise the higher-level source of truth.
 
 Never implement from an `impl-*` brief alone if the parent plan exists and has not been read.
 
@@ -129,6 +165,18 @@ For implementation briefs, also include:
 - `parallel_with`
 
 Leave unknown fields blank rather than inventing dates or links.
+
+### GitHub issues
+
+When GitHub issues are used:
+
+- parent issues usually track a parent plan or approved work package
+- sub-issues usually track implementation briefs or independently grabbable slices
+- decision sub-issues track unresolved choices
+- investigation sub-issues track ambiguity reduction
+- issues should link to the source docs in a paper trail
+
+Do not make issues the only memory system when specs, plans, or implementation briefs exist.
 
 ### Main plan
 

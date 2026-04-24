@@ -2,7 +2,7 @@
 
 Use this for new parent `plan-*` docs.
 
-Keep it architectural and milestone-oriented. Point detailed execution into `impl-*` briefs when useful.
+Keep it architectural and milestone-oriented. Point detailed execution into `impl-*` briefs when useful. If there is a source feature spec, treat that spec as product truth and link it in frontmatter.
 
 ---
 type: plan
@@ -19,6 +19,7 @@ areas: []
 related_specs: []
 related_adrs: []
 related_sessions: []
+related_issues: []
 ---
 
 # <Plan Title>
@@ -30,6 +31,8 @@ related_sessions: []
 **Tech Stack:** <Relevant stack for this plan only.>
 
 **Architecture Areas:** <List `AREA-*` IDs from `docs/architecture/areas/`, if the repo uses area docs.>
+
+**Source Spec:** <SPEC ID or link, if this plan implements an approved spec.>
 
 ---
 
@@ -138,3 +141,10 @@ Dependencies / parallelization:
 - <observable finished condition>
 - <observable finished condition>
 - <architecture or invariant condition>
+
+## Issue Tracking
+
+- Parent issue: <link, if created>
+- Sub-issues: <links, if created>
+
+Issues track this plan. They do not replace the plan or implementation briefs.

@@ -7,6 +7,7 @@ The core idea is simple: docs should let a fresh human or AI agent understand cu
 This kit is useful when:
 
 - feature work starts from a parent plan
+- product or system requirements can be captured as specs before planning
 - plans are broken into bounded implementation briefs when useful
 - agents or humans need to resume work across sessions
 - decisions, session history, and verification need durable homes
@@ -218,6 +219,20 @@ AGENTS.md
 ```
 
 The important rule is topic first, artifact type second. A plan lives under the domain that owns the outcome.
+
+## Work Item Mapping
+
+Use the docs as the source of truth and GitHub as tracking:
+
+```text
+SPEC -> PLAN -> IMPL -> Issue / PR
+```
+
+- Specs own product or system requirements.
+- Plans own intent, architecture, scope, and sequencing.
+- Implementation briefs own bounded execution detail.
+- Parent GitHub issues usually track plans or work packages.
+- Sub-issues usually track implementation briefs or independently grabbable slices.
 
 ## Smaller Project Shape
 
