@@ -1,50 +1,172 @@
 # Agent Docs Workflow
 
-Portable docs kit for running an agent-friendly planning and implementation workflow in a new repository.
+Portable docs kit for running an agent-friendly planning and implementation workflow in a repository.
 
-This pack is designed for repos where:
+The core idea is simple: docs should let a fresh human or AI agent understand current reality, planned intent, execution boundaries, and the reason a change happened without needing old chat history.
+
+This kit is useful when:
 
 - feature work starts from a parent plan
-- each plan can be broken into bounded implementation briefs
-- the main agent coordinates subagents instead of trying to hold the whole milestone at once
-- task grouping and parallelization are decided deliberately, not ad hoc
-- session memory, decisions, and state history are kept in durable repo docs instead of chat
+- plans are broken into bounded implementation briefs when useful
+- agents or humans need to resume work across sessions
+- decisions, session history, and verification need durable homes
+- the repo is large enough that "just read the code" is not a kind onboarding path
 
-## Read this first
+## Read This First
 
-1. [AGENTS.md](AGENTS.md)
-2. [guides/workflow-overview.md](guides/workflow-overview.md)
-3. [guides/doc-types-and-responsibilities.md](guides/doc-types-and-responsibilities.md)
-4. [guides/subagent-execution-loop.md](guides/subagent-execution-loop.md)
-5. [guides/adoption-checklist.md](guides/adoption-checklist.md)
+1. [AGENTS.md](AGENTS.md) - local instructions for working in this repo
+2. [guides/workflow-overview.md](guides/workflow-overview.md) - the workflow in one pass
+3. [guides/doc-types-and-responsibilities.md](guides/doc-types-and-responsibilities.md) - what each doc type owns
+4. [guides/subagent-execution-loop.md](guides/subagent-execution-loop.md) - how to split, delegate, and integrate work
+5. [guides/adoption-checklist.md](guides/adoption-checklist.md) - how to install the workflow in another repo
 
-## Templates
+## The Folder Model
 
-- [templates/AGENTS.template.md](templates/AGENTS.template.md)
-- [templates/DOCS-README.template.md](templates/DOCS-README.template.md)
-- [templates/orientation/ONBOARDING.template.md](templates/orientation/ONBOARDING.template.md)
-- [templates/CURRENT_STATE.template.md](templates/CURRENT_STATE.template.md)
-- [templates/ROADMAP.template.md](templates/ROADMAP.template.md)
-- [templates/ARCHITECTURE.template.md](templates/ARCHITECTURE.template.md)
-- [templates/feature-spec.template.md](templates/feature-spec.template.md)
-- [templates/research/research-note-template.md](templates/research/research-note-template.md)
-- [templates/operations/release-checklist-template.md](templates/operations/release-checklist-template.md)
-- [templates/marketing/marketing-plan-template.md](templates/marketing/marketing-plan-template.md)
-- [templates/codebase-map.template.md](templates/codebase-map.template.md)
-- [templates/data-seams.template.md](templates/data-seams.template.md)
-- [templates/testing-guide.template.md](templates/testing-guide.template.md)
-- [templates/surface-AGENTS.template.md](templates/surface-AGENTS.template.md)
-- [templates/reusable-implementer-handoff-prompt.template.md](templates/reusable-implementer-handoff-prompt.template.md)
-- [templates/plans/README.template.md](templates/plans/README.template.md)
-- [templates/plans/plan-template.md](templates/plans/plan-template.md)
-- [templates/plans/implementation-brief-template.md](templates/plans/implementation-brief-template.md)
-- [templates/adr/README.template.md](templates/adr/README.template.md)
-- [templates/adr/adr-template.md](templates/adr/adr-template.md)
-- [templates/session-logs/README.template.md](templates/session-logs/README.template.md)
-- [templates/session-logs/session-log-template.md](templates/session-logs/session-log-template.md)
-- [templates/state/README.template.md](templates/state/README.template.md)
+Use a topic-first docs hierarchy. The top-level folder should describe the kind of work or knowledge, and artifact types like `plans/` should live under the topic that owns them.
 
-## Suggested starter structure
+The useful question is:
+
+> Who needs to care about this later?
+
+### Orientation
+
+```text
+docs/orientation/
+  CURRENT_STATE.md
+  ONBOARDING.md
+  ROADMAP.md
+  ARCHITECTURE.md
+```
+
+Use this for first-contact docs.
+
+- `CURRENT_STATE.md`: short truth page for what exists now and where to look next
+- `ONBOARDING.md`: non-code walkthrough of the product/system and mental model
+- `ROADMAP.md`: sequence, priority, and rationale
+- `ARCHITECTURE.md`: system boundaries, canonical seams, and decision provenance
+
+These files should be skimmable. If one starts becoming a history journal, move the detail elsewhere.
+
+### Product
+
+```text
+docs/product/
+  specs/
+  plans/
+  future-ideas/
+```
+
+Use this for user-facing product behavior or product-enabling architecture.
+
+Examples:
+
+- capture flow
+- search
+- sync
+- data model changes that unlock product behavior
+- import/export
+- UI surfaces
+- feature specs
+
+Even if a product plan is architecture-heavy, it still belongs here when the reason for the work is product capability.
+
+### Decisions
+
+```text
+docs/decisions/
+  adr/
+  learnings/
+  execution-readiness.md
+```
+
+Use this for durable reasoning.
+
+- `adr/`: decisions that affect multiple future plans or long-lived architecture
+- `learnings/`: surprising lessons, plan corrections, runtime/tooling discoveries
+- `execution-readiness.md`: preflight assumptions and environment blockers
+
+Do not put routine implementation notes here. Use session logs or implementation briefs for those.
+
+### Repo Health
+
+```text
+docs/repo-health/
+  plans/
+  session-logs/
+  state/
+```
+
+Use this for the project machinery itself.
+
+Examples:
+
+- docs information architecture
+- CI setup
+- test reliability
+- dependency/tooling upgrades
+- release workflow cleanup
+- agent workflow conventions
+- state-history snapshots
+- timestamped session receipts
+
+This is where you put work that makes the repo easier to understand, verify, or maintain but does not directly change the product.
+
+### Research
+
+```text
+docs/research/
+```
+
+Use this for uncertainty.
+
+Examples:
+
+- feasibility spikes
+- provider/library comparisons
+- market or technical investigations
+- findings that may lead to a spec, plan, or "do not build this yet"
+
+Research docs should make the question and recommendation obvious. They do not need to become implementation plans unless the repo chooses to act on them.
+
+### Operations
+
+```text
+docs/operations/
+```
+
+Use this for running, shipping, or recovering the project.
+
+Examples:
+
+- release checklists
+- App Store/TestFlight readiness
+- hosted service setup
+- migration rollout notes
+- manual QA checklists
+- incident or production recovery notes
+
+If the work is about safely operating the project rather than designing or building the product, it probably belongs here.
+
+### Marketing
+
+```text
+docs/marketing/
+```
+
+Use this for growth, launch, positioning, and public-facing strategy.
+
+Examples:
+
+- launch plans
+- campaign scripts
+- audience research
+- messaging
+- distribution plans
+- marketing outputs
+
+Marketing can use the same plan/brief pattern when execution needs structure, but it should stay in the marketing domain.
+
+## Suggested Full Structure
 
 ```text
 docs/
@@ -79,15 +201,92 @@ AGENTS.md
 <surface>/AGENTS.md
 ```
 
-The exact folders should match the repo. The important rule is topic first, artifact type second: plans live under the domain that owns the work.
+The important rule is topic first, artifact type second. A plan lives under the domain that owns the outcome.
 
-## What is most reusable
+## Smaller Project Shape
 
-The most reusable idea in this workflow is the split between:
+Small repos do not need the full scaffolding. Start with the smallest set that prevents confusion.
 
-- parent plans that define intent, boundaries, invariants, sequencing, and parallelization
-- implementation briefs that define one bounded execution slice suitable for a smaller model or subagent
-- session logs that leave timestamped receipts for important human/agent work
-- ADRs that preserve durable cross-plan decisions and alternatives
+```text
+docs/
+  CURRENT_STATE.md
+  ARCHITECTURE.md
+  ROADMAP.md
+  plans/
+    plan-<slug>/
+      plan.md
+      impl-task-1-<slug>.md
+  decisions/
+    adr/
+  session-logs/
+AGENTS.md
+```
 
-That separation keeps the main agent focused on architecture and integration while still making delegation safe.
+For very small repos, this is often enough:
+
+```text
+docs/
+  CURRENT_STATE.md
+  ARCHITECTURE.md
+  plans/
+  session-logs/
+AGENTS.md
+```
+
+Add `product/`, `repo-health/`, `research/`, `operations/`, or `marketing/` only when those categories start competing for space. The hierarchy should reduce ambiguity, not advertise sophistication.
+
+## Template Map
+
+Use templates as starting points, not as mandatory paperwork. Copy only what the repo needs.
+
+### Entry Points
+
+- [templates/AGENTS.template.md](templates/AGENTS.template.md) - root agent index and repo rules
+- [templates/surface-AGENTS.template.md](templates/surface-AGENTS.template.md) - local instructions for one app, package, or service
+- [templates/DOCS-README.template.md](templates/DOCS-README.template.md) - map for a repo's `docs/` folder
+
+### Orientation And Reality
+
+- [templates/orientation/ONBOARDING.template.md](templates/orientation/ONBOARDING.template.md) - non-code product/system walkthrough
+- [templates/CURRENT_STATE.template.md](templates/CURRENT_STATE.template.md) - compact truth page and fanout
+- [templates/ROADMAP.template.md](templates/ROADMAP.template.md) - ordered sequence and rationale
+- [templates/ARCHITECTURE.template.md](templates/ARCHITECTURE.template.md) - system shape and decision provenance
+- [templates/codebase-map.template.md](templates/codebase-map.template.md) - current module map and entry points
+- [templates/data-seams.template.md](templates/data-seams.template.md) - canonical seams, compatibility layers, and extension rules
+- [templates/testing-guide.template.md](templates/testing-guide.template.md) - real verification commands and limits
+
+### Product And Planning
+
+- [templates/feature-spec.template.md](templates/feature-spec.template.md) - product behavior before implementation planning
+- [templates/plans/README.template.md](templates/plans/README.template.md) - guide for parent plans and implementation briefs
+- [templates/plans/plan-template.md](templates/plans/plan-template.md) - parent plan template
+- [templates/plans/implementation-brief-template.md](templates/plans/implementation-brief-template.md) - bounded execution brief template
+- [templates/plans/implementation-briefs/README.template.md](templates/plans/implementation-briefs/README.template.md) - optional central brief-folder guide for repos that keep briefs separate
+- [templates/reusable-implementer-handoff-prompt.template.md](templates/reusable-implementer-handoff-prompt.template.md) - boot prompt for fresh implementation sessions
+
+### Memory And Decisions
+
+- [templates/adr/README.template.md](templates/adr/README.template.md) - ADR folder guide and decision index
+- [templates/adr/adr-template.md](templates/adr/adr-template.md) - durable decision record
+- [templates/session-logs/README.template.md](templates/session-logs/README.template.md) - timestamped session-log convention
+- [templates/session-logs/session-log-template.md](templates/session-logs/session-log-template.md) - session receipt template
+- [templates/state/README.template.md](templates/state/README.template.md) - state-history snapshot guide
+
+### Domain-Specific Work
+
+- [templates/research/research-note-template.md](templates/research/research-note-template.md) - research question, findings, recommendation
+- [templates/operations/release-checklist-template.md](templates/operations/release-checklist-template.md) - release or operational checklist
+- [templates/marketing/marketing-plan-template.md](templates/marketing/marketing-plan-template.md) - launch or growth campaign plan
+
+## What Is Most Reusable
+
+The most reusable idea in this workflow is not the exact folder tree. It is the separation of jobs:
+
+- current state tells you what is true now
+- specs and roadmap explain product direction
+- parent plans define intent, boundaries, invariants, sequencing, and parallelization
+- implementation briefs define bounded execution slices
+- session logs leave timestamped receipts for important work
+- ADRs preserve durable decisions and rejected alternatives
+
+Start small, then add structure only when the absence of structure is costing you comprehension.
