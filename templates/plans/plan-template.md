@@ -52,6 +52,12 @@ related_issues: []
 - <decision>
 - <decision>
 
+## Domain Model / Interfaces
+
+- Domain terms to preserve: `<term>`, `<term>`
+- New or changed interfaces: `<interface or seam>`
+- Related area docs: `AREA-<NAME>`
+
 ## Design Rules
 
 - <invariant to preserve>

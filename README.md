@@ -229,8 +229,10 @@ SPEC -> PLAN -> IMPL -> Issue / PR
 ```
 
 - Specs own product or system requirements.
-- Plans own intent, architecture, scope, and sequencing.
+- Specs also own product language when they introduce new terms, actors, or lifecycle states.
+- Plans own intent, architecture, scope, sequencing, and the build-time interface choices that matter.
 - Implementation briefs own bounded execution detail.
+- Architecture area docs own durable vocabulary, boundaries, and caller-facing interfaces for each `AREA-*`.
 - Parent GitHub issues usually track plans or work packages.
 - Sub-issues usually track implementation briefs or independently grabbable slices.
 

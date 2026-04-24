@@ -73,6 +73,11 @@ Cover the important behavior and edge cases. Do not create a huge user-story lis
 - <locked-in decision>
 - <locked-in decision>
 
+## Domain Language
+
+- `<term>` means <canonical meaning>.
+- Avoid `<ambiguous term>` because <reason>.
+
 ## Requirements
 
 - <functional requirement>
@@ -88,6 +93,7 @@ Cover the important behavior and edge cases. Do not create a huge user-story lis
 - <new seam>
 - <changed seam>
 - <related `AREA-*` doc, if the repo uses architecture areas>
+- <new or changed caller-facing interface, if known>
 
 ## Test Expectations
 
@@ -114,4 +120,4 @@ Cover the important behavior and edge cases. Do not create a huge user-story lis
 | Issue |  | tracking container, when created |
 | Session |  | work receipt |
 
-The spec owns product truth. Plans own execution strategy. Issues own tracking.
+The spec owns product truth and product language. Plans own execution strategy. Area docs own durable architecture boundaries and interfaces. Issues own tracking.

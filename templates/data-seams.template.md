@@ -12,6 +12,12 @@ Use this doc to explain canonical models, compatibility layers, migrations in pr
 - <canonical repository, table, service, or model>
 - <canonical repository, table, service, or model>
 
+## Caller-Facing Interfaces
+
+| Interface | Caller | Hidden Complexity | Owner |
+|---|---|---|---|
+| `<interface>` | <caller> | <what callers should not need to know> | <area, module, or team> |
+
 ## Compatibility or transitional seams
 
 - <compatibility seam>
@@ -28,6 +34,11 @@ Use this doc to explain canonical models, compatibility layers, migrations in pr
 
 - <mistake>
 - <mistake>
+
+## Terms To Preserve
+
+- `<term>` - <canonical meaning>
+- `<term>` - <canonical meaning>
 
 ## Read this before changing
 

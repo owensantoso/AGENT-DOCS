@@ -34,6 +34,22 @@ docs/architecture/areas/AREA-<NAME>.md
 - <rule that should survive refactors>
 - <rule that should survive refactors>
 
+## Domain Language
+
+Use this section when the area owns important terms, lifecycle states, actors, or product concepts.
+
+| Term | Meaning | Notes |
+|---|---|---|
+| `<term>` | <canonical meaning> | <aliases, rejected names, or source docs> |
+
+## Interfaces / Seams
+
+Use this section for caller-facing contracts owned by the area.
+
+| Interface | Caller | Owns | Does Not Own |
+|---|---|---|---|
+| `<interface or seam>` | <caller> | <responsibility> | <nearby responsibility owned elsewhere> |
+
 ## Intended Flow
 
 1. <step>
@@ -53,4 +69,4 @@ docs/architecture/areas/AREA-<NAME>.md
 
 - <spec, ADR, plan, session log, or source-of-truth doc>
 
-The area doc is a boundary contract. Put execution sequencing in plans, receipts in session logs, and durable rationale in ADRs.
+The area doc is a boundary contract. Keep vocabulary and interfaces stable here; put execution sequencing in plans, receipts in session logs, and durable rationale in ADRs.

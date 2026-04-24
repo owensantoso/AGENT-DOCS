@@ -6,6 +6,8 @@ These docs should answer:
 
 - what boundary each area owns
 - which subsystem owns what
+- which domain terms and lifecycle states belong to each area
+- which caller-facing interfaces create important seams
 - what must remain true across refactors
 - where current code diverges from intended architecture
 
@@ -66,9 +68,14 @@ A commit, PR, issue, or plan can reference multiple areas.
 - <invariant that cuts across multiple areas>
 - <invariant that cuts across multiple areas>
 
+## Cross-Cutting Interfaces
+
+- `<interface or seam>` - <areas involved and ownership rule>
+- `<interface or seam>` - <areas involved and ownership rule>
+
 ## Known Boundary Pressure
 
 - <current implementation mismatch or pressure point>
 - <current implementation mismatch or pressure point>
 
-Do not turn this README into the full architecture. It is the map; area docs own the boundaries.
+Do not turn this README into the full architecture. It is the map; area docs own the vocabulary, boundaries, and interfaces.

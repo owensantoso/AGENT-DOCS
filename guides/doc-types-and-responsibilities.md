@@ -63,12 +63,14 @@ Purpose:
 
 - define the intended forward system shape
 - explain boundaries and long-lived seams
+- define durable area vocabulary and caller-facing interfaces when architecture is split
 
 Should answer:
 
 - what layers exist?
 - what is canonical versus derived?
 - which boundaries should feature work preserve?
+- which interfaces create the seams future work should use?
 - where is the decision provenance for major claims?
 
 ## ADR
@@ -105,10 +107,12 @@ Should answer:
 Purpose:
 
 - define product behavior before implementation planning
+- preserve product language before build strategy hardens it into code
 
 Should answer:
 
 - what should the user experience be?
+- which terms, actors, and lifecycle states are canonical?
 - what decisions are already locked in?
 - what is explicitly not decided yet?
 
@@ -117,11 +121,13 @@ Should answer:
 Purpose:
 
 - define milestone intent, architecture, invariants, tasks, dependencies, and safe parallelization
+- identify important domain terms and interface choices that implementation must preserve
 
 Should answer:
 
 - what shape should this milestone have?
 - what must not regress?
+- which module/API/service boundaries need a stable caller-facing contract?
 - which tasks are sequential versus parallel?
 - where should work be grouped or split?
 - what is the plan status, creation time, and execution window?
