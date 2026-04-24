@@ -6,7 +6,7 @@ This doc is intentionally different from other docs:
 
 - `CURRENT_STATE.md` says what is built today.
 - `future-ideas.md` or equivalent backlog docs hold later or exploratory ideas.
-- `specs/` holds review-first feature specs.
+- `SPECS.md` holds the global `SPEC-####` registry; topic-first `specs/` folders hold review-first specs.
 - `plans/plan-*.md` holds milestone plans once a feature has a chosen execution shape.
 
 ## Status legend
@@ -53,7 +53,7 @@ The key principle is:
 
 | Work | Status | Why it belongs later |
 |---|---|---|
-| <feature spec or plan> | Spec only | <rationale> |
+| <spec or plan> | Spec only | <rationale> |
 
 ## 5. How to use this roadmap
 

@@ -33,6 +33,7 @@ These describe where the repo is going:
 - `orientation/ARCHITECTURE.md`
 - `product/specs/`
 - domain-specific specs or research notes
+- `docs/SPECS.md` as the global registry for `SPEC-####` IDs
 
 Use these to understand sequencing, target shape, and feature intent.
 

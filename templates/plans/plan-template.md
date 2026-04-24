@@ -2,7 +2,7 @@
 
 Use this for new parent `plan-*` docs.
 
-Keep it architectural and milestone-oriented. Point detailed execution into `impl-*` briefs when useful. If there is a source feature spec, treat that spec as product truth and link it in frontmatter.
+Keep it architectural and milestone-oriented. Point detailed execution into `impl-*` briefs when useful. If there is a source spec, treat that spec as requirements truth and link it in frontmatter.
 
 ---
 type: plan

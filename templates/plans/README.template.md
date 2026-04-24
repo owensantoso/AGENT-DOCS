@@ -4,7 +4,7 @@ This repo uses specs, plans, and implementation briefs on purpose.
 
 Starter templates live here:
 
-- `docs/specs/feature-spec-template.md` or equivalent
+- `docs/SPECS.md` and the repo's spec template
 - `docs/plans/templates/plan-template.md`
 - `docs/plans/templates/implementation-brief-template.md`
 
@@ -40,7 +40,7 @@ Use this hierarchy:
 SPEC -> PLAN -> IMPL -> Issues / PRs
 ```
 
-- `SPEC` owns product or system requirements: what should exist and why.
+- `SPEC` owns durable requirements and language: what should be true and why.
 - `PLAN` owns intent, architecture, scope, sequencing, dependencies, and validation strategy.
 - `IMPL` owns bounded execution detail for one task or grouped slice.
 - GitHub issues track approved work. They should link to specs, plans, and implementation briefs rather than replace them.
@@ -48,15 +48,15 @@ SPEC -> PLAN -> IMPL -> Issues / PRs
 
 ## The planning layers
 
-### 1. Feature specs
+### 1. Specs
 
-Feature specs define product or system requirements before implementation planning.
+Specs define durable requirements before implementation planning. They may describe features, bugs, improvements, architecture, repo-health work, or research-backed decisions.
 
 They define:
 
-- the user/system problem
+- the user/system/workflow problem
 - goals and non-goals
-- user stories and primary flows
+- user stories, primary flows, bug evidence, or improvement target shape
 - requirements and edge behavior
 - open questions
 - architecture or data implications
@@ -64,7 +64,7 @@ They define:
 
 They should answer:
 
-> What should exist, for whom, and why?
+> What should be true, for whom, and why?
 
 They should not define task sequencing or become a pseudo-plan.
 
@@ -116,11 +116,11 @@ They should answer:
 
 The important rule is:
 
-> The spec defines product truth. The main `plan-*` doc defines intent and boundaries. The `impl-*` brief defines execution details for one bounded slice.
+> The spec defines requirements truth. The main `plan-*` doc defines intent and boundaries. The `impl-*` brief defines execution details for one bounded slice.
 
 If both exist:
 
-- spec wins on product requirements, user promises, and feature behavior
+- spec wins on requirements, user promises, bug expectations, and target behavior
 - plan wins on product intent, scope, architecture, and non-goals
 - implementation brief wins on execution order and verification details
 

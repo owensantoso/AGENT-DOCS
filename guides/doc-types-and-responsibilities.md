@@ -102,19 +102,22 @@ Should answer:
 - what verification ran?
 - what follow-up remains?
 
-## Feature spec
+## Spec
 
 Purpose:
 
-- define product behavior before implementation planning
-- preserve product language before build strategy hardens it into code
+- define durable requirements before implementation planning
+- preserve product, technical, workflow, or architecture language before build strategy hardens it into code
+- provide one globally unique `SPEC-####` paper-trail ID
 
 Should answer:
 
-- what should the user experience be?
-- which terms, actors, and lifecycle states are canonical?
+- what should be true and why?
+- what kind of spec is this: feature, bug, improvement, architecture, repo-health, or research?
+- which terms, actors, lifecycle states, or ownership boundaries are canonical?
 - what decisions are already locked in?
 - what is explicitly not decided yet?
+- where does it live in the topic-first docs tree?
 
 ## Parent `plan-*` doc
 

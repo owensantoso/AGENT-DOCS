@@ -7,7 +7,7 @@ The core idea is simple: docs should let a fresh human or AI agent understand cu
 This kit is useful when:
 
 - feature work starts from a parent plan
-- product or system requirements can be captured as specs before planning
+- product, system, bug, architecture, or repo-health requirements can be captured as specs before planning
 - plans are broken into bounded implementation briefs when useful
 - agents or humans need to resume work across sessions
 - decisions, session history, and verification need durable homes
@@ -79,7 +79,7 @@ Examples:
 - data model changes that unlock product behavior
 - import/export
 - UI surfaces
-- feature specs
+- specs
 
 Even if a product plan is architecture-heavy, it still belongs here when the reason for the work is product capability.
 
@@ -184,6 +184,7 @@ Marketing can use the same plan/brief pattern when execution needs structure, bu
 ```text
 docs/
   README.md
+  SPECS.md
   orientation/
     CURRENT_STATE.md
     ONBOARDING.md
@@ -205,6 +206,7 @@ docs/
     learnings/
     execution-readiness.md
   repo-health/
+    specs/
     plans/
       <repo-health-topic>/
         plan.md
@@ -212,8 +214,11 @@ docs/
     session-logs/
     state/
   research/
+    specs/
   operations/
+    specs/
   marketing/
+    specs/
 AGENTS.md
 <surface>/AGENTS.md
 ```
@@ -229,7 +234,7 @@ SPEC -> PLAN -> IMPL -> Issue / PR
 ```
 
 - Specs own product or system requirements.
-- Specs also own product language when they introduce new terms, actors, or lifecycle states.
+- Specs own durable requirements and language before implementation planning. They may describe features, bugs, improvements, architecture, repo-health work, or research-backed decisions.
 - Plans own intent, architecture, scope, sequencing, and the build-time interface choices that matter.
 - Implementation briefs own bounded execution detail.
 - Architecture area docs own durable vocabulary, boundaries, and caller-facing interfaces for each `AREA-*`.
@@ -293,7 +298,9 @@ Use templates as starting points, not as mandatory paperwork. Copy only what the
 
 ### Product And Planning
 
-- [templates/feature-spec.template.md](templates/feature-spec.template.md) - product or system requirements before implementation planning
+- [templates/SPECS.template.md](templates/SPECS.template.md) - global spec registry using one continuous `SPEC-####` sequence
+- [templates/spec.template.md](templates/spec.template.md) - durable spec template for features, bugs, improvements, architecture, repo-health, and research
+- [templates/feature-spec.template.md](templates/feature-spec.template.md) - compatibility pointer for older feature-spec workflows
 - [templates/plans/README.template.md](templates/plans/README.template.md) - guide for parent plans and implementation briefs
 - [templates/plans/plan-template.md](templates/plans/plan-template.md) - parent plan template
 - [templates/plans/implementation-brief-template.md](templates/plans/implementation-brief-template.md) - bounded execution brief template

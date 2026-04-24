@@ -11,7 +11,7 @@ Start by reading, in order:
 2. docs/ONBOARDING.md or equivalent orientation doc
 3. docs/ROADMAP.md
 4. docs/ARCHITECTURE.md
-5. the relevant feature spec
+5. the relevant `SPEC-*` doc
 6. the parent plan doc
 7. the relevant implementation brief(s)
 8. AGENTS.md and any surface-level AGENTS.md you touch
