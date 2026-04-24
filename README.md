@@ -276,7 +276,7 @@ Use templates as starting points, not as mandatory paperwork. Copy only what the
 
 ### Product And Planning
 
-- [templates/feature-spec.template.md](templates/feature-spec.template.md) - product behavior before implementation planning
+- [templates/feature-spec.template.md](templates/feature-spec.template.md) - product or system requirements before implementation planning
 - [templates/plans/README.template.md](templates/plans/README.template.md) - guide for parent plans and implementation briefs
 - [templates/plans/plan-template.md](templates/plans/plan-template.md) - parent plan template
 - [templates/plans/implementation-brief-template.md](templates/plans/implementation-brief-template.md) - bounded execution brief template
