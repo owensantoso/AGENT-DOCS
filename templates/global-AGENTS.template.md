@@ -12,6 +12,8 @@ When it does, act as an orchestrator by default:
 
 - identify the independent workstreams
 - decide what critical-path work should stay local
+- check available subagent capacity before spawning; this environment may have a fixed active-agent limit
+- if spawning fails because the subagent limit is reached, close completed or no-longer-needed agents before falling back to local work
 - delegate bounded research, exploration, review, or sidecar implementation tasks to subagents when available and allowed
 - give each subagent a concrete, self-contained task with clear output expectations
 - avoid duplicate subagent work unless using independent review intentionally
