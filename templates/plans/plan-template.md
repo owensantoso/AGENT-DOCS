@@ -1,0 +1,137 @@
+# Plan Template
+
+Use this for new parent `plan-*` docs.
+
+Keep it architectural and milestone-oriented. Point detailed execution into `impl-*` briefs when useful.
+
+---
+type: plan
+domain: product
+status: draft
+created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+planned_execution_start:
+planned_execution_end:
+actual_execution_start:
+actual_execution_end:
+owner:
+related_specs: []
+related_adrs: []
+related_sessions: []
+---
+
+# <Plan Title>
+
+**Goal:** <One paragraph on the user-facing or system outcome.>
+
+**Architecture:** <Why this plan exists, what shape the solution should have, and what layer it belongs to.>
+
+**Tech Stack:** <Relevant stack for this plan only.>
+
+---
+
+## Prerequisites
+
+- <completed milestone or required seam>
+- <required doc or spec dependency>
+
+## Why Now
+
+- <why this should happen now in the roadmap>
+- <why delaying it would create pain or drift>
+
+## Product Decisions
+
+- <decision>
+- <decision>
+- <decision>
+
+## Design Rules
+
+- <invariant to preserve>
+- <another invariant>
+- <behavior or UX rule that must not regress>
+
+## Task Dependencies / Parallelization
+
+- <which tasks are foundational and must go first>
+- <which tasks can run in parallel after that foundation>
+- <which tasks are doc or closeout follow-through and should finish last>
+- Net: <one-sentence execution shape>
+
+## Out Of Scope
+
+- <explicit non-goal>
+- <explicit non-goal>
+- <explicit non-goal>
+
+## File Structure
+
+Likely create:
+
+```text
+<new files or seams>
+```
+
+Likely modify:
+
+```text
+<existing files or seams>
+```
+
+## Implementation Tasks
+
+### Task 1: <Task title>
+
+**Goal:** <one-sentence task goal>
+
+- <what it should do>
+- <what it should preserve>
+- <what it should avoid>
+
+Dependencies / parallelization:
+
+- Depends on: <task numbers or "prerequisites only">
+- Can run in parallel with: <task numbers or "none">
+- Notes: <ownership split or why it is coupled>
+
+### Task 2: <Task title>
+
+**Goal:** <one-sentence task goal>
+
+- <what it should do>
+- <what it should preserve>
+- <what it should avoid>
+
+Dependencies / parallelization:
+
+- Depends on: <task numbers>
+- Can run in parallel with: <task numbers or "none">
+- Notes: <ownership split or why it is coupled>
+
+### Task N: <Task title>
+
+**Goal:** <one-sentence task goal>
+
+- <what it should do>
+- <what it should preserve>
+- <what it should avoid>
+
+Dependencies / parallelization:
+
+- Depends on: <task numbers>
+- Can run in parallel with: <task numbers or "none">
+- Notes: <ownership split or why it is coupled>
+
+## Validation
+
+- <build or generation command>
+- <focused tests>
+- <full suite or migration checks>
+- <manual smoke if needed>
+
+## Completion Criteria
+
+- <observable finished condition>
+- <observable finished condition>
+- <architecture or invariant condition>
