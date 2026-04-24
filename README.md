@@ -258,6 +258,7 @@ Use templates as starting points, not as mandatory paperwork. Copy only what the
 ### Entry Points
 
 - [templates/AGENTS.template.md](templates/AGENTS.template.md) - root agent index and repo rules
+- [templates/global-AGENTS.template.md](templates/global-AGENTS.template.md) - personal/global Codex instructions for always-on orchestration habits
 - [templates/surface-AGENTS.template.md](templates/surface-AGENTS.template.md) - local instructions for one app, package, or service
 - [templates/DOCS-README.template.md](templates/DOCS-README.template.md) - map for a repo's `docs/` folder
 
