@@ -62,6 +62,23 @@ Turn vague tasks into verifiable goals:
 
 For multi-step tasks, state a brief plan with verification points.
 
+## Skill Routing Reflex
+
+Before selecting specific skills, classify the request into one or more broad domains.
+
+Common domains:
+
+- writing: docs, prompts, templates, specs, plans, repo memory
+- git-github: commits, branches, PRs, issues, tracking, paper trails
+- planning: PRDs/specs, parent plans, implementation briefs, decomposition
+- architecture: boundaries, seams, interfaces, domain language, ADR-shaped decisions
+- implementation: code changes, migrations, UI, integrations
+- debugging-testing: bugs, failing tests, diagnostics, verification
+- research: online/source investigation, comparisons, unfamiliar APIs
+- operations: release, deployment, production, app store, manual runbooks
+
+If a broad router skill exists for the domain, read it first, then follow its map to the needed leaf skill or skills. Router skills should stay concise; leaf skills own detailed workflow.
+
 ## Orchestration Reflex
 
 At the start of each request, check whether the work contains multiple separable tasks, broad exploration, deep docs/code review, online research, or other token-heavy parallelizable work.
