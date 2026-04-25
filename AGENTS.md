@@ -34,6 +34,7 @@ Use this pack when you want to bootstrap a repo that supports:
 - Add timestamped session logs for meaningful implementation, planning, debugging, or docs workflow sessions.
 - Use YAML frontmatter in new durable docs so status, timestamps, links, and domain can be queried later.
 - Make verification docs honest. List what the repo actually supports today, not an imagined future CI setup.
+- When feedback reveals a missed rule, wrong assumption, ambiguous docs, or workflow failure, use `reflect-and-improve` and update the smallest durable source that would prevent a repeat.
 
 ## Output expectation
 

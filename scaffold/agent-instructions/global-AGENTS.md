@@ -1,10 +1,6 @@
 # Global Codex Instructions
 
-Use this as a starting point for a personal or machine-level `~/.codex/AGENTS.md`.
-
-Global instructions should stay short. Put repo-specific rules in the repo's own `AGENTS.md`, and put detailed workflows in repo docs or reusable skills.
-
-Behavioral guidelines to reduce common agent coding mistakes. Merge with repo-specific instructions as needed.
+Behavioral guidelines to reduce common agent coding mistakes. Merge with repo-specific `AGENTS.md` instructions as needed.
 
 Tradeoff: these guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
@@ -62,6 +58,19 @@ Turn vague tasks into verifiable goals:
 
 For multi-step tasks, state a brief plan with verification points.
 
+## Reflect And Improve
+
+When the user points out a contradiction, wrong assumption, missed rule, unclear doc, tooling gap, or seems frustrated by how the work is going, treat it as a signal to improve the shared system.
+
+- Pause long enough to name what happened.
+- Reflect on what prompt wording, docs, tool behavior, or agent assumption led there.
+- Classify the source: prompt ambiguity, doc ambiguity/drift, agent assumption, tooling gap, conflicting instructions, or unknown.
+- Update the smallest authoritative doc, template, check, or skill when that would prevent a repeat.
+- Record a brief paper trail when the lesson matters beyond the current chat.
+- Resume from the corrected understanding and verify the fix.
+
+Use `reflect-and-improve` when this becomes more than a one-sentence clarification.
+
 ## Skill Routing Reflex
 
 Before selecting specific skills, classify the request into one or more broad domains.
@@ -76,6 +85,7 @@ Common domains:
 - debugging-testing: bugs, failing tests, diagnostics, verification
 - research: online/source investigation, comparisons, unfamiliar APIs
 - operations: release, deployment, production, app store, manual runbooks
+- reflection: corrections, frustration signals, wrong assumptions, ambiguous docs, tooling gaps, and workflow improvements
 
 If a broad router skill exists for the domain, read it first, then follow its map to the needed leaf skill or skills. Router skills should stay concise; leaf skills own detailed workflow.
 

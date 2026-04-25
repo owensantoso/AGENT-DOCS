@@ -22,9 +22,9 @@ Put current reality in `../CURRENT_STATE.md`, execution details in plans or impl
 
 ## Reading Order
 
-1. [areas/AREA-MODEL.md](areas/AREA-MODEL.md)
-2. [areas/AREA-SYNC.md](areas/AREA-SYNC.md)
-3. [diagrams.md](diagrams.md)
+1. `areas/AREA-MODEL.md`
+2. `areas/AREA-SYNC.md`
+3. `diagrams.md`
 
 ## Area Registry
 
@@ -43,8 +43,8 @@ AREA-SYNC -> docs/architecture/areas/AREA-SYNC.md
 
 | Area ID | Doc | Owns |
 |---|---|---|
-| `AREA-MODEL` | [areas/AREA-MODEL.md](areas/AREA-MODEL.md) | <canonical model and data ownership> |
-| `AREA-SYNC` | [areas/AREA-SYNC.md](areas/AREA-SYNC.md) | <sync, auth, and remote/local boundaries> |
+| `AREA-MODEL` | `areas/AREA-MODEL.md` | <canonical model and data ownership> |
+| `AREA-SYNC` | `areas/AREA-SYNC.md` | <sync, auth, and remote/local boundaries> |
 
 Use area IDs in:
 
@@ -59,9 +59,9 @@ A commit, PR, issue, or plan can reference multiple areas.
 ## Which Doc Answers Which Question
 
 - "<question>"
-  - [areas/AREA-<NAME>.md](areas/AREA-<NAME>.md)
+  - `areas/AREA-<NAME>.md`
 - "I need the fastest visual map of how the system fits together"
-  - [diagrams.md](diagrams.md)
+  - `diagrams.md`
 
 ## Cross-Cutting Invariants
 

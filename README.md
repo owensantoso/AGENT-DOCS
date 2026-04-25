@@ -20,6 +20,9 @@ This kit is useful when:
 3. [guides/doc-types-and-responsibilities.md](guides/doc-types-and-responsibilities.md) - what each doc type owns
 4. [guides/subagent-execution-loop.md](guides/subagent-execution-loop.md) - how to split, delegate, and integrate work
 5. [guides/adoption-checklist.md](guides/adoption-checklist.md) - how to install the workflow in another repo
+6. [plans/README.md](plans/README.md) - upstream AGENT-DOCS and docs-meta improvement plans
+
+Reusable global and surface-level agent instructions live under `scaffold/agent-instructions/`. Keep those separate from repo-specific docs so personal defaults, project rules, and future persona files can evolve without crowding every target repo root.
 
 ## The Folder Model
 
@@ -198,9 +201,9 @@ docs/
   product/
     specs/
     plans/
-      plan-<id>-<slug>/
-        plan.md
-        impl-task-<task-ref>-<slug>.md
+      PLAN-<id>-<slug>/
+        PLAN-<id>-<slug>.md
+        IMPL-<id>-<task-ref>-<slug>.md
     ideas/
   decisions/
     adr/
@@ -211,8 +214,8 @@ docs/
     specs/
     plans/
       <repo-health-topic>/
-        plan.md
-        impl-task-1-<slug>.md
+        PLAN-<id>-<slug>.md
+        IMPL-<id>-01-<slug>.md
     audits/
     session-logs/
     state/
@@ -260,6 +263,9 @@ Use it for:
 - extracting Markdown todos
 - regenerating `IDEAS.md`, `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, `AREAS.md`, `AUDITS.md`, and `ROADMAP-VIEW.md`
 - checking duplicate IDs, stale generated docs, metadata contracts, statuses, and mismatched filenames
+- inspecting docs links, backlinks, broken repo-local links, and orphan docs
+- normalizing repo-local Markdown hrefs to relative links
+- moving or renaming docs with backlink rewrites and dry-run previews
 - showing advisory docs-health warnings for docs that may be stale or worth reviewing
 - producing a stable-ID plan roadmap from `sequence` frontmatter
 - printing generated views in the CLI while refreshing their Markdown cache and `updated_at` metadata
@@ -267,6 +273,8 @@ Use it for:
 The repo tree remains the source of truth. Generated files are views, not separate state.
 
 Read [scripts/README.md](scripts/README.md) for the rationale, command reference, and adoption notes.
+
+Upstream `docs-meta` feature work belongs in [plans/](plans/), not in the consuming repo that first exposes the need.
 
 ## Smaller Project Shape
 
@@ -278,9 +286,9 @@ docs/
   ARCHITECTURE.md
   ROADMAP.md
   plans/
-    plan-<slug>/
-      plan.md
-      impl-task-1-<slug>.md
+    PLAN-<id>-<slug>/
+      PLAN-<id>-<slug>.md
+      IMPL-<id>-01-<slug>.md
   decisions/
     adr/
   session-logs/
@@ -334,7 +342,7 @@ Use scaffold files as starting points, not as mandatory paperwork. Keep one cano
 - [scaffold/docs/product/specs/SPEC-0000-spec-title.md](scaffold/docs/product/specs/SPEC-0000-spec-title.md) - durable spec example for features, bugs, improvements, architecture, repo-health, and research
 - [scaffold/docs/product/specs/feature-spec-compatibility.md](scaffold/docs/product/specs/feature-spec-compatibility.md) - compatibility pointer for older feature-spec workflows
 - [scaffold/docs/product/plans/README.md](scaffold/docs/product/plans/README.md) - guide for parent plans and implementation briefs
-- [scaffold/docs/product/plans/PLAN-0000-plan-title/plan.md](scaffold/docs/product/plans/PLAN-0000-plan-title/plan.md) - parent plan example
+- [scaffold/docs/product/plans/PLAN-0000-plan-title/PLAN-0000-plan-title.md](scaffold/docs/product/plans/PLAN-0000-plan-title/PLAN-0000-plan-title.md) - parent plan example
 - [scaffold/docs/product/plans/PLAN-0000-plan-title/IMPL-0000-00-implementation-brief-title.md](scaffold/docs/product/plans/PLAN-0000-plan-title/IMPL-0000-00-implementation-brief-title.md) - bounded execution brief example
 - [scaffold/optional/central-implementation-briefs/README.md](scaffold/optional/central-implementation-briefs/README.md) - optional central brief-folder guide for repos that keep briefs separate
 - [scaffold/docs/repo-health/prompts/reusable-implementer-handoff-prompt.md](scaffold/docs/repo-health/prompts/reusable-implementer-handoff-prompt.md) - boot prompt for fresh implementation sessions

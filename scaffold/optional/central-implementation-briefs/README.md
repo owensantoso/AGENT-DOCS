@@ -6,8 +6,8 @@ The preferred newer shape is one folder per plan:
 
 ```text
 <domain>/plans/<plan-slug>/
-  plan.md
-  impl-task-<task-ref>-<slug>.md
+  PLAN-0001-<slug>.md
+  IMPL-0001-01-<slug>.md
 ```
 
 Use a central implementation-briefs folder only if that is simpler for the repo.

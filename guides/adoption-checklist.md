@@ -33,6 +33,7 @@ Use this when setting up this workflow in a new repository.
 - Make sure naming conventions are unambiguous.
 - Make sure `CURRENT_STATE.md` is fresh enough to trust.
 - Make sure session logs have exact local timestamps for meaningful actions.
+- Make sure agents know to use `reflect-and-improve` when feedback reveals a wrong assumption, ambiguous docs, missed rule, or tooling gap.
 
 ## Ongoing maintenance
 
@@ -40,10 +41,13 @@ Use this when setting up this workflow in a new repository.
 - Update plan and brief checklists together when both exist.
 - Update session logs at closeout for meaningful work.
 - Use commit trailers for meaningful commits.
+- Use `scripts/docs-meta move ... --dry-run` before moving or renaming docs when the repo has `docs-meta`.
+- Run `scripts/docs-meta check-links` after docs layout changes.
 - Keep roadmap ordering intentional.
 - Move over-detailed execution notes out of parent plans and into briefs.
 - Move over-detailed state history out of `CURRENT_STATE.md` and into `state/`.
 - Delete or rewrite stale docs instead of letting them drift quietly.
+- Treat corrections as blameless system feedback: clarify the workflow, update the smallest durable doc or check, and log the lesson when it should survive the chat.
 
 ## Smells to watch for
 
@@ -54,5 +58,6 @@ Use this when setting up this workflow in a new repository.
 - the testing guide promises checks the repo does not actually have
 - agents keep implementing from old plans that contradict the codebase
 - tasks marked parallel still fight over the same files
+- the same correction appears in chat more than once but never becomes a doc, template, check, or skill update
 
 If you see these, the docs need simplification, not more layers.

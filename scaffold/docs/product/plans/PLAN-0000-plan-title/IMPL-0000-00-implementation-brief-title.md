@@ -40,7 +40,7 @@ Prefer `scripts/docs-meta new impl "<title>" --plan PLAN-0000` when the repo has
 
 ## Parent plan
 
-- [plan.md](plan.md)
+- [PLAN-0000-plan-title.md](PLAN-0000-plan-title.md)
 
 <Optional note if this brief intentionally groups multiple parent-plan tasks.>
 

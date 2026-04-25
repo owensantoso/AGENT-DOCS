@@ -2,7 +2,7 @@
 type: generated-view
 title: Docs Health
 status: generated
-updated_at: "2026-04-25 11:34:26 JST +0900"
+updated_at: "2026-04-25 20:16:57 JST +0900"
 ---
 
 # Docs Health
@@ -32,7 +32,7 @@ Advisory review queue for docs that may be stale or worth checking. This is not 
 | info | missing-review-commit | `orientation/ROADMAP.md` | orientation/ROADMAP.md has repo_state but no last_reviewed_commit. |  |
 | info | missing-review-commit | `product/ideas/IDEA-0000-idea-title.md` | IDEA-0000 has repo_state but no last_reviewed_commit. |  |
 | info | missing-review-commit | `product/plans/PLAN-0000-plan-title/IMPL-0000-00-implementation-brief-title.md` | IMPL-0000-00 has repo_state but no last_reviewed_commit. |  |
-| info | missing-review-commit | `product/plans/PLAN-0000-plan-title/plan.md` | PLAN-0000 has repo_state but no last_reviewed_commit. |  |
+| info | missing-review-commit | `product/plans/PLAN-0000-plan-title/PLAN-0000-plan-title.md` | PLAN-0000 has repo_state but no last_reviewed_commit. |  |
 | info | missing-review-commit | `product/specs/SPEC-0000-spec-title.md` | SPEC-0000 has repo_state but no last_reviewed_commit. |  |
 | info | missing-review-commit | `repo-health/audits/YYYY-MM-DD-repo-health-audit.md` | repo-health/audits/YYYY-MM-DD-repo-health-audit.md has repo_state but no last_reviewed_commit. |  |
 | warn | missing-updated-at | `repo-health/codebase-map.md` | repo-health/codebase-map.md has no parseable updated_at timestamp. |  |
@@ -42,3 +42,21 @@ Advisory review queue for docs that may be stale or worth checking. This is not 
 | warn | missing-updated-at | `repo-health/testing-guide.md` | repo-health/testing-guide.md has no parseable updated_at timestamp. |  |
 | info | missing-review-commit | `repo-health/testing-guide.md` | repo-health/testing-guide.md has repo_state but no last_reviewed_commit. |  |
 | info | missing-review-commit | `research/notes/research-note.md` | research/notes/research-note.md has repo_state but no last_reviewed_commit. |  |
+| info | orphan-doc | `architecture/areas/AREA-EXAMPLE.md` | AREA-EXAMPLE has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `decisions/adr/ADR-0000-decision-title.md` | ADR-0000 has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `marketing/plans/marketing-plan.md` | marketing/plans/marketing-plan.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `operations/checklists/release-checklist.md` | operations/checklists/release-checklist.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `orientation/ARCHITECTURE.md` | orientation/ARCHITECTURE.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `orientation/CURRENT_STATE.md` | orientation/CURRENT_STATE.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `orientation/ONBOARDING.md` | orientation/ONBOARDING.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `orientation/ROADMAP.md` | orientation/ROADMAP.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `product/ideas/IDEA-0000-idea-title.md` | IDEA-0000 has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `product/plans/PLAN-0000-plan-title/IMPL-0000-00-implementation-brief-title.md` | IMPL-0000-00 has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `product/specs/feature-spec-compatibility.md` | product/specs/feature-spec-compatibility.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `repo-health/audits/YYYY-MM-DD-repo-health-audit.md` | repo-health/audits/YYYY-MM-DD-repo-health-audit.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `repo-health/codebase-map.md` | repo-health/codebase-map.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `repo-health/data-seams.md` | repo-health/data-seams.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `repo-health/prompts/reusable-implementer-handoff-prompt.md` | repo-health/prompts/reusable-implementer-handoff-prompt.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `repo-health/session-logs/YYYY-MM-DD-session-title.md` | repo-health/session-logs/YYYY-MM-DD-session-title.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `repo-health/testing-guide.md` | repo-health/testing-guide.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |
+| info | orphan-doc | `research/notes/research-note.md` | research/notes/research-note.md has no inbound Markdown links. | Review whether this is intentional or add an index/backlink. |

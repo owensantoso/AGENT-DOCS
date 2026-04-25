@@ -2,7 +2,7 @@
 type: generated-view
 title: Roadmap View
 status: generated
-updated_at: "2026-04-25 11:34:26 JST +0900"
+updated_at: "2026-04-25 19:06:59 JST +0900"
 ---
 
 # Roadmap View
@@ -13,4 +13,4 @@ Generated plan-order view. `PLAN-*` IDs are stable identity; `sequence` frontmat
 
 | Sequence | Plan | Plan Name | Title | Status | Domain | Lane | After | Before | Path |
 |---|---|---|---|---|---|---|---|---|---|
-| 0.0 | PLAN-0000 | PLAN-0000-plan-title | <Plan title> | draft | product | product |  |  | `product/plans/PLAN-0000-plan-title/plan.md` |
+| 0.0 | PLAN-0000 | PLAN-0000-plan-title | <Plan title> | draft | product | product |  |  | `product/plans/PLAN-0000-plan-title/PLAN-0000-plan-title.md` |

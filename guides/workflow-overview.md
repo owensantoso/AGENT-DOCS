@@ -45,7 +45,7 @@ Use these to understand sequencing, target shape, and feature intent.
 
 These describe how a specific milestone should be executed:
 
-- parent `plan.md` docs inside a plan folder
+- parent `PLAN-*` docs inside a plan folder
 - task-scoped `impl-task-*` implementation briefs in the same plan folder
 
 Use these to decide ordering, grouping, ownership, and verification.
@@ -123,3 +123,7 @@ The usual sequence is:
 9. Use commit trailers for meaningful commits.
 
 If the docs are doing their job, a fresh agent should be able to enter midstream without relying on old chat memory.
+
+When user feedback reveals a wrong assumption, ambiguous docs, missed rule, or tooling gap, use `reflect-and-improve`: pause, identify what made the miss likely, update the smallest durable source, and record the lesson when it should survive the chat.
+
+When moving or renaming docs, use `docs-meta move` so Markdown backlinks are updated from the same link graph that powers `backlinks`, `check-links`, `orphans`, and `normalize-links`.

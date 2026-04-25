@@ -6,7 +6,7 @@ Starter examples live here:
 
 - `docs/IDEAS.md` and the repo's idea template
 - `docs/SPECS.md` and the repo's spec template
-- `docs/product/plans/PLAN-0000-plan-title/plan.md`
+- `docs/product/plans/PLAN-0000-plan-title/PLAN-0000-plan-title.md`
 - `docs/product/plans/PLAN-0000-plan-title/IMPL-0000-00-implementation-brief-title.md`
 
 Reusable implementation-session handoff prompt:
@@ -47,8 +47,8 @@ Each meaningful plan should get its own folder:
 
 ```text
 <domain>/plans/<plan-slug>/
-  plan.md
-  impl-task-<task-ref>-<slug>.md
+  PLAN-0001-<slug>.md
+  IMPL-0001-01-<slug>.md
 ```
 
 Use the old flat file convention only when the repo intentionally chooses simpler docs.
@@ -84,7 +84,7 @@ Recommended paths:
 ```text
 docs/<domain>/ideas/IDEA-0001-<slug>.md
 docs/<domain>/specs/SPEC-0001-<slug>.md
-docs/<domain>/plans/PLAN-0001-<slug>/plan.md
+docs/<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
 docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
 ```
 
@@ -335,13 +335,13 @@ Recommended sections:
 Folder-based plan:
 
 ```text
-<domain>/plans/<plan-slug>/plan.md
+<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
 ```
 
 Implementation briefs:
 
 ```text
-<domain>/plans/<plan-slug>/impl-task-<task-ref>-<slug>.md
+<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
 ```
 
 Use `<task-ref>` to mirror the parent-plan task numbers:

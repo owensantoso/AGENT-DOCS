@@ -9,13 +9,16 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import fnmatch
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import quote, unquote
 
 
 ID_PATTERNS = {
@@ -162,6 +165,37 @@ class HealthIssue:
     detail: str = ""
 
 
+@dataclass
+class LinkRef:
+    source: Path
+    source_rel: str
+    line: int
+    raw: str
+    href: str
+    label: str
+    kind: str
+    href_start: int
+    href_end: int
+    target: Path | None
+    target_rel: str
+    status: str
+    fragment: str = ""
+    detail: str = ""
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "source": self.source_rel,
+            "line": self.line,
+            "kind": self.kind,
+            "label": self.label,
+            "href": self.href,
+            "target": self.target_rel,
+            "status": self.status,
+            "fragment": self.fragment,
+            "detail": self.detail,
+        }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Scan and update docs metadata.")
     parser.add_argument("--root", default="docs", help="Docs root to scan. Default: docs")
@@ -215,6 +249,36 @@ def parse_args() -> argparse.Namespace:
     view_cmd.add_argument("--commit-threshold", type=int, default=10, help="Health view commit threshold. Default: 10")
     view_cmd.add_argument("--audit-days", type=int, default=30, help="Health view audit threshold. Default: 30")
 
+    links_cmd = sub.add_parser("links", help="List repo-local and external links found in Markdown docs.")
+    links_cmd.add_argument("target", nargs="?", help="Optional source path/ID or target path/ID filter.")
+    links_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+
+    backlinks_cmd = sub.add_parser("backlinks", help="List docs that link to a path or ID.")
+    backlinks_cmd.add_argument("target", help="Target path or stable ID.")
+    backlinks_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+
+    check_links_cmd = sub.add_parser("check-links", help="Report broken repo-local links.")
+    check_links_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+
+    orphans_cmd = sub.add_parser("orphans", help="Report Markdown docs with no inbound links.")
+    orphans_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+    orphans_cmd.add_argument("--include-generated", action="store_true", help="Include generated views in orphan output.")
+    orphans_cmd.add_argument("--exclude", action="append", default=[], help="Glob-style docs-root path to ignore. Repeatable.")
+
+    normalize_cmd = sub.add_parser("normalize-links", help="Normalize repo-local Markdown links.")
+    normalize_cmd.add_argument("--style", choices=["relative"], default="relative")
+    normalize_cmd.add_argument("--dry-run", action="store_true", help="Preview changes without writing. This is the default unless --write is passed.")
+    normalize_cmd.add_argument("--write", action="store_true", help="Rewrite files.")
+    normalize_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+
+    move_cmd = sub.add_parser("move", help="Move a doc and rewrite Markdown backlinks.")
+    move_cmd.add_argument("old")
+    move_cmd.add_argument("new")
+    move_cmd.add_argument("--dry-run", action="store_true", help="Preview changes without writing. This is the default unless --write is passed.")
+    move_cmd.add_argument("--write", action="store_true", help="Move the file and rewrite backlinks.")
+    move_cmd.add_argument("--allow-historical", action="store_true", help="Allow moving legacy plan/spec paths.")
+    move_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+
     return parser.parse_args()
 
 
@@ -241,6 +305,416 @@ def read_docs(root: Path) -> list[Doc]:
         ids = sorted(set(ids))
         docs.append(Doc(path=path, relpath=path.relative_to(root).as_posix(), frontmatter=frontmatter, content=content, ids=ids))
     return docs
+
+
+def repo_root_for(root: Path) -> Path:
+    return root.resolve().parent
+
+
+def relative_to_root(path: Path, root: Path) -> str:
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        try:
+            return path.resolve().relative_to(repo_root_for(root)).as_posix()
+        except ValueError:
+            return path.as_posix()
+
+
+def line_number(text: str, offset: int) -> int:
+    return text.count("\n", 0, offset) + 1
+
+
+def split_href(href: str) -> tuple[str, str, str]:
+    fragment = ""
+    path_and_query = href
+    if "#" in path_and_query:
+        path_and_query, fragment = path_and_query.split("#", 1)
+    query = ""
+    path_part = path_and_query
+    if "?" in path_part:
+        path_part, query = path_part.split("?", 1)
+    suffix = ""
+    if query:
+        suffix += f"?{query}"
+    if fragment:
+        suffix += f"#{fragment}"
+    return path_part, suffix, fragment
+
+
+def is_external_href(href: str) -> bool:
+    return bool(re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", href)) or href.startswith("//")
+
+
+def is_path_like_autolink(href: str) -> bool:
+    return "/" in href or href.endswith(".md") or href.startswith((".", "#"))
+
+
+def resolve_path_input(value: str, root: Path, docs: list[Doc] | None = None) -> Path:
+    if docs:
+        doc = find_doc(docs, value)
+        if doc:
+            return doc.path
+    path = Path(value)
+    if path.is_absolute():
+        return path
+    parts = path.parts
+    if parts and parts[0] == root.name:
+        return root.parent / path
+    return root / path
+
+
+def resolve_href(href: str, source: Path, root: Path) -> tuple[Path | None, str, str, str]:
+    if not href:
+        return None, "", "empty", ""
+    if is_external_href(href):
+        return None, "", "external", ""
+    if href.startswith("#"):
+        return source, relative_to_root(source, root), "ok", href[1:]
+
+    path_part, _, fragment = split_href(href)
+    if not path_part:
+        return source, relative_to_root(source, root), "ok", fragment
+
+    decoded = unquote(path_part)
+    candidate: Path
+    status = "ok"
+    root_resolved = root.resolve()
+    repo_root = repo_root_for(root)
+
+    if decoded.startswith("/"):
+        stripped = decoded.lstrip("/")
+        if stripped.startswith(f"{root.name}/"):
+            candidate = repo_root / stripped
+        else:
+            candidate = root / stripped
+        status = "root-relative"
+    else:
+        path = Path(decoded)
+        if path.is_absolute():
+            candidate = path
+            try:
+                candidate.resolve().relative_to(repo_root)
+                status = "absolute-repo-local"
+            except ValueError:
+                return candidate, candidate.as_posix(), "outside-repo", fragment
+        else:
+            candidate = source.parent / path
+
+    candidate = candidate.resolve()
+    if candidate.is_dir():
+        for index_name in ("README.md", "index.md"):
+            index = candidate / index_name
+            if index.exists():
+                candidate = index.resolve()
+                break
+        else:
+            return candidate, relative_to_root(candidate, root), "directory-no-index", fragment
+    if not candidate.exists():
+        return candidate, relative_to_root(candidate, root), "missing", fragment
+    try:
+        candidate.relative_to(root_resolved)
+    except ValueError:
+        try:
+            candidate.relative_to(repo_root)
+        except ValueError:
+            return candidate, candidate.as_posix(), "outside-repo", fragment
+    return candidate, relative_to_root(candidate, root), status, fragment
+
+
+MD_LINK_RE = re.compile(r"(!?)\[([^\]\n]*)\]\(([^)\s]+)([^)]*)\)")
+WIKI_LINK_RE = re.compile(r"(!?)\[\[([^\]|\n]+)(?:\|([^\]\n]+))?\]\]")
+AUTOLINK_RE = re.compile(r"<([^<>\s]+)>")
+
+
+def markdown_ignored_ranges(text: str) -> list[tuple[int, int]]:
+    ranges: list[tuple[int, int]] = []
+    in_fence = False
+    fence_start = 0
+    offset = 0
+    for line in text.splitlines(keepends=True):
+        stripped = line.lstrip()
+        if stripped.startswith(("```", "~~~")):
+            if in_fence:
+                ranges.append((fence_start, offset + len(line)))
+                in_fence = False
+            else:
+                fence_start = offset
+                in_fence = True
+        if not in_fence:
+            for match in re.finditer(r"`[^`\n]+`", line):
+                ranges.append((offset + match.start(), offset + match.end()))
+        offset += len(line)
+    if in_fence:
+        ranges.append((fence_start, len(text)))
+    return ranges
+
+
+def in_ignored_markdown_range(offset: int, ranges: list[tuple[int, int]]) -> bool:
+    return any(start <= offset < end for start, end in ranges)
+
+
+def link_refs_for_doc(doc: Doc, root: Path) -> list[LinkRef]:
+    refs: list[LinkRef] = []
+    text = doc.path.read_text(encoding="utf-8")
+    ignored_ranges = markdown_ignored_ranges(text)
+
+    for match in MD_LINK_RE.finditer(text):
+        if in_ignored_markdown_range(match.start(), ignored_ranges):
+            continue
+        href = match.group(3)
+        target, target_rel, status, fragment = resolve_href(href, doc.path, root)
+        refs.append(
+            LinkRef(
+                source=doc.path,
+                source_rel=doc.relpath,
+                line=line_number(text, match.start()),
+                raw=match.group(0),
+                href=href,
+                label=match.group(2),
+                kind="markdown-image" if match.group(1) else "markdown-link",
+                href_start=match.start(3),
+                href_end=match.end(3),
+                target=target,
+                target_rel=target_rel,
+                status=status,
+                fragment=fragment,
+            )
+        )
+
+    for match in WIKI_LINK_RE.finditer(text):
+        if in_ignored_markdown_range(match.start(), ignored_ranges):
+            continue
+        href = match.group(2)
+        wiki_path = href.split("#", 1)[0]
+        target, target_rel, status, fragment = resolve_href(wiki_path, doc.path, root)
+        refs.append(
+            LinkRef(
+                source=doc.path,
+                source_rel=doc.relpath,
+                line=line_number(text, match.start()),
+                raw=match.group(0),
+                href=href,
+                label=match.group(3) or href,
+                kind="wiki-image" if match.group(1) else "wiki-link",
+                href_start=match.start(2),
+                href_end=match.end(2),
+                target=target,
+                target_rel=target_rel,
+                status=status if status != "external" else "unsupported-wiki-link",
+                fragment=fragment,
+                detail="Wikilinks are parsed for visibility but are not the canonical link format.",
+            )
+        )
+
+    for match in AUTOLINK_RE.finditer(text):
+        if in_ignored_markdown_range(match.start(), ignored_ranges):
+            continue
+        href = match.group(1)
+        if href.startswith(("http://", "https://", "mailto:")):
+            continue
+        if not is_path_like_autolink(href):
+            continue
+        target, target_rel, status, fragment = resolve_href(href, doc.path, root)
+        refs.append(
+            LinkRef(
+                source=doc.path,
+                source_rel=doc.relpath,
+                line=line_number(text, match.start()),
+                raw=match.group(0),
+                href=href,
+                label=href,
+                kind="autolink",
+                href_start=match.start(1),
+                href_end=match.end(1),
+                target=target,
+                target_rel=target_rel,
+                status=status,
+                fragment=fragment,
+            )
+        )
+
+    return sorted(refs, key=lambda ref: (ref.source_rel, ref.line, ref.href_start))
+
+
+def link_graph(root: Path, docs: list[Doc]) -> list[LinkRef]:
+    refs: list[LinkRef] = []
+    for doc in docs:
+        refs.extend(link_refs_for_doc(doc, root))
+    return refs
+
+
+def is_generated_doc(doc: Doc) -> bool:
+    return doc.doc_type == "generated-view" or doc.path.name in {
+        "IDEAS.md",
+        "SPECS.md",
+        "DOCS-REGISTRY.md",
+        "TODOS.md",
+        "AREAS.md",
+        "AUDITS.md",
+        "ROADMAP-VIEW.md",
+        "HEALTH.md",
+    }
+
+
+def link_matches_target(ref: LinkRef, target: Path) -> bool:
+    return ref.target is not None and ref.target.resolve() == target.resolve()
+
+
+def markdown_link_refs(refs: list[LinkRef]) -> list[LinkRef]:
+    return [ref for ref in refs if ref.kind in {"markdown-link", "markdown-image", "autolink"} and ref.target is not None]
+
+
+def relative_href(source: Path, target: Path, suffix: str = "") -> str:
+    rel = os.path.relpath(target.resolve(), start=source.resolve().parent)
+    return quote(Path(rel).as_posix(), safe="/") + suffix
+
+
+def format_link_rows(refs: list[LinkRef]) -> str:
+    if not refs:
+        return "No links found."
+    return "\n".join(
+        f"{ref.status}\t{ref.kind}\t{ref.source_rel}:{ref.line}\t{ref.href}\t{ref.target_rel}"
+        for ref in refs
+    )
+
+
+def broken_link_refs(refs: list[LinkRef]) -> list[LinkRef]:
+    broken_statuses = {"missing", "directory-no-index", "outside-repo", "empty", "unsupported-wiki-link"}
+    return [ref for ref in refs if ref.status in broken_statuses]
+
+
+def orphan_docs(root: Path, docs: list[Doc], refs: list[LinkRef], include_generated: bool = False, excludes: list[str] | None = None) -> list[Doc]:
+    inbound = {ref.target.resolve() for ref in refs if ref.target is not None and ref.status in {"ok", "root-relative", "absolute-repo-local"}}
+    result: list[Doc] = []
+    excludes = excludes or []
+    for doc in docs:
+        if not include_generated and is_generated_doc(doc):
+            continue
+        if doc.frontmatter.get("docs_meta_ignore_orphan") or doc.frontmatter.get("orphan_ok"):
+            continue
+        if any(fnmatch.fnmatch(doc.relpath, pattern) for pattern in excludes):
+            continue
+        if doc.path.name == "README.md":
+            continue
+        if doc.path.resolve() not in inbound:
+            result.append(doc)
+    return sorted(result, key=lambda doc: doc.relpath)
+
+
+def print_json_or_text(payload: object, text: str, use_json: bool) -> None:
+    if use_json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(text)
+
+
+def rewrite_markdown_hrefs(path: Path, replacements: list[tuple[int, int, str]], write: bool) -> str:
+    text = path.read_text(encoding="utf-8")
+    for start, end, href in sorted(replacements, reverse=True):
+        text = text[:start] + href + text[end:]
+    if write:
+        path.write_text(text, encoding="utf-8")
+    return text
+
+
+def planned_link_rewrites(refs: list[LinkRef], write: bool = False) -> list[dict[str, object]]:
+    by_file: dict[Path, list[tuple[int, int, str, LinkRef]]] = {}
+    for ref in refs:
+        _, suffix, _ = split_href(ref.href)
+        if not ref.target or ref.kind not in {"markdown-link", "markdown-image", "autolink"}:
+            continue
+        new_href = relative_href(ref.source, ref.target, suffix)
+        if new_href == ref.href:
+            continue
+        by_file.setdefault(ref.source, []).append((ref.href_start, ref.href_end, new_href, ref))
+
+    changes: list[dict[str, object]] = []
+    for path, replacements in sorted(by_file.items(), key=lambda item: item[0].as_posix()):
+        rewrite_markdown_hrefs(path, [(start, end, href) for start, end, href, _ in replacements], write)
+        for _, _, href, ref in replacements:
+            changes.append(
+                {
+                    "file": ref.source_rel,
+                    "line": ref.line,
+                    "from": ref.href,
+                    "to": href,
+                    "target": ref.target_rel,
+                }
+            )
+    return changes
+
+
+def prose_mentions(root: Path, old_path: Path, refs: list[LinkRef]) -> list[dict[str, object]]:
+    old_rel = relative_to_root(old_path, root)
+    link_spans = {(ref.source.resolve(), ref.line, ref.href) for ref in refs}
+    mentions: list[dict[str, object]] = []
+    needles = {old_rel, old_path.name}
+    for path in sorted(root.rglob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        rel = relative_to_root(path, root)
+        for idx, line in enumerate(text.splitlines(), start=1):
+            if any(needle and needle in line for needle in needles):
+                if any(item[0] == path.resolve() and item[1] == idx for item in link_spans):
+                    continue
+                mentions.append({"file": rel, "line": idx, "text": line.strip()})
+    return mentions
+
+
+def is_historical_move(path: Path, root: Path) -> bool:
+    rel = relative_to_root(path, root)
+    name = path.name
+    return bool(re.match(r"plan-\d", name)) or bool(re.match(r"impl-plan-", name)) or rel.startswith("plans/plan-")
+
+
+def perform_move(root: Path, docs: list[Doc], old_value: str, new_value: str, write: bool, allow_historical: bool) -> dict[str, object]:
+    old_path = resolve_path_input(old_value, root, docs).resolve()
+    new_path = resolve_path_input(new_value, root, docs).resolve()
+    if not old_path.exists():
+        raise SystemExit(f"Move source does not exist: {old_value}")
+    if new_path.exists():
+        raise SystemExit(f"Move destination already exists: {new_value}")
+    try:
+        old_path.relative_to(root.resolve())
+        new_path.relative_to(root.resolve())
+    except ValueError:
+        raise SystemExit("docs-meta move only supports paths inside the docs root")
+    if is_historical_move(old_path, root) and not allow_historical:
+        raise SystemExit("Refusing to move historical plan/brief path without --allow-historical")
+
+    refs = link_graph(root, docs)
+    replacements_by_file: dict[Path, list[tuple[int, int, str]]] = {}
+    changes: list[dict[str, object]] = []
+    for ref in markdown_link_refs(refs):
+        if ref.status not in {"ok", "root-relative", "absolute-repo-local"}:
+            continue
+        _, suffix, _ = split_href(ref.href)
+        source_after_move = new_path if ref.source.resolve() == old_path else ref.source
+        target_after_move = new_path if ref.target and ref.target.resolve() == old_path else ref.target
+        if ref.source.resolve() != old_path and (not ref.target or ref.target.resolve() != old_path):
+            continue
+        if not target_after_move:
+            continue
+        new_href = relative_href(source_after_move, target_after_move, suffix)
+        if new_href == ref.href:
+            continue
+        replacements_by_file.setdefault(ref.source, []).append((ref.href_start, ref.href_end, new_href))
+        changes.append({"file": ref.source_rel, "line": ref.line, "from": ref.href, "to": new_href})
+
+    mentions = prose_mentions(root, old_path, refs)
+    if write:
+        for path, replacements in replacements_by_file.items():
+            rewrite_markdown_hrefs(path, replacements, True)
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(old_path), str(new_path))
+
+    return {
+        "old": relative_to_root(old_path, root),
+        "new": relative_to_root(new_path, root),
+        "write": write,
+        "link_changes": changes,
+        "prose_mentions": mentions,
+    }
 
 
 def parse_frontmatter(text: str) -> tuple[dict[str, object], str]:
@@ -380,7 +854,7 @@ def new_doc(args: argparse.Namespace, root: Path, docs: list[Doc]) -> Path:
         body = spec_doc(doc_id, title, args, timestamp, commit)
     elif args.family == "plan":
         doc_id = next_id("plan", docs)
-        path = root / args.domain / "plans" / f"{doc_id}-{slug}" / "plan.md"
+        path = root / args.domain / "plans" / f"{doc_id}-{slug}" / f"{doc_id}-{slug}.md"
         body = plan_doc(doc_id, title, args, timestamp, commit)
     elif args.family == "impl":
         if not args.plan:
@@ -877,7 +1351,7 @@ def roadmap_rows(docs: list[Doc]) -> list[dict[str, str]]:
             after = field_summary(sequence.get("after", ""))
             before = field_summary(sequence.get("before", ""))
             lane = str(sequence.get("lane", "") or "")
-        plan_name = doc.path.parent.name if doc.path.name == "plan.md" else doc.path.stem
+        plan_name = doc.path.stem
         rows.append(
             {
                 "sequence": sequence_value(doc),
@@ -943,7 +1417,7 @@ def nested_value(mapping: dict[str, object], key: str, child_key: str) -> str:
     return ""
 
 
-def health_issues(docs: list[Doc], stale_days: int, commit_threshold: int, audit_days: int) -> list[HealthIssue]:
+def health_issues(root: Path, docs: list[Doc], stale_days: int, commit_threshold: int, audit_days: int) -> list[HealthIssue]:
     issues: list[HealthIssue] = []
     now = dt.datetime.now().astimezone()
     current_head = git_head()
@@ -1038,6 +1512,39 @@ def health_issues(docs: list[Doc], stale_days: int, commit_threshold: int, audit
                     )
                 )
 
+    refs = link_graph(root, docs)
+    for ref in broken_link_refs(refs):
+        issues.append(
+            HealthIssue(
+                "warn",
+                "broken-link",
+                ref.source_rel,
+                f"{ref.source_rel}:{ref.line} links to {ref.href!r}, which is {ref.status}.",
+                ref.detail,
+            )
+        )
+    for ref in refs:
+        if ref.status in {"absolute-repo-local", "root-relative"}:
+            issues.append(
+                HealthIssue(
+                    "info",
+                    "non-relative-link",
+                    ref.source_rel,
+                    f"{ref.source_rel}:{ref.line} uses a {ref.status} repo-local href.",
+                    ref.href,
+                )
+            )
+    for doc in orphan_docs(root, docs, refs):
+        issues.append(
+            HealthIssue(
+                "info",
+                "orphan-doc",
+                doc.relpath,
+                f"{doc.primary_id or doc.relpath} has no inbound Markdown links.",
+                "Review whether this is intentional or add an index/backlink.",
+            )
+        )
+
     return issues
 
 
@@ -1087,7 +1594,7 @@ def generated_view_path(root: Path, name: str) -> Path:
     return paths[name]
 
 
-def generated_view_markdown(name: str, docs: list[Doc], args: argparse.Namespace | None = None) -> str:
+def generated_view_markdown(root: Path, name: str, docs: list[Doc], args: argparse.Namespace | None = None) -> str:
     if name == "ideas":
         return ideas_markdown(docs)
     if name == "specs":
@@ -1106,13 +1613,13 @@ def generated_view_markdown(name: str, docs: list[Doc], args: argparse.Namespace
         stale_days = getattr(args, "stale_days", 14)
         commit_threshold = getattr(args, "commit_threshold", 10)
         audit_days = getattr(args, "audit_days", 30)
-        issues = health_issues(docs, stale_days, commit_threshold, audit_days)
+        issues = health_issues(root, docs, stale_days, commit_threshold, audit_days)
         return health_markdown(issues, stale_days, commit_threshold, audit_days)
     raise SystemExit(f"Unknown generated view: {name}")
 
 
 def write_generated_view(root: Path, name: str, docs: list[Doc], args: argparse.Namespace | None = None) -> str:
-    markdown = generated_view_markdown(name, docs, args)
+    markdown = generated_view_markdown(root, name, docs, args)
     generated_view_path(root, name).write_text(markdown, encoding="utf-8")
     return markdown
 
@@ -1141,10 +1648,8 @@ def check(root: Path, docs: list[Doc]) -> int:
         if doc_id in seen:
             errors.append(f"Duplicate ID {doc_id}: {seen[doc_id]} and {doc.relpath}")
         seen[doc_id] = doc.relpath
-        if doc_id not in doc.path.name and doc.path.name != "plan.md":
+        if doc_id not in doc.path.name:
             errors.append(f"ID {doc_id} is not present in filename: {doc.relpath}")
-        if doc.path.name == "plan.md" and doc_id.startswith("PLAN-") and doc_id not in doc.path.parent.name:
-            errors.append(f"Plan ID {doc_id} is not present in parent folder name: {doc.relpath}")
         errors.extend(validate_frontmatter(doc))
 
     generated = {
@@ -1195,8 +1700,6 @@ def validate_frontmatter(doc: Doc) -> list[str]:
     frontmatter_id = doc.frontmatter.get("id")
     if isinstance(frontmatter_id, str) and frontmatter_id:
         filename_ids = set(find_ids(doc.path.name))
-        if doc.path.name == "plan.md":
-            filename_ids.update(find_ids(doc.path.parent.name))
         family = frontmatter_id.split("-", 1)[0]
         mismatches = sorted(doc_id for doc_id in filename_ids if doc_id.startswith(f"{family}-") and doc_id != frontmatter_id)
         for mismatch in mismatches:
@@ -1246,13 +1749,74 @@ def main() -> int:
             for state, line, task, source in task_rows(doc, include_done=args.all):
                 print(f"{state}\t{source}\t{doc.relpath}:{line}\t{task}")
         return 0
+    if args.command == "links":
+        refs = link_graph(root, docs)
+        if args.target:
+            target_doc = find_doc(docs, args.target)
+            target_path = resolve_path_input(args.target, root, docs).resolve()
+            refs = [
+                ref
+                for ref in refs
+                if ref.source.resolve() == target_path
+                or (ref.target is not None and ref.target.resolve() == target_path)
+                or (target_doc is not None and ref.source.resolve() == target_doc.path.resolve())
+            ]
+        print_json_or_text([ref.as_dict() for ref in refs], format_link_rows(refs), args.json)
+        return 0
+    if args.command == "backlinks":
+        refs = link_graph(root, docs)
+        target = resolve_path_input(args.target, root, docs).resolve()
+        selected = [ref for ref in refs if link_matches_target(ref, target)]
+        print_json_or_text([ref.as_dict() for ref in selected], format_link_rows(selected), args.json)
+        return 0
+    if args.command == "check-links":
+        broken = broken_link_refs(link_graph(root, docs))
+        print_json_or_text([ref.as_dict() for ref in broken], format_link_rows(broken), args.json)
+        return 1 if broken else 0
+    if args.command == "orphans":
+        refs = link_graph(root, docs)
+        orphaned = orphan_docs(root, docs, refs, include_generated=args.include_generated, excludes=args.exclude)
+        rows = [{"path": doc.relpath, "id": doc.primary_id, "type": doc.doc_type, "title": doc.title} for doc in orphaned]
+        text = "No orphan docs found." if not rows else "\n".join(f"{row['path']}\t{row['id']}\t{row['title']}" for row in rows)
+        print_json_or_text(rows, text, args.json)
+        return 0
+    if args.command == "normalize-links":
+        write = bool(args.write)
+        refs = [
+            ref
+            for ref in link_graph(root, docs)
+            if ref.status in {"absolute-repo-local", "root-relative"} and ref.target is not None
+        ]
+        changes = planned_link_rewrites(refs, write)
+        text = "No link normalization changes." if not changes else "\n".join(
+            f"{change['file']}:{change['line']}\t{change['from']} -> {change['to']}" for change in changes
+        )
+        print_json_or_text(changes, text, args.json)
+        return 0
+    if args.command == "move":
+        result = perform_move(root, docs, args.old, args.new, bool(args.write), args.allow_historical)
+        lines = [
+            ("MOVE" if args.write else "DRY-RUN") + f"\t{result['old']} -> {result['new']}",
+            "Link changes:",
+        ]
+        link_changes = result["link_changes"]
+        if isinstance(link_changes, list) and link_changes:
+            lines.extend(f"- {item['file']}:{item['line']}\t{item['from']} -> {item['to']}" for item in link_changes)
+        else:
+            lines.append("- none")
+        mentions = result["prose_mentions"]
+        if isinstance(mentions, list) and mentions:
+            lines.append("Prose mentions to review:")
+            lines.extend(f"- {item['file']}:{item['line']}\t{item['text']}" for item in mentions)
+        print_json_or_text(result, "\n".join(lines), args.json)
+        return 0
     if args.command == "update":
         update(root, docs)
         return 0
     if args.command == "check":
         return check(root, docs)
     if args.command == "health":
-        issues = health_issues(docs, args.stale_days, args.commit_threshold, args.audit_days)
+        issues = health_issues(root, docs, args.stale_days, args.commit_threshold, args.audit_days)
         write_generated_view(root, "health", docs, args)
         if args.json:
             print(json.dumps([issue.__dict__ for issue in issues], indent=2))

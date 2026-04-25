@@ -142,6 +142,61 @@ run_meta view todos >/tmp/docs-meta-view-todos.md
 require_contains /tmp/docs-meta-view-todos.md "Docs Todos"
 require_contains "$docs_root/TODOS.md" "updated_at:"
 
+mkdir -p "$docs_root/link-fixtures"
+cat > "$docs_root/link-fixtures/target.md" <<'TARGET'
+# Target
+TARGET
+cat > "$docs_root/link-fixtures/source.md" <<'SOURCE'
+# Source
+
+- [Target](target.md)
+- [Spec](/product/specs/SPEC-0001-shared-capture-workflow.md)
+- [Missing](missing.md)
+- [[target.md]]
+- `<not-a-link>`
+
+```text
+[also-not-a-link](missing-in-code.md)
+```
+SOURCE
+
+run_meta links link-fixtures/source.md >/tmp/docs-meta-links.out
+require_contains /tmp/docs-meta-links.out "target.md"
+require_contains /tmp/docs-meta-links.out "wiki-link"
+run_meta backlinks link-fixtures/target.md >/tmp/docs-meta-backlinks.out
+require_contains /tmp/docs-meta-backlinks.out "link-fixtures/source.md"
+if run_meta check-links >/tmp/docs-meta-check-links.out 2>&1; then
+  echo "Expected missing link to fail check-links" >&2
+  exit 1
+fi
+require_contains /tmp/docs-meta-check-links.out "missing.md"
+if grep -Fq "not-a-link" /tmp/docs-meta-check-links.out || grep -Fq "missing-in-code" /tmp/docs-meta-check-links.out; then
+  echo "Expected check-links to ignore links inside inline and fenced code" >&2
+  exit 1
+fi
+perl -0pi -e 's/^- \[Missing\]\(missing\.md\)\n//m' "$docs_root/link-fixtures/source.md"
+if ! run_meta check-links >/tmp/docs-meta-check-links-clean.out 2>&1; then
+  cat /tmp/docs-meta-check-links-clean.out >&2
+  echo "Expected check-links to pass after removing missing link" >&2
+  exit 1
+fi
+run_meta normalize-links --style relative --dry-run >/tmp/docs-meta-normalize-dry-run.out
+require_contains /tmp/docs-meta-normalize-dry-run.out "/product/specs/SPEC-0001-shared-capture-workflow.md -> ../product/specs/SPEC-0001-shared-capture-workflow.md"
+run_meta normalize-links --style relative --write >/tmp/docs-meta-normalize-write.out
+require_contains "$docs_root/link-fixtures/source.md" "../product/specs/SPEC-0001-shared-capture-workflow.md"
+run_meta move link-fixtures/target.md link-fixtures/moved/target-new.md --dry-run >/tmp/docs-meta-move-dry-run.out
+require_contains /tmp/docs-meta-move-dry-run.out "target.md -> moved/target-new.md"
+run_meta move link-fixtures/target.md link-fixtures/moved/target-new.md --write >/tmp/docs-meta-move-write.out
+require_file "$docs_root/link-fixtures/moved/target-new.md"
+require_contains "$docs_root/link-fixtures/source.md" "moved/target-new.md"
+run_meta backlinks link-fixtures/moved/target-new.md >/tmp/docs-meta-backlinks-moved.out
+require_contains /tmp/docs-meta-backlinks-moved.out "link-fixtures/source.md"
+run_meta orphans --exclude 'link-fixtures/*' >/tmp/docs-meta-orphans.out
+if grep -Fq "link-fixtures/target.md" /tmp/docs-meta-orphans.out; then
+  echo "Expected orphan exclude pattern to suppress link-fixtures docs" >&2
+  exit 1
+fi
+
 perl -0pi -e 's/updated_at: "[^"]+"/updated_at: "2026-01-01 00:00:00 JST +0900"/' "$docs_root/architecture/areas/AREA-capture.md"
 run_meta health --stale-days 1 >/tmp/docs-meta-health.out
 require_contains /tmp/docs-meta-health.out "stale-by-time"

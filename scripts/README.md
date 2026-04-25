@@ -23,7 +23,7 @@ Canonical state lives in docs files:
 ```text
 docs/<domain>/specs/SPEC-0001-<slug>.md
 docs/<domain>/ideas/IDEA-0001-<slug>.md
-docs/<domain>/plans/PLAN-0001-<slug>/plan.md
+docs/<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
 docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
 ```
 
@@ -96,6 +96,34 @@ scripts/docs-meta check
 
 `check` also validates frontmatter contracts for known doc types, type-specific statuses, ID/filename agreement, implementation-to-parent-plan ID agreement, and whether generated registry files are stale.
 
+Inspect docs links:
+
+```bash
+scripts/docs-meta links
+scripts/docs-meta links docs/README.md
+scripts/docs-meta backlinks docs/README.md
+scripts/docs-meta check-links
+scripts/docs-meta orphans
+scripts/docs-meta orphans --exclude 'repo-health/session-logs/*'
+```
+
+`links` parses standard Markdown links, Markdown image links, path-like autolinks, and Obsidian-style wikilinks. Standard Markdown links are the canonical format; wikilinks are reported for visibility but are not rewritten.
+
+`check-links` exits nonzero when repo-local Markdown links point at missing files, folders without a `README.md` or `index.md`, or paths outside the repo. It does not validate external HTTP links.
+
+`orphans` supports repeatable `--exclude` glob patterns. Individual docs can also opt out with `docs_meta_ignore_orphan: true` or `orphan_ok: true` frontmatter when low-link docs are intentional.
+
+Normalize or move docs safely:
+
+```bash
+scripts/docs-meta normalize-links --style relative --dry-run
+scripts/docs-meta normalize-links --style relative --write
+scripts/docs-meta move docs/old.md docs/new.md --dry-run
+scripts/docs-meta move docs/old.md docs/new.md --write
+```
+
+Mutating commands are dry-run-first. They preserve link labels and fragments, rewrite only structured Markdown hrefs, and report prose mentions separately for human review.
+
 Show advisory docs-health warnings:
 
 ```bash
@@ -105,7 +133,7 @@ scripts/docs-meta health --json
 scripts/docs-meta health --write
 ```
 
-`health` is intentionally softer than `check`. It flags docs that may be worth reviewing because they are old, still in an open status, missing a review commit, many commits behind `repo_state.last_reviewed_commit`, or because the repo has no recent completed repo-health audit. It exits successfully even when warnings exist; treat the output as a review queue, not a CI failure. Running it also refreshes `docs/HEALTH.md`.
+`health` is intentionally softer than `check`. It flags docs that may be worth reviewing because they are old, still in an open status, missing a review commit, many commits behind `repo_state.last_reviewed_commit`, because the repo has no recent completed repo-health audit, or because link-health signals deserve review. It exits successfully even when warnings exist; treat the output as a review queue, not a CI failure. Running it also refreshes `docs/HEALTH.md`.
 
 Show or write the plan roadmap view:
 
@@ -213,5 +241,7 @@ For stricter repos, wire `scripts/docs-meta check` into CI or a pre-commit hook.
 - It does not decide what a spec or plan should say.
 - It does not replace ADRs, session logs, GitHub issues, or PR descriptions.
 - It does not make generated registries canonical.
+- It does not validate external HTTP links.
+- It does not rewrite prose mentions automatically.
 
 The goal is not to document everything. The goal is to make the important metadata deterministic enough that future humans and agents can trust the map.

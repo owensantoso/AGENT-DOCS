@@ -45,6 +45,7 @@ Short index. Read the file for your task.
   - Implementation briefs win on execution order and verification details.
 - Do not implement from an implementation brief alone without first reading its parent plan.
 - Parent plans and implementation briefs should explicitly call out dependencies and safe parallelization.
+- When feedback reveals a missed rule, wrong assumption, ambiguous docs, or workflow failure, use `reflect-and-improve` and update the smallest durable source that would prevent a repeat.
 
 ## Behavioral guidelines
 
@@ -70,6 +71,11 @@ Short index. Read the file for your task.
 
 - Turn vague tasks into verifiable outcomes.
 - Prefer tasks that can be tested or otherwise checked explicitly.
+
+### Reflect and improve
+
+- Treat corrections, contradictions, frustration signals, and missed rules as chances to improve the shared system.
+- Name what happened, classify the source, update the smallest useful doc/template/check/skill, and record a session-log note when the lesson should survive the chat.
 
 ### Planning workflow
 
