@@ -138,6 +138,8 @@ updated
 
 Source docs remain canonical. `TODOS.md` is a generated dashboard; regenerate it instead of editing it by hand.
 
+Source-code TODO comments are intentionally not scanned by `docs-meta`. Keep inline TODO comments for local implementation notes that only matter near that code. If an inline TODO needs ownership, delegation, review, cross-session tracking, or commit/PR/session-log references, promote it to a structured Markdown `TODO-*` in the relevant plan, implementation brief, checklist, or state doc, and leave a short code comment pointing to that ID only when it helps the next reader.
+
 `check-todos` validates duplicate IDs, lifecycle/checkbox contradictions, missing owners for `in_progress`, missing blockers or reasons for `blocked`, missing plan/brief references, and missing referenced `TODO-*` dependencies. It may warn about helpful but optional metadata such as `skill` or `updated`.
 
 Regenerate and check generated views:

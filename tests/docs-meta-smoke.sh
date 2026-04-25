@@ -77,6 +77,8 @@ cat >> "$plan_path" <<'TODOS'
 - [ ] TODO-0001 [ready] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0001] Define stable todo model
 - [ ] TODO-0002 [blocked] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0001] [brief:IMPL-0001-01] [blocker:TODO-0001] Wire todo checks
 - [x] TODO-0003 [done] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0001] [verification:tests/docs-meta-smoke.sh] Document todo workflow
+- [ ] Follow up on TODO-0001 in review notes
+- [ ] Local task with a | pipe
 
 ```text
 - [ ] TODO-9999 [bogus] This example should not be parsed.
@@ -147,6 +149,7 @@ require_contains "$docs_root/ROADMAP-VIEW.md" "updated_at:"
 require_contains "$docs_root/TODOS.md" "Define owner boundaries"
 require_contains "$docs_root/TODOS.md" "Structured Todos"
 require_contains "$docs_root/TODOS.md" "TODO-0001"
+require_contains "$docs_root/TODOS.md" "Local task with a \\| pipe"
 
 run_meta check
 run_meta check-todos >/tmp/docs-meta-check-todos.out 2>&1
@@ -159,6 +162,11 @@ run_meta todos --plan PLAN-0001 --json >/tmp/docs-meta-todos.json
 require_contains /tmp/docs-meta-todos.json "\"id\": \"TODO-0001\""
 run_meta todos TODO-0003 --all >/tmp/docs-meta-todos-id.out
 require_contains /tmp/docs-meta-todos-id.out "TODO-0003"
+run_meta todos --structured-only --all >/tmp/docs-meta-todos-structured.out
+if grep -Fq "Follow up on TODO-0001" /tmp/docs-meta-todos-structured.out; then
+  echo "Expected non-leading TODO reference to remain a local checkbox" >&2
+  exit 1
+fi
 run_meta roadmap --json >/tmp/docs-meta-roadmap.json
 require_contains /tmp/docs-meta-roadmap.json "\"id\": \"PLAN-0001\""
 require_contains /tmp/docs-meta-roadmap.json "\"plan_name\": \"PLAN-0001-shared-capture-implementation\""

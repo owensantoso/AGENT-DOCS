@@ -30,6 +30,7 @@ ID_PATTERNS = {
 }
 
 TODO_ID_RE = re.compile(r"\bTODO-(\d{4})\b")
+TODO_ID_START_RE = re.compile(r"^TODO-(\d{4})\b")
 TODO_STATUSES = {"backlog", "ready", "in_progress", "blocked", "review", "done", "superseded", "archived"}
 TODO_ACTIVE_STATUSES = {"backlog", "ready", "in_progress", "blocked", "review"}
 
@@ -1197,7 +1198,7 @@ TODO_TOKEN_RE = re.compile(r"^\[([^\]]+)\]\s*")
 
 
 def parse_todo_body(body: str, checkbox_done: bool) -> tuple[str, str, dict[str, str], str]:
-    todo_match = TODO_ID_RE.search(body)
+    todo_match = TODO_ID_START_RE.match(body)
     if not todo_match:
         return "", "done" if checkbox_done else "open", {}, body.strip()
 
@@ -1322,6 +1323,11 @@ def format_todo_rows(items: list[TodoItem]) -> str:
         else:
             rows.append(f"{item.state}\t{item.source}\t{item.path}:{item.line}\t{item.task}")
     return "\n".join(rows)
+
+
+def markdown_table_cell(value: object) -> str:
+    text = str(value) if value is not None else ""
+    return text.replace("\\", "\\\\").replace("|", "\\|").replace("\n", " ")
 
 
 def field_summary(value: object) -> str:
@@ -1452,15 +1458,15 @@ def todos_markdown(docs: list[Doc]) -> str:
         for item in structured:
             lines.append(
                 "| {id} | {status} | {owner} | {skill} | {source} | {line} | {plan} | {brief} | {task} |".format(
-                    id=item.todo_id,
-                    status=item.status,
-                    owner=item.owner,
-                    skill=item.skill,
-                    source=item.source,
+                    id=markdown_table_cell(item.todo_id),
+                    status=markdown_table_cell(item.status),
+                    owner=markdown_table_cell(item.owner),
+                    skill=markdown_table_cell(item.skill),
+                    source=markdown_table_cell(item.source),
                     line=item.line,
-                    plan=item.plan,
-                    brief=item.brief,
-                    task=item.task,
+                    plan=markdown_table_cell(item.plan),
+                    brief=markdown_table_cell(item.brief),
+                    task=markdown_table_cell(item.task),
                 )
             )
     else:
@@ -1480,7 +1486,14 @@ def todos_markdown(docs: list[Doc]) -> str:
             ]
         )
         for item in local:
-            lines.append(f"| {item.state} | {item.source} | {item.line} | {item.task} |")
+            lines.append(
+                "| {state} | {source} | {line} | {task} |".format(
+                    state=markdown_table_cell(item.state),
+                    source=markdown_table_cell(item.source),
+                    line=item.line,
+                    task=markdown_table_cell(item.task),
+                )
+            )
     else:
         lines.append("No local checkbox todos found.")
     lines.append("")

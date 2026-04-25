@@ -150,6 +150,8 @@ Use Markdown checkboxes for local task lists. Use structured `TODO-*` checkboxes
 
 Keep parent plans and implementation briefs authoritative for scope. Use `TODO-*` IDs for progress references, handoff, filtering, and closeout. `docs-meta todos` derives a repo-level task view without making a second source of truth.
 
+`docs-meta` does not scan source-code TODO comments. Keep those comments for local implementation notes. Promote an in-file TODO to a structured Markdown `TODO-*` when it needs ownership, delegation, review, or cross-session tracking.
+
 ## The planning layers
 
 ### 1. Ideas

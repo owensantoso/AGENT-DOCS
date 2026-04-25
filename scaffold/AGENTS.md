@@ -48,6 +48,7 @@ Short index. Read the file for your task.
 - Parent plans and implementation briefs should explicitly call out dependencies and safe parallelization.
 - Use structured `TODO-*` items only for durable coordination across sessions, agents, skills, or reviews; keep tiny checklist items as local checkboxes.
 - `TODO-*` IDs coordinate progress, but parent plans and implementation briefs still define scope and verification.
+- Keep source-code TODO comments local; promote them to structured Markdown `TODO-*` items when they need ownership, delegation, review, or cross-session tracking.
 - When completing durable todo-backed work, update the source checkbox line and run the repo's todo checks before closeout.
 - When feedback reveals a missed rule, wrong assumption, ambiguous docs, or workflow failure, use `reflect-and-improve` and update the smallest durable source that would prevent a repeat.
 
