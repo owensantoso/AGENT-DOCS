@@ -1,3 +1,21 @@
+---
+type: architecture-overview
+title: Architecture
+domain: architecture
+status: draft
+created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+owner:
+areas: []
+related_specs: []
+related_plans: []
+related_adrs: []
+related_sessions: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
 # Architecture
 
 System overview for <repo or product>. This document describes the intended forward architecture. For what is actually built today, see `docs/CURRENT_STATE.md`.

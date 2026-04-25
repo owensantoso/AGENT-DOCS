@@ -40,7 +40,7 @@ Start from `session-log-template.md`.
 New session logs should start with YAML frontmatter:
 
 - `type: session-log`
-- `status`: `in-progress`, `completed`, or `archived`
+- `status`: `in_progress`, `completed`, or `archived`
 - `created_at`, `updated_at`, `started_at`, and `ended_at`
 - `timezone`
 - `participants`

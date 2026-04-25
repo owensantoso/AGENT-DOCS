@@ -39,6 +39,7 @@ It writes generated views:
 docs/SPECS.md
 docs/DOCS-REGISTRY.md
 docs/TODOS.md
+docs/AREAS.md
 ```
 
 Those generated files should be treated as caches. If they disagree with the source docs, regenerate them instead of editing them by hand.
@@ -60,6 +61,7 @@ Create new docs:
 scripts/docs-meta new spec "Shared Capture Workflow" --domain product --spec-type feature
 scripts/docs-meta new plan "Shared Capture Implementation" --domain product --spec SPEC-0001
 scripts/docs-meta new impl "Persist Capture Drafts" --plan PLAN-0001
+scripts/docs-meta new adr "Use Append-Only Worktree Journal"
 ```
 
 Inspect or update status:
@@ -83,6 +85,14 @@ Regenerate and check generated views:
 ```bash
 scripts/docs-meta update
 scripts/docs-meta check
+```
+
+`check` also validates frontmatter contracts for known doc types, type-specific statuses, ID/filename agreement, implementation-to-parent-plan ID agreement, and whether generated registry files are stale.
+
+Run the smoke test after changing `docs-meta` behavior:
+
+```bash
+tests/docs-meta-smoke.sh
 ```
 
 ## Naming Model
@@ -125,7 +135,7 @@ Use this to understand which repository state a spec, plan, or implementation br
 Copy `scripts/docs-meta` into a repo that uses this docs workflow. Then:
 
 1. Ensure spec, plan, implementation brief, and ADR templates have `id`, `type`, `status`, `created_at`, `updated_at`, and relationship frontmatter.
-2. Prefer `scripts/docs-meta new ...` for new specs, plans, and implementation briefs.
+2. Prefer `scripts/docs-meta new ...` for new specs, plans, implementation briefs, and ADRs.
 3. Run `scripts/docs-meta update` after meaningful doc changes.
 4. Run `scripts/docs-meta check` before committing docs workflow changes.
 

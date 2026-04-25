@@ -1,6 +1,8 @@
 ---
 type: session-log
-status: in-progress
+title: Session Title
+domain: repo-health
+status: in_progress
 created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
 updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
 started_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
@@ -12,6 +14,8 @@ related_plans: []
 related_briefs: []
 related_specs: []
 related_adrs: []
+related_issues: []
+related_prs: []
 commits: []
 ---
 

@@ -22,6 +22,7 @@ related_specs: []
 related_adrs: []
 related_sessions: []
 related_issues: []
+related_prs: []
 repo_state:
   based_on_commit:
   last_reviewed_commit:

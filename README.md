@@ -250,11 +250,11 @@ This exists because agents are good at synthesis but unreliable at bookkeeping. 
 Use it for:
 
 - next `SPEC-*`, `PLAN-*`, `IMPL-*`, and `ADR-*` IDs
-- creating new specs, plans, and implementation briefs
+- creating new specs, plans, implementation briefs, and ADRs
 - updating frontmatter status
 - extracting Markdown todos
-- regenerating `SPECS.md`, `DOCS-REGISTRY.md`, and `TODOS.md`
-- checking duplicate IDs, stale generated docs, and mismatched filenames
+- regenerating `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, and `AREAS.md`
+- checking duplicate IDs, stale generated docs, metadata contracts, statuses, and mismatched filenames
 
 The repo tree remains the source of truth. Generated files are views, not separate state.
 

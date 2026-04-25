@@ -9,10 +9,14 @@ Start new ADRs from `adr-template.md`.
 New ADRs should start with YAML frontmatter:
 
 - `type: adr`
+- `id: ADR-####`
+- `title`
+- `domain`
 - `status`: `proposed`, `accepted`, `superseded`, or `archived`
 - `created_at` and `updated_at`
+- `areas`
 - `deciders`
-- `related_specs`, `related_plans`, and `related_sessions`
+- `related_specs`, `related_plans`, `related_briefs`, `related_sessions`, `related_issues`, and `related_prs`
 - `supersedes` and `superseded_by`
 
 ## When To Create Or Update An ADR

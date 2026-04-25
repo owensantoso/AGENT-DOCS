@@ -19,7 +19,7 @@ related_prs: []
 related_adrs: []
 related_sessions: []
 supersedes: []
-superseded_by:
+superseded_by: []
 repo_state:
   based_on_commit:
   last_reviewed_commit:

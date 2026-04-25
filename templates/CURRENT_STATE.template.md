@@ -1,8 +1,26 @@
+---
+type: current-state
+title: Current State
+domain: orientation
+status: draft
+created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+owner:
+areas: []
+related_specs: []
+related_plans: []
+related_adrs: []
+related_sessions: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
 # Current State
 
 Fast truth page for what exists now and where to look next. Keep this file short. It should fan out to durable docs instead of becoming a session journal.
 
-**Last updated:** YYYY-MM-DD
+Canonical freshness lives in `updated_at` frontmatter.
 
 Detailed historical state snapshots live in `<state-history-folder>`.
 

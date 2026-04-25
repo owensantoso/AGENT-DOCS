@@ -1,13 +1,19 @@
 ---
 type: adr
 id: ADR-0000
+title: Decision Title
+domain: architecture
 status: proposed
 created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
 updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
 deciders: []
+areas: []
 related_specs: []
 related_plans: []
+related_briefs: []
 related_sessions: []
+related_issues: []
+related_prs: []
 supersedes: []
 superseded_by: []
 repo_state:

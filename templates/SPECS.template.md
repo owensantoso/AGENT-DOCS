@@ -13,7 +13,7 @@ Before creating a new spec manually:
 
 | ID | Title | Type | Domain | Status | Path | Source |
 |---|---|---|---|---|---|---|
-| `SPEC-0001` | <title> | <feature/improvement/bug/architecture/repo-health/research> | <domain> | <draft/proposed/approved/implemented/superseded> | `<domain>/specs/SPEC-0001-<slug>.md` | <conversation, issue, review, research, etc.> |
+| `SPEC-0001` | <title> | <feature/improvement/bug/architecture/repo-health/research> | <domain> | <draft/proposed/approved/implemented/superseded/archived> | `<domain>/specs/SPEC-0001-<slug>.md` | <conversation, issue, review, research, etc.> |
 
 ## Naming Rules
 

@@ -1,3 +1,22 @@
+---
+type: testing-guide
+title: Testing Guide
+domain: repo-health
+status: draft
+created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+owner:
+surface:
+areas: []
+related_specs: []
+related_plans: []
+related_adrs: []
+related_sessions: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
 # Testing Guide
 
 Current verification guide for `<surface>`. This document should describe what the repo actually supports today, not an ideal future CI setup.

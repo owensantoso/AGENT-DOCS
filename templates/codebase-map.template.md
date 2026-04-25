@@ -1,3 +1,22 @@
+---
+type: codebase-map
+title: <Surface Name> Codebase Map
+domain: orientation
+status: draft
+created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+owner:
+surface:
+areas: []
+related_specs: []
+related_plans: []
+related_adrs: []
+related_sessions: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
 # <Surface Name> Codebase Map
 
 Evergreen orientation guide for the current `<surface>` area. This is a map of what exists on disk today, not a forward plan.

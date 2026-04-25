@@ -99,17 +99,16 @@ Canonical status lives in frontmatter:
 status: draft
 ```
 
-Allowed common statuses:
+Allowed plan and implementation-brief statuses:
 
 ```text
 draft
-proposed
 ready
 in_progress
 blocked
 completed
-implemented
 superseded
+archived
 ```
 
 Use Markdown checkboxes for local task lists. `docs-meta todos` can derive a repo-level task view without making a second source of truth.
@@ -218,7 +217,7 @@ Use frontmatter for metadata that future tools or Obsidian-style workflows may q
 
 - `type`: `plan` or `implementation-brief`
 - `domain`: `product`, `repo-health`, `research`, `operations`, or `marketing`
-- `status`: `draft`, `ready`, `in-progress`, `blocked`, `completed`, `superseded`, or `archived`
+- `status`: `draft`, `ready`, `in_progress`, `blocked`, `completed`, `superseded`, or `archived`
 - `created_at`: exact local creation timestamp
 - `updated_at`: exact local last meaningful update timestamp
 - `planned_execution_start` / `planned_execution_end`: intended execution window, if known

@@ -1,3 +1,21 @@
+---
+type: onboarding
+title: Project Onboarding
+domain: orientation
+status: draft
+created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+owner:
+areas: []
+related_specs: []
+related_plans: []
+related_adrs: []
+related_sessions: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
 # Project Onboarding
 
 Use this when you need to understand the repo without reading implementation code first.

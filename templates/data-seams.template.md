@@ -1,3 +1,21 @@
+---
+type: data-seams
+title: Data Model And Seams
+domain: architecture
+status: draft
+created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
+owner:
+areas: []
+related_specs: []
+related_plans: []
+related_adrs: []
+related_sessions: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
 # Data Model And Seams
 
 Use this doc to explain canonical models, compatibility layers, migrations in progress, and places where agents might accidentally extend the wrong seam.
