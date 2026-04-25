@@ -71,6 +71,8 @@ When the user points out a contradiction, wrong assumption, missed rule, unclear
 
 Use `reflect-and-improve` when this becomes more than a one-sentence clarification.
 
+When the correction creates durable understanding that future humans or agents should reuse, create or update the smallest relevant source: an owning doc section, an `LRN-*` learning record, an `EXPL-*` explainer, or a `QST-*` question. Do not claim the human understands something unless they confirm it.
+
 ## Skill Routing Reflex
 
 Before selecting specific skills, classify the request into one or more broad domains.

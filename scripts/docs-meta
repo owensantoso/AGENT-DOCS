@@ -27,6 +27,9 @@ ID_PATTERNS = {
     "plan": re.compile(r"\bPLAN-(\d{4})\b"),
     "impl": re.compile(r"\bIMPL-(\d{4})-(\d{2})\b"),
     "adr": re.compile(r"\bADR-(\d{4})\b"),
+    "lrn": re.compile(r"\bLRN-(\d{4})\b"),
+    "expl": re.compile(r"\bEXPL-(\d{4})\b"),
+    "qst": re.compile(r"\bQST-(\d{4})\b"),
 }
 
 TODO_ID_RE = re.compile(r"\bTODO-(\d{4})\b")
@@ -40,6 +43,9 @@ TYPE_BY_PREFIX = {
     "PLAN": "plan",
     "IMPL": "implementation-brief",
     "ADR": "adr",
+    "LRN": "learning",
+    "EXPL": "explainer",
+    "QST": "question",
 }
 
 COMMON_STATUSES = {
@@ -51,6 +57,10 @@ COMMON_STATUSES = {
     "in_progress",
     "in-progress",
     "blocked",
+    "open",
+    "investigating",
+    "answered",
+    "deferred",
     "completed",
     "implemented",
     "superseded",
@@ -58,6 +68,8 @@ COMMON_STATUSES = {
     "rejected",
     "archived",
     "planned",
+    "active",
+    "stale",
     "generated",
 }
 
@@ -69,6 +81,9 @@ STATUS_BY_TYPE = {
     "plan": {"draft", "ready", "in_progress", "blocked", "completed", "superseded", "archived"},
     "implementation-brief": {"draft", "ready", "in_progress", "blocked", "completed", "superseded", "archived"},
     "adr": {"proposed", "accepted", "superseded", "archived"},
+    "learning": {"draft", "active", "superseded", "archived"},
+    "explainer": {"draft", "active", "stale", "superseded", "archived"},
+    "question": {"open", "investigating", "answered", "deferred", "superseded", "archived"},
     "session-log": {"in_progress", "in-progress", "completed", "archived"},
     "architecture-area": {"draft", "active", "stale", "superseded", "archived"},
     "research-note": {"draft", "completed", "superseded", "archived"},
@@ -99,6 +114,24 @@ REQUIRED_FIELDS_BY_TYPE = {
     "plan": {"type", "id", "title", "domain", "status", "created_at", "updated_at", "areas", "related_specs", "repo_state"},
     "implementation-brief": {"type", "id", "title", "domain", "status", "created_at", "updated_at", "parent_plan", "task_refs", "repo_state"},
     "adr": {"type", "id", "title", "domain", "status", "created_at", "updated_at", "areas", "deciders", "repo_state"},
+    "learning": {"type", "id", "title", "domain", "status", "learning_type", "created_at", "updated_at", "source", "repo_state"},
+    "explainer": {"type", "id", "title", "domain", "status", "explainer_type", "created_at", "updated_at", "audience", "repo_state"},
+    "question": {
+        "type",
+        "id",
+        "title",
+        "domain",
+        "status",
+        "question_type",
+        "created_at",
+        "updated_at",
+        "owner",
+        "source",
+        "decision_needed_by",
+        "resolution",
+        "resolved_by",
+        "repo_state",
+    },
     "session-log": {"type", "title", "status", "created_at", "updated_at", "started_at", "ended_at", "timezone", "participants", "related_todos"},
     "research-note": {"type", "title", "domain", "status", "created_at", "updated_at", "owner", "question", "links", "repo_state"},
     "release-checklist": {"type", "title", "domain", "status", "created_at", "updated_at", "release_target", "owner", "repo_state"},
@@ -246,11 +279,11 @@ def parse_args() -> argparse.Namespace:
     sub = parser.add_subparsers(dest="command", required=True)
 
     next_cmd = sub.add_parser("next", help="Print next ID for a doc family.")
-    next_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr", "todo"])
+    next_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr", "lrn", "expl", "qst", "todo"])
     next_cmd.add_argument("--plan", help="Required for impl IDs, e.g. PLAN-0034")
 
-    new_cmd = sub.add_parser("new", help="Create a new idea, spec, plan, impl doc, or ADR.")
-    new_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr"])
+    new_cmd = sub.add_parser("new", help="Create a new idea, spec, plan, impl doc, ADR, learning, explainer, or question.")
+    new_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr", "learning", "lrn", "explainer", "expl", "question", "qst"])
     new_cmd.add_argument("title")
     new_cmd.add_argument("--domain", default="product")
     new_cmd.add_argument("--spec-type", default="feature")
@@ -298,7 +331,7 @@ def parse_args() -> argparse.Namespace:
     roadmap_cmd.add_argument("--write", action="store_true", help="Write docs/ROADMAP-VIEW.md as a generated plan-order view.")
 
     view_cmd = sub.add_parser("view", help="Print and refresh a generated Markdown view.")
-    view_cmd.add_argument("name", choices=["ideas", "specs", "registry", "todos", "areas", "audits", "roadmap", "health"])
+    view_cmd.add_argument("name", choices=["ideas", "specs", "learnings", "explainers", "questions", "registry", "todos", "areas", "audits", "roadmap", "health"])
     view_cmd.add_argument("--stale-days", type=int, default=14, help="Health view stale-days threshold. Default: 14")
     view_cmd.add_argument("--commit-threshold", type=int, default=10, help="Health view commit threshold. Default: 10")
     view_cmd.add_argument("--audit-days", type=int, default=30, help="Health view audit threshold. Default: 30")
@@ -929,10 +962,22 @@ def new_doc(args: argparse.Namespace, root: Path, docs: list[Doc]) -> Path:
         base = parent.path.parent if parent else root / args.domain / "plans" / args.plan
         path = base / f"{doc_id}-{slug}.md"
         body = impl_doc(doc_id, title, args, timestamp, commit)
-    else:
+    elif args.family == "adr":
         doc_id = next_id("adr", docs)
         path = root / "decisions" / "adr" / f"{doc_id}-{slug}.md"
         body = adr_doc(doc_id, title, args, timestamp, commit)
+    elif args.family in {"learning", "lrn"}:
+        doc_id = next_id("lrn", docs)
+        path = root / "decisions" / "learnings" / f"{doc_id}-{slug}.md"
+        body = learning_doc(doc_id, title, args, timestamp, commit)
+    elif args.family in {"explainer", "expl"}:
+        doc_id = next_id("expl", docs)
+        path = root / "orientation" / "explainers" / f"{doc_id}-{slug}.md"
+        body = explainer_doc(doc_id, title, args, timestamp, commit)
+    else:
+        doc_id = next_id("qst", docs)
+        path = root / "decisions" / "questions" / f"{doc_id}-{slug}.md"
+        body = question_doc(doc_id, title, args, timestamp, commit)
 
     if path.exists():
         raise SystemExit(f"Refusing to overwrite existing file: {path}")
@@ -947,6 +992,10 @@ def status_for_new(args: argparse.Namespace, doc_type: str) -> str:
         status = "proposed"
     if doc_type == "idea" and status == "draft":
         status = "captured"
+    if doc_type == "learning" and status == "draft":
+        status = "active"
+    if doc_type == "question" and status == "draft":
+        status = "open"
     allowed = STATUS_BY_TYPE.get(doc_type, COMMON_STATUSES)
     if status not in allowed:
         raise SystemExit(f"Status {status!r} is not valid for {doc_type}; choose one of: {', '.join(sorted(allowed))}")
@@ -1180,6 +1229,161 @@ superseded_by: []
 ## Alternatives Considered
 
 ## Guardrails
+"""
+
+
+def learning_doc(doc_id: str, title: str, args: argparse.Namespace, timestamp: str, commit: str) -> str:
+    status = status_for_new(args, "learning")
+    return f"""---
+type: learning
+id: {doc_id}
+title: {title}
+domain: {args.domain}
+status: {status}
+learning_type: lesson
+created_at: "{timestamp}"
+updated_at: "{timestamp}"
+owner: {args.owner}
+source:
+  type: {args.source_type}
+  link: {args.source_link}
+  notes:
+areas: []
+related_specs: []
+related_plans: []
+related_briefs: []
+related_adrs: []
+related_sessions: []
+related_research: []
+related_todos: []
+related_questions: []
+supersedes: []
+superseded_by: []
+repo_state:
+  based_on_commit: {commit}
+  last_reviewed_commit: {commit}
+---
+
+# {doc_id} - {title}
+
+## What We Learned
+
+## Previous Assumption
+
+## Evidence / Source
+
+## Where This Should Change Behavior
+
+## Related Open Questions
+"""
+
+
+def explainer_doc(doc_id: str, title: str, args: argparse.Namespace, timestamp: str, commit: str) -> str:
+    status = status_for_new(args, "explainer")
+    return f"""---
+type: explainer
+id: {doc_id}
+title: {title}
+domain: {args.domain}
+status: {status}
+explainer_type: concept
+created_at: "{timestamp}"
+updated_at: "{timestamp}"
+owner: {args.owner}
+audience:
+areas: []
+related_specs: []
+related_plans: []
+related_briefs: []
+related_adrs: []
+related_learnings: []
+related_questions: []
+related_sessions: []
+related_todos: []
+visuals: []
+repo_state:
+  based_on_commit: {commit}
+  last_reviewed_commit: {commit}
+---
+
+# {doc_id} - {title}
+
+## Use This When
+
+## Short Answer
+
+## Mental Model
+
+## Explanation
+
+## Visual
+
+Use a visualization pass when a diagram would clarify structure, flow, state, ownership, or behavior better than prose.
+
+```mermaid
+flowchart TD
+  A["Concept or starting point"] --> B["Important relationship"]
+  B --> C["Result or takeaway"]
+```
+
+## Common Misunderstandings
+
+## How This Connects To The Repo
+
+## Check Your Understanding
+
+## Related Docs
+"""
+
+
+def question_doc(doc_id: str, title: str, args: argparse.Namespace, timestamp: str, commit: str) -> str:
+    status = status_for_new(args, "question")
+    return f"""---
+type: question
+id: {doc_id}
+title: {title}
+domain: {args.domain}
+status: {status}
+question_type: product
+created_at: "{timestamp}"
+updated_at: "{timestamp}"
+owner: {args.owner}
+source:
+  type: {args.source_type}
+  link: {args.source_link}
+  notes:
+decision_needed_by:
+resolution:
+resolved_by: []
+areas: []
+related_specs: []
+related_plans: []
+related_briefs: []
+related_adrs: []
+related_learnings: []
+related_explainers: []
+related_sessions: []
+related_todos: []
+supersedes: []
+superseded_by: []
+repo_state:
+  based_on_commit: {commit}
+  last_reviewed_commit: {commit}
+---
+
+# {doc_id} - {title}
+
+## Question
+
+## Why It Matters
+
+## Current Understanding
+
+## What Would Answer It
+
+## Resolution
+
+## Related Docs
 """
 
 
@@ -1435,6 +1639,98 @@ def specs_markdown(docs: list[Doc]) -> str:
         )
     lines.append("")
     return generated_view("generated-view", "Spec Registry", lines)
+
+
+def learnings_markdown(docs: list[Doc]) -> str:
+    learnings = sorted((doc for doc in docs if doc.primary_id.startswith("LRN-")), key=lambda d: d.primary_id)
+    lines = [
+        "# Learning Registry",
+        "",
+        GENERATED_HEADER,
+        "",
+        "Global registry for durable learning records. Learning records preserve lessons learned, corrected assumptions, and surprising discoveries that should change future behavior.",
+        "",
+        "| ID | Title | Type | Domain | Status | Path | Related Questions |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for doc in learnings:
+        lines.append(
+            "| {id} | {title} | {typ} | {domain} | {status} | `{path}` | {related_questions} |".format(
+                id=markdown_table_cell(doc.primary_id),
+                title=markdown_table_cell(doc.title),
+                typ=markdown_table_cell(doc.frontmatter.get("learning_type", "")),
+                domain=markdown_table_cell(doc.frontmatter.get("domain", "")),
+                status=markdown_table_cell(doc.status),
+                path=markdown_table_cell(doc.relpath),
+                related_questions=markdown_table_cell(field_summary(doc.frontmatter.get("related_questions", ""))),
+            )
+        )
+    if not learnings:
+        lines.append("|  |  |  |  |  | No learning records found. |  |")
+    lines.append("")
+    return generated_view("generated-view", "Learning Registry", lines)
+
+
+def explainers_markdown(docs: list[Doc]) -> str:
+    explainers = sorted((doc for doc in docs if doc.primary_id.startswith("EXPL-")), key=lambda d: d.primary_id)
+    lines = [
+        "# Explainer Registry",
+        "",
+        GENERATED_HEADER,
+        "",
+        "Global registry for durable human-facing explainers. Explainers teach concepts, flows, and mental models; they are not records of what the team learned.",
+        "",
+        "| ID | Title | Type | Domain | Status | Path | Related Questions |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for doc in explainers:
+        lines.append(
+            "| {id} | {title} | {typ} | {domain} | {status} | `{path}` | {related_questions} |".format(
+                id=markdown_table_cell(doc.primary_id),
+                title=markdown_table_cell(doc.title),
+                typ=markdown_table_cell(doc.frontmatter.get("explainer_type", "")),
+                domain=markdown_table_cell(doc.frontmatter.get("domain", "")),
+                status=markdown_table_cell(doc.status),
+                path=markdown_table_cell(doc.relpath),
+                related_questions=markdown_table_cell(field_summary(doc.frontmatter.get("related_questions", ""))),
+            )
+        )
+    if not explainers:
+        lines.append("|  |  |  |  |  | No explainers found. |  |")
+    lines.append("")
+    return generated_view("generated-view", "Explainer Registry", lines)
+
+
+def questions_markdown(docs: list[Doc]) -> str:
+    questions = sorted((doc for doc in docs if doc.primary_id.startswith("QST-")), key=lambda d: d.primary_id)
+    lines = [
+        "# Question Registry",
+        "",
+        GENERATED_HEADER,
+        "",
+        "Global registry for durable open questions. Questions track uncertainty that needs resolution, evidence, or ownership.",
+        "",
+        "| ID | Title | Type | Domain | Status | Owner | Needed By | Resolved By | Path |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for doc in questions:
+        lines.append(
+            "| {id} | {title} | {typ} | {domain} | {status} | {owner} | {needed_by} | {resolved_by} | `{path}` |".format(
+                id=markdown_table_cell(doc.primary_id),
+                title=markdown_table_cell(doc.title),
+                typ=markdown_table_cell(doc.frontmatter.get("question_type", "")),
+                domain=markdown_table_cell(doc.frontmatter.get("domain", "")),
+                status=markdown_table_cell(doc.status),
+                owner=markdown_table_cell(doc.frontmatter.get("owner", "")),
+                needed_by=markdown_table_cell(doc.frontmatter.get("decision_needed_by", "")),
+                resolved_by=markdown_table_cell(field_summary(doc.frontmatter.get("resolved_by", ""))),
+                path=markdown_table_cell(doc.relpath),
+            )
+        )
+    if not questions:
+        lines.append("|  |  |  |  |  |  |  |  | No questions found. |")
+    lines.append("")
+    return generated_view("generated-view", "Question Registry", lines)
 
 
 def registry_markdown(docs: list[Doc]) -> str:
@@ -1828,6 +2124,9 @@ def generated_view_path(root: Path, name: str) -> Path:
     paths = {
         "ideas": root / "IDEAS.md",
         "specs": root / "SPECS.md",
+        "learnings": root / "LEARNINGS.md",
+        "explainers": root / "EXPLAINERS.md",
+        "questions": root / "QUESTIONS.md",
         "registry": root / "DOCS-REGISTRY.md",
         "todos": root / "TODOS.md",
         "areas": root / "AREAS.md",
@@ -1843,6 +2142,12 @@ def generated_view_markdown(root: Path, name: str, docs: list[Doc], args: argpar
         return ideas_markdown(docs)
     if name == "specs":
         return specs_markdown(docs)
+    if name == "learnings":
+        return learnings_markdown(docs)
+    if name == "explainers":
+        return explainers_markdown(docs)
+    if name == "questions":
+        return questions_markdown(docs)
     if name == "registry":
         return registry_markdown(docs)
     if name == "todos":
@@ -1871,6 +2176,12 @@ def write_generated_view(root: Path, name: str, docs: list[Doc], args: argparse.
 def update(root: Path, docs: list[Doc]) -> None:
     if any(doc.primary_id.startswith("IDEA-") for doc in docs) or (root / "IDEAS.md").exists():
         write_generated_view(root, "ideas", docs)
+    if any(doc.primary_id.startswith("LRN-") for doc in docs) or (root / "LEARNINGS.md").exists():
+        write_generated_view(root, "learnings", docs)
+    if any(doc.primary_id.startswith("EXPL-") for doc in docs) or (root / "EXPLAINERS.md").exists():
+        write_generated_view(root, "explainers", docs)
+    if any(doc.primary_id.startswith("QST-") for doc in docs) or (root / "QUESTIONS.md").exists():
+        write_generated_view(root, "questions", docs)
     write_generated_view(root, "specs", docs)
     write_generated_view(root, "registry", docs)
     write_generated_view(root, "todos", docs)
@@ -1903,6 +2214,12 @@ def check(root: Path, docs: list[Doc]) -> int:
     }
     if any(doc.primary_id.startswith("IDEA-") for doc in docs) or (root / "IDEAS.md").exists():
         generated[root / "IDEAS.md"] = ideas_markdown(docs)
+    if any(doc.primary_id.startswith("LRN-") for doc in docs) or (root / "LEARNINGS.md").exists():
+        generated[root / "LEARNINGS.md"] = learnings_markdown(docs)
+    if any(doc.primary_id.startswith("EXPL-") for doc in docs) or (root / "EXPLAINERS.md").exists():
+        generated[root / "EXPLAINERS.md"] = explainers_markdown(docs)
+    if any(doc.primary_id.startswith("QST-") for doc in docs) or (root / "QUESTIONS.md").exists():
+        generated[root / "QUESTIONS.md"] = questions_markdown(docs)
     if any(doc.doc_type == "repo-health-audit" for doc in docs) or (root / "AUDITS.md").exists():
         generated[root / "AUDITS.md"] = audits_markdown(docs)
     if any(doc.doc_type == "plan" for doc in docs) or (root / "ROADMAP-VIEW.md").exists():
@@ -2029,6 +2346,27 @@ def validate_frontmatter(doc: Doc) -> list[str]:
             expected = f"IMPL-{parent.split('-')[-1]}-"
             if not doc_id.startswith(expected):
                 errors.append(f"Implementation ID {doc_id} does not match parent_plan {parent} in {doc.relpath}")
+
+    if doc_type == "learning" and doc.status == "superseded":
+        superseded_by = doc.frontmatter.get("superseded_by")
+        reason = doc.frontmatter.get("reason")
+        has_replacement = (isinstance(superseded_by, list) and bool(superseded_by)) or (
+            isinstance(superseded_by, str) and bool(superseded_by)
+        )
+        if not has_replacement and not reason:
+            errors.append(f"Superseded learning {doc.primary_id or doc.relpath} must include superseded_by or reason in {doc.relpath}")
+
+    if doc_type == "question":
+        if doc.status == "answered" and not doc.frontmatter.get("resolution") and not doc.frontmatter.get("resolved_by"):
+            errors.append(f"Answered question {doc.primary_id or doc.relpath} must include resolution or resolved_by in {doc.relpath}")
+        if doc.status == "superseded":
+            superseded_by = doc.frontmatter.get("superseded_by")
+            reason = doc.frontmatter.get("reason")
+            has_replacement = (isinstance(superseded_by, list) and bool(superseded_by)) or (
+                isinstance(superseded_by, str) and bool(superseded_by)
+            )
+            if not has_replacement and not reason:
+                errors.append(f"Superseded question {doc.primary_id or doc.relpath} must include superseded_by or reason in {doc.relpath}")
 
     return errors
 

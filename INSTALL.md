@@ -98,6 +98,9 @@ Keep:
 - `docs/orientation/ONBOARDING.md` for the non-code walkthrough
 - `docs/orientation/ROADMAP.md` for sequence and rationale
 - `docs/orientation/ARCHITECTURE.md` for system boundaries
+- `docs/orientation/explainers/` for reusable human-facing explanations
+- `docs/decisions/learnings/` for lessons learned and corrected assumptions
+- `docs/decisions/questions/` for durable questions with status and resolution history
 - `docs/repo-health/session-logs/` for timestamped receipts
 - `docs/decisions/adr/` for durable decisions
 
@@ -117,7 +120,7 @@ Before handing off the target repo, make these true:
 - Parent plans explain scope, non-goals, dependencies, and safe parallelization.
 - Implementation briefs exist only for bounded work that benefits from delegation or resumability.
 - Session logs exist for meaningful setup, planning, debugging, or implementation sessions.
-- Generated files such as `IDEAS.md`, `SPECS.md`, `TODOS.md`, and `ROADMAP-VIEW.md` are treated as views, not hand-maintained source.
+- Generated files such as `IDEAS.md`, `SPECS.md`, `LEARNINGS.md`, `EXPLAINERS.md`, `QUESTIONS.md`, `TODOS.md`, and `ROADMAP-VIEW.md` are treated as views, not hand-maintained source.
 
 ## Paste This Prompt To Another Agent
 

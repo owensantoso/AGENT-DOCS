@@ -34,12 +34,18 @@ spec_path="$(run_meta new spec "Shared Capture Workflow" --domain product --spec
 plan_path="$(run_meta new plan "Shared Capture Implementation" --domain product --spec SPEC-0001)"
 impl_path="$(run_meta new impl "Persist Capture Drafts" --domain product --plan PLAN-0001 --spec SPEC-0001)"
 adr_path="$(run_meta new adr "Use Append Only Journal" --domain architecture --spec SPEC-0001)"
+lrn_path="$(run_meta new learning "Specs And Plans Stay Separate" --domain repo-health)"
+expl_path="$(run_meta new explainer "Specs Plans And Briefs" --domain orientation)"
+qst_path="$(run_meta new question "Should Specs And Plans Be One To One" --domain repo-health)"
 
 require_file "$idea_path"
 require_file "$spec_path"
 require_file "$plan_path"
 require_file "$impl_path"
 require_file "$adr_path"
+require_file "$lrn_path"
+require_file "$expl_path"
+require_file "$qst_path"
 
 require_contains "$idea_path" "id: IDEA-0001"
 require_contains "$idea_path" "status: captured"
@@ -50,6 +56,15 @@ require_contains "$impl_path" "parent_plan: PLAN-0001"
 require_contains "$impl_path" "related_prs: []"
 require_contains "$adr_path" "status: proposed"
 require_contains "$adr_path" "related_prs: []"
+require_contains "$lrn_path" "id: LRN-0001"
+require_contains "$lrn_path" "status: active"
+require_contains "$lrn_path" "learning_type: lesson"
+require_contains "$expl_path" "id: EXPL-0001"
+require_contains "$expl_path" "type: explainer"
+require_contains "$expl_path" "explainer_type: concept"
+require_contains "$qst_path" "id: QST-0001"
+require_contains "$qst_path" "status: open"
+require_contains "$qst_path" "question_type: product"
 
 cat > "$docs_root/architecture/areas/AREA-capture.md" <<'AREA'
 ---
@@ -127,6 +142,24 @@ if [[ "$next_adr" != "ADR-0002" ]]; then
   exit 1
 fi
 
+next_lrn="$(run_meta next lrn)"
+if [[ "$next_lrn" != "LRN-0002" ]]; then
+  echo "Expected next LRN-0002, got $next_lrn" >&2
+  exit 1
+fi
+
+next_expl="$(run_meta next expl)"
+if [[ "$next_expl" != "EXPL-0002" ]]; then
+  echo "Expected next EXPL-0002, got $next_expl" >&2
+  exit 1
+fi
+
+next_qst="$(run_meta next qst)"
+if [[ "$next_qst" != "QST-0002" ]]; then
+  echo "Expected next QST-0002, got $next_qst" >&2
+  exit 1
+fi
+
 next_todo="$(run_meta next todo)"
 if [[ "$next_todo" != "TODO-0005" ]]; then
   echo "Expected next TODO-0005, got $next_todo" >&2
@@ -137,10 +170,15 @@ run_meta set-status ADR-0001 accepted >/dev/null
 require_contains "$adr_path" "status: accepted"
 run_meta set-status IDEA-0001 exploring >/dev/null
 require_contains "$idea_path" "status: exploring"
+run_meta set-status LRN-0001 draft >/dev/null
+require_contains "$lrn_path" "status: draft"
 
 run_meta update
 require_file "$docs_root/IDEAS.md"
 require_file "$docs_root/SPECS.md"
+require_file "$docs_root/LEARNINGS.md"
+require_file "$docs_root/EXPLAINERS.md"
+require_file "$docs_root/QUESTIONS.md"
 require_file "$docs_root/DOCS-REGISTRY.md"
 require_file "$docs_root/TODOS.md"
 require_file "$docs_root/AREAS.md"
@@ -149,6 +187,12 @@ require_file "$docs_root/ROADMAP-VIEW.md"
 require_contains "$docs_root/IDEAS.md" "IDEA-0001"
 require_contains "$docs_root/AREAS.md" "AREA-capture"
 require_contains "$docs_root/AUDITS.md" "Repo Health Audit"
+require_contains "$docs_root/LEARNINGS.md" "LRN-0001"
+require_contains "$docs_root/LEARNINGS.md" "Specs And Plans Stay Separate"
+require_contains "$docs_root/EXPLAINERS.md" "EXPL-0001"
+require_contains "$docs_root/EXPLAINERS.md" "Specs Plans And Briefs"
+require_contains "$docs_root/QUESTIONS.md" "QST-0001"
+require_contains "$docs_root/QUESTIONS.md" "Should Specs And Plans Be One To One"
 require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001"
 require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001-shared-capture-implementation"
 require_contains "$docs_root/ROADMAP-VIEW.md" "type: generated-view"

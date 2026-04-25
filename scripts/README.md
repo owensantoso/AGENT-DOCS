@@ -39,6 +39,9 @@ It writes generated views:
 ```text
 docs/SPECS.md
 docs/IDEAS.md
+docs/LEARNINGS.md
+docs/EXPLAINERS.md
+docs/QUESTIONS.md
 docs/DOCS-REGISTRY.md
 docs/TODOS.md
 docs/AREAS.md
@@ -59,6 +62,9 @@ scripts/docs-meta next idea
 scripts/docs-meta next plan
 scripts/docs-meta next impl --plan PLAN-0001
 scripts/docs-meta next adr
+scripts/docs-meta next lrn
+scripts/docs-meta next expl
+scripts/docs-meta next qst
 ```
 
 Create new docs:
@@ -69,6 +75,9 @@ scripts/docs-meta new idea "Repo Memory Timeline" --domain product
 scripts/docs-meta new plan "Shared Capture Implementation" --domain product --spec SPEC-0001
 scripts/docs-meta new impl "Persist Capture Drafts" --plan PLAN-0001
 scripts/docs-meta new adr "Use Append-Only Worktree Journal"
+scripts/docs-meta new learning "Why plans and specs are separate" --domain repo-health
+scripts/docs-meta new explainer "How specs and plans fit together" --domain orientation
+scripts/docs-meta new question "Should specs and plans be one-to-one?" --domain repo-health
 ```
 
 Inspect or update status:
@@ -184,6 +193,26 @@ When a commit, PR, issue, or session log is todo-backed, cite the `TODO-*` ID th
 
 `check-todos` validates duplicate IDs, lifecycle/checkbox contradictions, missing claim metadata for `in_progress`, missing freshness for `review`, missing blockers or reasons for `blocked`, missing closeout evidence for `done`, missing plan/brief references, and missing referenced `TODO-*` dependencies. `check-todos --strict` also warns about helpful routing/freshness metadata such as `skill` and `updated` on ready or blocked work.
 
+### Learning records
+
+Use `LRN-*` learning records for lessons learned: durable corrected assumptions, surprising discoveries, plan corrections, and runtime/tooling discoveries that should change future behavior.
+
+Create one when the lesson should survive the chat:
+
+```bash
+scripts/docs-meta new learning "Why specs and plans are not one-to-one" --domain repo-health
+scripts/docs-meta next lrn
+scripts/docs-meta view learnings
+scripts/docs-meta view explainers
+scripts/docs-meta view questions
+```
+
+Do not use learning records for routine implementation narration. Use session logs for what happened, ADRs for durable decisions, research notes for investigations, specs for requirements, and plans or briefs for execution scope.
+
+Keep local open questions in the owning spec, plan, implementation brief, research note, session log, explainer, or learning record. Create a `QST-*` when the question needs durable status, ownership, links, or resolution history. Promote a question to `TODO-*` only when it needs action, verification, or closeout.
+
+Use `EXPL-*` explainers for reusable human-facing teaching material. Include a visualization-pass-style diagram when structure, flow, state, ownership, or behavior is clearer visually than in prose.
+
 Regenerate and check generated views:
 
 ```bash
@@ -245,8 +274,14 @@ scripts/docs-meta roadmap --write
 Print and refresh any generated Markdown view:
 
 ```bash
+scripts/docs-meta view ideas
 scripts/docs-meta view specs
+scripts/docs-meta view learnings
+scripts/docs-meta view explainers
+scripts/docs-meta view questions
+scripts/docs-meta view registry
 scripts/docs-meta view todos
+scripts/docs-meta view areas
 scripts/docs-meta view audits
 scripts/docs-meta view roadmap
 scripts/docs-meta view health

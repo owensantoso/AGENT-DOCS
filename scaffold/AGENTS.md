@@ -29,6 +29,9 @@ Short index. Read the file for your task.
 | Model / repository seam question | `docs/CURRENT_STATE.md` + seams guide + `docs/ARCHITECTURE.md` |
 | Verification / test command question | testing guide + surface `AGENTS.md` + any execution-readiness doc |
 | Future feature request | `docs/IDEAS.md` + relevant `docs/<domain>/ideas/IDEA-####-<slug>.md` |
+| Repeated confusion or corrected understanding | `docs/LEARNINGS.md` + relevant `docs/decisions/learnings/LRN-####-<slug>.md` |
+| Human-facing concept explanation | `docs/EXPLAINERS.md` + relevant `docs/orientation/explainers/EXPL-####-<slug>.md` |
+| Durable open question | `docs/QUESTIONS.md` + relevant `docs/decisions/questions/QST-####-<slug>.md` |
 
 ## Rules
 
@@ -38,6 +41,9 @@ Short index. Read the file for your task.
 - Add a timestamped session log for meaningful implementation, planning, or debugging sessions.
 - Use commit trailers for meaningful commits: `Plan:`, `Brief:`, `Spec:`, `ADR:`, `Todo:`, `Session:`, `Area:`, and `Verification:` as applicable.
 - Capture early, fuzzy, or future-facing thoughts as `IDEA-*` docs instead of bloating specs or plans.
+- Capture lessons learned as `LRN-*` records instead of leaving them trapped in chat.
+- Capture reusable human-facing explanations as `EXPL-*` docs. Use visualization-pass-style diagrams when structure, flow, state, ownership, or behavior is clearer visually.
+- Capture durable unresolved questions as `QST-*` docs when they need status, ownership, links, or resolution history.
 - If the repo uses `docs/architecture/areas/AREA-*.md`, use those exact `AREA-*` IDs in plan frontmatter, session logs, PRs, issues, and `Area:` commit trailers.
 - Planning doc hierarchy matters.
   - Parent `plan-*` docs define scope, architecture, invariants, and non-goals.
@@ -52,6 +58,8 @@ Short index. Read the file for your task.
 - Cite todo-backed work in session logs, commit trailers, PRs, and issues with `Todo: TODO-####` or equivalent references.
 - Keep source-code TODO comments local; promote them to structured Markdown `TODO-*` items when they need ownership, delegation, review, or cross-session tracking.
 - When completing durable todo-backed work, update the source checkbox line and run the repo's todo checks before closeout.
+- When the human asks for an explanation, answer in chat first. Create or update an `EXPL-*`, `LRN-*`, or `QST-*` only when it will reduce future confusion.
+- Do not write that the human understands something unless they confirmed it. Use agent-inferred wording when unsure.
 - When feedback reveals a missed rule, wrong assumption, ambiguous docs, or workflow failure, use `reflect-and-improve` and update the smallest durable source that would prevent a repeat.
 
 ## Behavioral guidelines

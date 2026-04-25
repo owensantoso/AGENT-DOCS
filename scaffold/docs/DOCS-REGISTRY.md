@@ -2,7 +2,7 @@
 type: generated-view
 title: Docs Registry
 status: generated
-updated_at: "2026-04-25 19:06:59 JST +0900"
+updated_at: "2026-04-25 22:49:58 JST +0900"
 ---
 
 # Docs Registry
@@ -13,7 +13,10 @@ updated_at: "2026-04-25 19:06:59 JST +0900"
 |---|---|---|---|---|
 | ADR-0000 | adr | Decision Title | proposed | `decisions/adr/ADR-0000-decision-title.md` |
 | AREA-EXAMPLE | architecture-area | Example | draft | `architecture/areas/AREA-EXAMPLE.md` |
+| EXPL-0000 | explainer | Explainer Title | draft | `orientation/explainers/EXPL-0000-explainer-title.md` |
 | IDEA-0000 | idea | <Idea Title> | captured | `product/ideas/IDEA-0000-idea-title.md` |
 | IMPL-0000-00 | implementation-brief | <Implementation brief title> | draft | `product/plans/PLAN-0000-plan-title/IMPL-0000-00-implementation-brief-title.md` |
+| LRN-0000 | learning | Learning Title | active | `decisions/learnings/LRN-0000-learning-title.md` |
 | PLAN-0000 | plan | <Plan title> | draft | `product/plans/PLAN-0000-plan-title/PLAN-0000-plan-title.md` |
+| QST-0000 | question | Question Title | open | `decisions/questions/QST-0000-question-title.md` |
 | SPEC-0000 | spec | <Spec title> | draft | `product/specs/SPEC-0000-spec-title.md` |

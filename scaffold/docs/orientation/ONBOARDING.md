@@ -35,6 +35,7 @@ Read in this order:
 5. `<ARCHITECTURE path>` - system/data model and decision provenance
 6. `<spec path>` - approved product or technical baseline
 7. `<planning guide path>` - how plans and briefs work
+8. `<explainers path>` - deeper human-facing explainers when onboarding is too compact
 
 ## Current User / System Flow
 
@@ -56,6 +57,10 @@ Read in this order:
 3. For implemented work, check the relevant plan folder.
 4. For session-level paper trail, check session logs.
 5. For commit-level archaeology, look for commit trailers.
+
+## Deeper Explanations
+
+Use `orientation/explainers/` for reusable `EXPL-*` explanations, visuals, or step-by-step tours that would make this onboarding doc too long. Keep authoritative architecture truth in architecture docs, lessons learned in `LRN-*` records, and unresolved durable questions in `QST-*` records.
 
 ## What Not To Trust Alone
 

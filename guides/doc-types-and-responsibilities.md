@@ -86,6 +86,60 @@ Should answer:
 - what alternatives were rejected?
 - what future work must preserve or explicitly supersede?
 
+## Learning record
+
+Purpose:
+
+- preserve durable corrected understanding with a globally unique `LRN-####` paper-trail ID
+- capture surprising lessons, corrected assumptions, plan corrections, or runtime/tooling discoveries
+- prevent future humans or agents from repeating the same confusion
+
+Should answer:
+
+- what did we learn?
+- what previous assumption or confusion did this correct?
+- what evidence or source supports the corrected understanding?
+- where should this change future behavior?
+- what questions remain unresolved?
+
+Learning records are not session logs, ADRs, specs, or plans. If the doc mainly says what happened, use a session log. If it chooses a durable direction, use an ADR. If it defines requirements or execution scope, use a spec, plan, or brief.
+
+## Explainer
+
+Purpose:
+
+- explain a concept, flow, or system path for humans
+- hold small visuals, examples, and common misunderstandings
+- keep `ONBOARDING.md` short while still giving deeper teaching material
+
+Should answer:
+
+- who should read this?
+- what confusion does it resolve?
+- what is the short answer?
+- what mental model or visual helps?
+- how does this connect to source docs or code?
+
+Explainers use `EXPL-####` IDs when reusable teaching material needs stable links. Use a visualization pass when structure, flow, state, ownership, or behavior is clearer visually than in prose.
+
+## Question
+
+Purpose:
+
+- preserve durable uncertainty with a globally unique `QST-####` paper-trail ID
+- track status, ownership, links, and resolution history for questions that outgrow one local doc
+- separate unresolved uncertainty from lessons learned, explainers, decisions, and TODOs
+
+Should answer:
+
+- what is the question?
+- why does it matter?
+- what do we know so far?
+- what evidence, decision, or verification would answer it?
+- what resolved it, if status is `answered`?
+
+Questions are not tasks by default. Promote a question to `TODO-*` only when it needs action, ownership, verification, or closeout.
+
 ## Session log
 
 Purpose:

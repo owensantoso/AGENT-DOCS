@@ -69,6 +69,8 @@ These keep reasoning durable after the chat disappears:
 
 Use these to reconstruct why a change happened.
 
+Use `LRN-*` learning records for lessons learned that should change future behavior. Use `EXPL-*` explainers for reusable human-facing teaching material. Use `QST-*` questions for durable uncertainty that needs status, ownership, links, or resolution history. Keep authoritative truth in the owning orientation, architecture, spec, plan, ADR, or testing doc.
+
 ### 5. Entry-point docs
 
 These tell future agents how to boot into the repo cleanly:

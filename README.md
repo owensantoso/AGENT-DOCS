@@ -71,6 +71,8 @@ Use this for first-contact docs.
 
 These files should be skimmable. If one starts becoming a history journal, move the detail elsewhere.
 
+Use `orientation/explainers/` for reusable `EXPL-*` human-facing explanations that are too detailed for onboarding but not authoritative decisions, requirements, or plans. Include visualization-pass-style diagrams when they clarify structure or flow.
+
 When architecture gets too dense for one overview, split it into an architecture hub plus area docs:
 
 ```text
@@ -118,7 +120,8 @@ docs/decisions/
 Use this for durable reasoning.
 
 - `adr/`: decisions that affect multiple future plans or long-lived architecture
-- `learnings/`: surprising lessons, plan corrections, runtime/tooling discoveries
+- `learnings/`: `LRN-*` records for lessons learned, corrected assumptions, plan corrections, and runtime/tooling discoveries
+- `questions/`: `QST-*` records for durable unresolved questions, status, and resolution history
 - `execution-readiness.md`: preflight assumptions and environment blockers
 
 Do not put routine implementation notes here. Use session logs or implementation briefs for those.
@@ -214,6 +217,8 @@ docs/
     ONBOARDING.md
     ROADMAP.md
     ARCHITECTURE.md
+    explainers/
+      EXPL-<id>-<slug>.md
   architecture/
     README.md
     areas/
@@ -228,6 +233,9 @@ docs/
   decisions/
     adr/
     learnings/
+      LRN-<id>-<slug>.md
+    questions/
+      QST-<id>-<slug>.md
     execution-readiness.md
   repo-health/
     ideas/
@@ -259,6 +267,9 @@ Use the docs as the source of truth and GitHub as tracking:
 
 ```text
 IDEA -> SPEC -> PLAN -> IMPL -> Issue / PR
+LRN -> lesson learned
+EXPL -> reusable human-facing explanation
+QST -> durable open question
 ```
 
 - Ideas own early sparks, rambles, possible future work, and not-yet-formed thoughts.
@@ -266,6 +277,7 @@ IDEA -> SPEC -> PLAN -> IMPL -> Issue / PR
 - Plans own intent, architecture, scope, sequencing, and the build-time interface choices that matter.
 - Implementation briefs own bounded execution detail.
 - Architecture area docs own durable vocabulary, boundaries, and caller-facing interfaces for each `AREA-*`.
+- Learning records own lessons learned that should change future behavior. Explainers own teaching material. Questions own durable unresolved uncertainty.
 - Parent GitHub issues usually track plans or work packages.
 - Sub-issues usually track implementation briefs or independently grabbable slices.
 
@@ -333,7 +345,7 @@ Add `product/`, `repo-health/`, `research/`, `operations/`, or `marketing/` only
 
 The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. For a new repo, copy the parts of that folder you need instead of translating a flat template list into paths by hand.
 
-Use scaffold files as starting points, not as mandatory paperwork. Keep one canonical home for each doc, then use generated registries like `IDEAS.md`, `SPECS.md`, `AREAS.md`, `AUDITS.md`, `ROADMAP-VIEW.md`, and `HEALTH.md` for cross-cutting views.
+Use scaffold files as starting points, not as mandatory paperwork. Keep one canonical home for each doc, then use generated registries like `IDEAS.md`, `SPECS.md`, `LEARNINGS.md`, `EXPLAINERS.md`, `QUESTIONS.md`, `AREAS.md`, `AUDITS.md`, `ROADMAP-VIEW.md`, and `HEALTH.md` for cross-cutting views.
 
 ### Entry Points
 
@@ -372,6 +384,15 @@ Use scaffold files as starting points, not as mandatory paperwork. Keep one cano
 
 - [scaffold/docs/decisions/adr/README.md](scaffold/docs/decisions/adr/README.md) - ADR folder guide and decision index
 - [scaffold/docs/decisions/adr/ADR-0000-decision-title.md](scaffold/docs/decisions/adr/ADR-0000-decision-title.md) - durable decision record example
+- [scaffold/docs/EXPLAINERS.md](scaffold/docs/EXPLAINERS.md) - global explainer registry using one continuous `EXPL-####` sequence
+- [scaffold/docs/orientation/explainers/README.md](scaffold/docs/orientation/explainers/README.md) - human-facing explainer convention
+- [scaffold/docs/orientation/explainers/EXPL-0000-explainer-title.md](scaffold/docs/orientation/explainers/EXPL-0000-explainer-title.md) - explainer example with visualization guidance
+- [scaffold/docs/QUESTIONS.md](scaffold/docs/QUESTIONS.md) - global question registry using one continuous `QST-####` sequence
+- [scaffold/docs/decisions/questions/README.md](scaffold/docs/decisions/questions/README.md) - durable question convention
+- [scaffold/docs/decisions/questions/QST-0000-question-title.md](scaffold/docs/decisions/questions/QST-0000-question-title.md) - durable question example
+- [scaffold/docs/LEARNINGS.md](scaffold/docs/LEARNINGS.md) - global learning registry using one continuous `LRN-####` sequence
+- [scaffold/docs/decisions/learnings/README.md](scaffold/docs/decisions/learnings/README.md) - durable learning-record convention
+- [scaffold/docs/decisions/learnings/LRN-0000-learning-title.md](scaffold/docs/decisions/learnings/LRN-0000-learning-title.md) - lesson-learned record example
 - [scaffold/docs/repo-health/session-logs/README.md](scaffold/docs/repo-health/session-logs/README.md) - timestamped session-log convention
 - [scaffold/docs/repo-health/session-logs/YYYY-MM-DD-session-title.md](scaffold/docs/repo-health/session-logs/YYYY-MM-DD-session-title.md) - session receipt example
 - [scaffold/docs/repo-health/audits/README.md](scaffold/docs/repo-health/audits/README.md) - periodic repo-health checkup convention
@@ -394,5 +415,8 @@ The most reusable idea in this workflow is not the exact folder tree. It is the 
 - implementation briefs define bounded execution slices
 - session logs leave timestamped receipts for important work
 - ADRs preserve durable decisions and rejected alternatives
+- learning records preserve lessons learned that should change future behavior
+- explainers preserve reusable teaching material and diagrams
+- questions preserve durable uncertainty and resolution history
 
 Start small, then add structure only when the absence of structure is costing you comprehension.

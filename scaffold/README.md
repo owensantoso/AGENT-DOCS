@@ -20,13 +20,16 @@ docs/
   marketing/
 ```
 
-Use one canonical physical home for each doc. Use generated views like `IDEAS.md`, `SPECS.md`, `AREAS.md`, `AUDITS.md`, `ROADMAP-VIEW.md`, `DOCS-REGISTRY.md`, `TODOS.md`, and `HEALTH.md` for cross-cutting navigation instead of duplicating files.
+Use one canonical physical home for each doc. Use generated views like `IDEAS.md`, `SPECS.md`, `LEARNINGS.md`, `EXPLAINERS.md`, `QUESTIONS.md`, `AREAS.md`, `AUDITS.md`, `ROADMAP-VIEW.md`, `DOCS-REGISTRY.md`, `TODOS.md`, and `HEALTH.md` for cross-cutting navigation instead of duplicating files.
 
 If the target repo uses `scripts/docs-meta`, prefer the CLI for new IDs and generated views:
 
 ```bash
 scripts/docs-meta new idea "<title>" --domain product
 scripts/docs-meta new spec "<title>" --domain product
+scripts/docs-meta new learning "<title>" --domain repo-health
+scripts/docs-meta new explainer "<title>" --domain orientation
+scripts/docs-meta new question "<title>" --domain repo-health
 scripts/docs-meta update
 scripts/docs-meta health --write
 scripts/docs-meta roadmap --write
