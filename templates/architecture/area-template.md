@@ -9,6 +9,9 @@ related_specs: []
 related_adrs: []
 related_plans: []
 related_sessions: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
 ---
 
 # AREA-<NAME> - <Area Title>

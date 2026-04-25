@@ -20,6 +20,9 @@ related_adrs: []
 related_sessions: []
 supersedes: []
 superseded_by:
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
 ---
 
 # SPEC-0000 - <Spec Title>
@@ -33,6 +36,8 @@ docs/<domain>/specs/SPEC-0000-<slug>.md
 ```
 
 Register this spec in `docs/SPECS.md`.
+
+Prefer `scripts/docs-meta new spec "<title>"` when the repo has `docs-meta`; it will assign the next `SPEC-####`, fill timestamps and repo state, and place the file in the topic-first specs folder.
 
 ## Summary
 

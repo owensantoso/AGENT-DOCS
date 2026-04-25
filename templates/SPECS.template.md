@@ -2,7 +2,7 @@
 
 Global registry for durable specs. Use one continuous `SPEC-####` sequence across all domains, even when spec files live in topic-first folders.
 
-Before creating a new spec:
+Before creating a new spec manually:
 
 1. Find the highest existing `SPEC-####` in this registry and existing spec files.
 2. Use the next unused global number.
@@ -23,4 +23,13 @@ Before creating a new spec:
 - Do not use date-only spec filenames for durable specs.
 - If an existing repo still uses `docs/specs/`, follow local convention unless the task is explicitly migrating docs hierarchy.
 
-The registry prevents scattered topic folders from creating duplicate spec numbers.
+When the repo has `scripts/docs-meta`, prefer:
+
+```bash
+scripts/docs-meta next spec
+scripts/docs-meta new spec "<title>" --domain product --spec-type improvement
+scripts/docs-meta update
+scripts/docs-meta check
+```
+
+The registry prevents scattered topic folders from creating duplicate spec numbers. `docs-meta` can regenerate it from the repo tree and frontmatter.

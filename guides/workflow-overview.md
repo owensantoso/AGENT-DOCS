@@ -35,6 +35,8 @@ These describe where the repo is going:
 - domain-specific specs or research notes
 - `docs/SPECS.md` as the global registry for `SPEC-####` IDs
 
+When available, use `scripts/docs-meta` to derive IDs, status, registries, and todos from the repo tree instead of manually maintaining counters.
+
 Use these to understand sequencing, target shape, and feature intent.
 
 ### 3. Planning docs

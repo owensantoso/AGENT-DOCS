@@ -12,6 +12,23 @@ Reusable implementation-session handoff prompt:
 
 - `docs/plans/reusable-implementer-handoff-prompt.md`
 
+If this repo has `scripts/docs-meta`, use it for mechanical metadata:
+
+```bash
+scripts/docs-meta next spec
+scripts/docs-meta next plan
+scripts/docs-meta next impl --plan PLAN-0000
+scripts/docs-meta new spec "<title>" --domain product --spec-type feature
+scripts/docs-meta new plan "<title>" --domain product --spec SPEC-0000
+scripts/docs-meta new impl "<title>" --plan PLAN-0000
+scripts/docs-meta set-status PLAN-0000 in_progress
+scripts/docs-meta todos
+scripts/docs-meta update
+scripts/docs-meta check
+```
+
+Do not ask agents to guess the next ID when the repo can derive it.
+
 ## Topic-first planning
 
 Plans should live under the topic/domain that owns the work:
@@ -45,6 +62,57 @@ SPEC -> PLAN -> IMPL -> Issues / PRs
 - `IMPL` owns bounded execution detail for one task or grouped slice.
 - GitHub issues track approved work. They should link to specs, plans, and implementation briefs rather than replace them.
 - PRs deliver one reviewable change and link back to the relevant issue/docs.
+
+## ID and filename conventions
+
+Use independent IDs for specs and plans. Do not force plan numbers to match spec numbers.
+
+```text
+SPEC-0001
+PLAN-0001
+IMPL-0001-01
+```
+
+Recommended paths:
+
+```text
+docs/<domain>/specs/SPEC-0001-<slug>.md
+docs/<domain>/plans/PLAN-0001-<slug>/plan.md
+docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
+```
+
+Relationships belong in frontmatter:
+
+```yaml
+related_specs:
+  - SPEC-0001
+parent_plan: PLAN-0001
+```
+
+This keeps filenames readable while still supporting one-to-one, one-to-many, many-to-one, and no-spec plans.
+
+## Status and todos
+
+Canonical status lives in frontmatter:
+
+```yaml
+status: draft
+```
+
+Allowed common statuses:
+
+```text
+draft
+proposed
+ready
+in_progress
+blocked
+completed
+implemented
+superseded
+```
+
+Use Markdown checkboxes for local task lists. `docs-meta todos` can derive a repo-level task view without making a second source of truth.
 
 ## The planning layers
 

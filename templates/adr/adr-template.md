@@ -1,5 +1,6 @@
 ---
 type: adr
+id: ADR-0000
 status: proposed
 created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
 updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
@@ -9,9 +10,12 @@ related_plans: []
 related_sessions: []
 supersedes: []
 superseded_by: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
 ---
 
-# ADR: Decision Title
+# ADR-0000 - Decision Title
 
 ## Context
 

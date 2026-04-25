@@ -241,6 +241,21 @@ SPEC -> PLAN -> IMPL -> Issue / PR
 - Parent GitHub issues usually track plans or work packages.
 - Sub-issues usually track implementation briefs or independently grabbable slices.
 
+## Deterministic Metadata
+
+When installed in a repo, [scripts/docs-meta](scripts/docs-meta) derives doc metadata from Markdown files and frontmatter instead of relying on agents to remember counters.
+
+Use it for:
+
+- next `SPEC-*`, `PLAN-*`, `IMPL-*`, and `ADR-*` IDs
+- creating new specs, plans, and implementation briefs
+- updating frontmatter status
+- extracting Markdown todos
+- regenerating `SPECS.md`, `DOCS-REGISTRY.md`, and `TODOS.md`
+- checking duplicate IDs, stale generated docs, and mismatched filenames
+
+The repo tree remains the source of truth. Generated files are views, not separate state.
+
 ## Smaller Project Shape
 
 Small repos do not need the full scaffolding. Start with the smallest set that prevents confusion.
@@ -283,6 +298,7 @@ Use templates as starting points, not as mandatory paperwork. Copy only what the
 - [templates/global-AGENTS.template.md](templates/global-AGENTS.template.md) - personal/global Codex instructions for always-on orchestration habits
 - [templates/surface-AGENTS.template.md](templates/surface-AGENTS.template.md) - local instructions for one app, package, or service
 - [templates/DOCS-README.template.md](templates/DOCS-README.template.md) - map for a repo's `docs/` folder
+- [scripts/docs-meta](scripts/docs-meta) - deterministic docs metadata CLI
 
 ### Orientation And Reality
 

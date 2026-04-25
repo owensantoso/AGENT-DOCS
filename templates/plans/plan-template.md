@@ -6,6 +6,8 @@ Keep it architectural and milestone-oriented. Point detailed execution into `imp
 
 ---
 type: plan
+id: PLAN-0000
+title: <Plan title>
 domain: product
 status: draft
 created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
@@ -20,9 +22,20 @@ related_specs: []
 related_adrs: []
 related_sessions: []
 related_issues: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
 ---
 
-# <Plan Title>
+# PLAN-0000 - <Plan Title>
+
+File path:
+
+```text
+docs/<domain>/plans/PLAN-0000-<slug>/plan.md
+```
+
+Prefer `scripts/docs-meta new plan "<title>" --spec SPEC-0000` when the repo has `docs-meta`; it will assign the next `PLAN-####`, fill timestamps and repo state, and create the topic-first plan folder.
 
 **Goal:** <One paragraph on the user-facing or system outcome.>
 

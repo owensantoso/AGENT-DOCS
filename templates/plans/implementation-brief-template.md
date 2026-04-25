@@ -6,6 +6,8 @@ Keep it concrete enough for delegation, but do not turn it into a pseudo-patch.
 
 ---
 type: implementation-brief
+id: IMPL-0000-00
+title: <Implementation brief title>
 domain: product
 status: draft
 created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
@@ -24,9 +26,20 @@ related_specs: []
 related_adrs: []
 related_sessions: []
 related_issues: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
 ---
 
-# Implementation Brief - <Plan/Task Title>
+# IMPL-0000-00 - <Implementation Brief Title>
+
+File path:
+
+```text
+docs/<domain>/plans/PLAN-0000-<slug>/IMPL-0000-00-<slug>.md
+```
+
+Prefer `scripts/docs-meta new impl "<title>" --plan PLAN-0000` when the repo has `docs-meta`; it will assign the next implementation ID scoped to the parent plan, fill timestamps and repo state, and create the brief beside its parent plan.
 
 ## Parent plan
 
