@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import os
 import re
 import subprocess
@@ -145,6 +146,15 @@ class Doc:
         return self.path.stem
 
 
+@dataclass
+class HealthIssue:
+    severity: str
+    code: str
+    doc: str
+    message: str
+    detail: str = ""
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Scan and update docs metadata.")
     parser.add_argument("--root", default="docs", help="Docs root to scan. Default: docs")
@@ -180,6 +190,12 @@ def parse_args() -> argparse.Namespace:
 
     sub.add_parser("update", help="Regenerate docs registries and todo dashboard.")
     sub.add_parser("check", help="Validate IDs, statuses, and generated docs.")
+
+    health_cmd = sub.add_parser("health", help="Show advisory docs freshness and workflow warnings.")
+    health_cmd.add_argument("--stale-days", type=int, default=14, help="Flag selected docs not updated in this many days. Default: 14")
+    health_cmd.add_argument("--commit-threshold", type=int, default=10, help="Flag docs reviewed this many commits behind HEAD. Default: 10")
+    health_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+    health_cmd.add_argument("--write", action="store_true", help="Write docs/HEALTH.md as a generated advisory view.")
 
     return parser.parse_args()
 
@@ -229,6 +245,14 @@ def parse_frontmatter(text: str) -> tuple[dict[str, object], str]:
                 data[current_key].append(value)
             continue
         if line.startswith("  ") and current_key:
+            nested = line.strip()
+            if ":" in nested:
+                child_key, child_value = nested.split(":", 1)
+                if not isinstance(data.get(current_key), dict):
+                    data[current_key] = {}
+                target = data[current_key]
+                if isinstance(target, dict):
+                    target[child_key.strip()] = parse_scalar(child_value.strip())
             continue
         if ":" not in line:
             continue
@@ -236,13 +260,16 @@ def parse_frontmatter(text: str) -> tuple[dict[str, object], str]:
         key = key.strip()
         value = value.strip()
         current_key = key
-        if value == "[]":
-            data[key] = []
-        elif value == "":
-            data[key] = ""
-        else:
-            data[key] = value.strip('"')
+        data[key] = parse_scalar(value)
     return data, content
+
+
+def parse_scalar(value: str) -> object:
+    if value == "[]":
+        return []
+    if value == "":
+        return ""
+    return value.strip('"')
 
 
 def find_ids(text: str) -> list[str]:
@@ -272,6 +299,16 @@ def git_head() -> str:
         return result.stdout.strip()
     except Exception:
         return ""
+
+
+def git_commit_count_since(commit: str) -> int | None:
+    if not commit:
+        return None
+    try:
+        result = subprocess.run(["git", "rev-list", "--count", f"{commit}..HEAD"], check=True, capture_output=True, text=True)
+        return int(result.stdout.strip())
+    except Exception:
+        return None
 
 
 def next_id(family: str, docs: list[Doc], plan: str | None = None) -> str:
@@ -616,6 +653,19 @@ def task_rows(doc: Doc, include_done: bool = False) -> list[tuple[str, int, str,
     return rows
 
 
+def field_summary(value: object) -> str:
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value)
+    if isinstance(value, dict):
+        pieces = []
+        for key in ("type", "link", "notes"):
+            item = value.get(key)
+            if item:
+                pieces.append(str(item))
+        return " / ".join(pieces)
+    return str(value) if value else ""
+
+
 def ideas_markdown(docs: list[Doc]) -> str:
     ideas = sorted((doc for doc in docs if doc.primary_id.startswith("IDEA-")), key=lambda d: d.primary_id)
     lines = [
@@ -636,8 +686,8 @@ def ideas_markdown(docs: list[Doc]) -> str:
                 domain=doc.frontmatter.get("domain", ""),
                 status=doc.status,
                 path=doc.relpath,
-                source=doc.frontmatter.get("source", ""),
-                promoted_to=doc.frontmatter.get("promoted_to", ""),
+                source=field_summary(doc.frontmatter.get("source", "")),
+                promoted_to=field_summary(doc.frontmatter.get("promoted_to", "")),
             )
         )
     lines.append("")
@@ -665,7 +715,7 @@ def specs_markdown(docs: list[Doc]) -> str:
                 domain=doc.frontmatter.get("domain", ""),
                 status=doc.status,
                 path=doc.relpath,
-                source=doc.frontmatter.get("source", ""),
+                source=field_summary(doc.frontmatter.get("source", "")),
             )
         )
     lines.append("")
@@ -720,6 +770,134 @@ def areas_markdown(docs: list[Doc]) -> str:
         lines.append(f"| {doc.primary_id} | {doc.title} | {doc.status} | `{doc.relpath}` |")
     lines.append("")
     return "\n".join(lines)
+
+
+def parse_timestamp(value: object) -> dt.datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    match = re.search(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})(?: [A-Za-z0-9_+/-]+)? ([+-]\d{4})", value)
+    if match:
+        try:
+            return dt.datetime.strptime(f"{match.group(1)} {match.group(2)}", "%Y-%m-%d %H:%M:%S %z")
+        except ValueError:
+            return None
+    try:
+        parsed = dt.datetime.fromisoformat(value)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=dt.datetime.now().astimezone().tzinfo)
+        return parsed
+    except ValueError:
+        return None
+
+
+def nested_value(mapping: dict[str, object], key: str, child_key: str) -> str:
+    value = mapping.get(key)
+    if isinstance(value, dict):
+        child = value.get(child_key)
+        return child if isinstance(child, str) else ""
+    return ""
+
+
+def health_issues(docs: list[Doc], stale_days: int, commit_threshold: int) -> list[HealthIssue]:
+    issues: list[HealthIssue] = []
+    now = dt.datetime.now().astimezone()
+    current_head = git_head()
+    freshness_types = {
+        "current-state",
+        "onboarding",
+        "roadmap",
+        "architecture-overview",
+        "architecture-area",
+        "codebase-map",
+        "data-seams",
+        "testing-guide",
+    }
+    work_statuses = {"captured", "exploring", "draft", "proposed", "ready", "in_progress", "in-progress", "blocked"}
+    archived_statuses = {"archived", "rejected", "superseded"}
+
+    for doc in docs:
+        doc_type = doc.doc_type
+        if not doc_type or doc.status in archived_statuses:
+            continue
+
+        updated_at = parse_timestamp(doc.frontmatter.get("updated_at"))
+        age_days = (now - updated_at).days if updated_at else None
+        label = doc.primary_id or doc.relpath
+
+        if doc_type in freshness_types:
+            if age_days is None:
+                issues.append(HealthIssue("warn", "missing-updated-at", doc.relpath, f"{label} has no parseable updated_at timestamp."))
+            elif age_days >= stale_days:
+                issues.append(
+                    HealthIssue(
+                        "warn",
+                        "stale-by-time",
+                        doc.relpath,
+                        f"{label} has not been updated in {age_days} days.",
+                        f"Threshold: {stale_days} days",
+                    )
+                )
+
+        if doc.status in work_statuses and age_days is not None and age_days >= stale_days:
+            severity = "warn" if doc.status == "blocked" else "info"
+            issues.append(
+                HealthIssue(
+                    severity,
+                    "open-work-aging",
+                    doc.relpath,
+                    f"{label} is {doc.status} and has not been updated in {age_days} days.",
+                    f"Review whether the status still reflects reality.",
+                )
+            )
+
+        reviewed_commit = nested_value(doc.frontmatter, "repo_state", "last_reviewed_commit")
+        if "repo_state" in doc.frontmatter and not reviewed_commit:
+            issues.append(HealthIssue("info", "missing-review-commit", doc.relpath, f"{label} has repo_state but no last_reviewed_commit."))
+        elif reviewed_commit and current_head and reviewed_commit != current_head:
+            count = git_commit_count_since(reviewed_commit)
+            if count is not None and count >= commit_threshold:
+                issues.append(
+                    HealthIssue(
+                        "warn",
+                        "stale-by-commit",
+                        doc.relpath,
+                        f"{label} was last reviewed {count} commits ago.",
+                        f"last_reviewed_commit: {reviewed_commit}",
+                    )
+                )
+
+    return issues
+
+
+def health_markdown(issues: list[HealthIssue], stale_days: int, commit_threshold: int) -> str:
+    lines = [
+        "# Docs Health",
+        "",
+        GENERATED_HEADER,
+        "",
+        "Advisory review queue for docs that may be stale or worth checking. This is not a correctness report; use `scripts/docs-meta check` for deterministic validation.",
+        "",
+        f"- Time threshold: {stale_days} days",
+        f"- Commit threshold: {commit_threshold} commits since `repo_state.last_reviewed_commit`",
+        "",
+        "| Severity | Code | Doc | Message | Detail |",
+        "|---|---|---|---|---|",
+    ]
+    for issue in issues:
+        lines.append(f"| {issue.severity} | {issue.code} | `{issue.doc}` | {issue.message} | {issue.detail} |")
+    if not issues:
+        lines.append("| ok | none |  | No docs health issues found. |  |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def health_text(issues: list[HealthIssue]) -> str:
+    if not issues:
+        return "No docs health issues found."
+    return "\n".join(
+        f"{issue.severity.upper()}\t{issue.code}\t{issue.doc}\t{issue.message}" + (f"\t{issue.detail}" if issue.detail else "")
+        for issue in issues
+    )
 
 
 def update(root: Path, docs: list[Doc]) -> None:
@@ -848,6 +1026,15 @@ def main() -> int:
         return 0
     if args.command == "check":
         return check(root, docs)
+    if args.command == "health":
+        issues = health_issues(docs, args.stale_days, args.commit_threshold)
+        if args.write:
+            (root / "HEALTH.md").write_text(health_markdown(issues, args.stale_days, args.commit_threshold), encoding="utf-8")
+        if args.json:
+            print(json.dumps([issue.__dict__ for issue in issues], indent=2))
+        else:
+            print(health_text(issues))
+        return 0
     raise SystemExit(f"Unknown command: {args.command}")
 
 

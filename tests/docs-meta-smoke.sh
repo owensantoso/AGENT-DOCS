@@ -99,6 +99,16 @@ require_contains "$docs_root/TODOS.md" "Define owner boundaries"
 
 run_meta check
 
+perl -0pi -e 's/updated_at: "[^"]+"/updated_at: "2026-01-01 00:00:00 JST +0900"/' "$docs_root/architecture/areas/AREA-capture.md"
+run_meta health --stale-days 1 >/tmp/docs-meta-health.out
+require_contains /tmp/docs-meta-health.out "stale-by-time"
+require_contains /tmp/docs-meta-health.out "AREA-capture"
+run_meta health --stale-days 1 --write >/tmp/docs-meta-health-write.out
+require_file "$docs_root/HEALTH.md"
+require_contains "$docs_root/HEALTH.md" "Docs Health"
+run_meta health --stale-days 1 --json >/tmp/docs-meta-health.json
+require_contains /tmp/docs-meta-health.json "\"code\": \"stale-by-time\""
+
 missing_field="$docs_root/product/specs/SPEC-0002-missing-field.md"
 cp "$spec_path" "$missing_field"
 perl -0pi -e 's/^title: .+\n//m; s/SPEC-0001/SPEC-0002/g' "$missing_field"

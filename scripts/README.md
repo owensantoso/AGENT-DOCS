@@ -42,6 +42,7 @@ docs/IDEAS.md
 docs/DOCS-REGISTRY.md
 docs/TODOS.md
 docs/AREAS.md
+docs/HEALTH.md
 ```
 
 Those generated files should be treated as caches. If they disagree with the source docs, regenerate them instead of editing them by hand.
@@ -92,6 +93,17 @@ scripts/docs-meta check
 ```
 
 `check` also validates frontmatter contracts for known doc types, type-specific statuses, ID/filename agreement, implementation-to-parent-plan ID agreement, and whether generated registry files are stale.
+
+Show advisory docs-health warnings:
+
+```bash
+scripts/docs-meta health
+scripts/docs-meta health --stale-days 30 --commit-threshold 20
+scripts/docs-meta health --json
+scripts/docs-meta health --write
+```
+
+`health` is intentionally softer than `check`. It flags docs that may be worth reviewing because they are old, still in an open status, missing a review commit, or many commits behind `repo_state.last_reviewed_commit`. It exits successfully even when warnings exist; treat the output as a review queue, not a CI failure.
 
 Run the smoke test after changing `docs-meta` behavior:
 
