@@ -22,7 +22,7 @@ Use this when setting up this workflow in a new repository.
 - Create a codebase map for the main app or service surface.
 - Create a testing guide that lists the real verification commands.
 - Create a seams guide if the repo has compatibility layers or transitional models.
-- Copy `scripts/docs-meta` if the repo should deterministically manage `SPEC-*`, `PLAN-*`, `IMPL-*`, status, and docs todos.
+- Copy `scripts/docs-meta` if the repo should deterministically manage `IDEA-*`, `SPEC-*`, `PLAN-*`, `IMPL-*`, status, and docs todos.
 - Create `docs/repo-health/state/` for detailed historical state snapshots.
 - Create plan templates with YAML frontmatter and exact timestamp fields.
 

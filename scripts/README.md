@@ -8,7 +8,7 @@ It exists to keep repository memory queryable without asking a human or AI agent
 
 Agent-driven projects tend to accumulate small bits of comprehension debt:
 
-- the next `SPEC-*`, `PLAN-*`, or `ADR-*` number is guessed instead of derived
+- the next `IDEA-*`, `SPEC-*`, `PLAN-*`, or `ADR-*` number is guessed instead of derived
 - plan and implementation statuses drift from reality
 - generated registries are hand-edited and quietly become stale
 - todos are scattered across specs, plans, and implementation briefs
@@ -22,6 +22,7 @@ Canonical state lives in docs files:
 
 ```text
 docs/<domain>/specs/SPEC-0001-<slug>.md
+docs/<domain>/ideas/IDEA-0001-<slug>.md
 docs/<domain>/plans/PLAN-0001-<slug>/plan.md
 docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
 ```
@@ -37,6 +38,7 @@ It writes generated views:
 
 ```text
 docs/SPECS.md
+docs/IDEAS.md
 docs/DOCS-REGISTRY.md
 docs/TODOS.md
 docs/AREAS.md
@@ -50,6 +52,7 @@ Show the next ID:
 
 ```bash
 scripts/docs-meta next spec
+scripts/docs-meta next idea
 scripts/docs-meta next plan
 scripts/docs-meta next impl --plan PLAN-0001
 scripts/docs-meta next adr
@@ -59,6 +62,7 @@ Create new docs:
 
 ```bash
 scripts/docs-meta new spec "Shared Capture Workflow" --domain product --spec-type feature
+scripts/docs-meta new idea "Repo Memory Timeline" --domain product
 scripts/docs-meta new plan "Shared Capture Implementation" --domain product --spec SPEC-0001
 scripts/docs-meta new impl "Persist Capture Drafts" --plan PLAN-0001
 scripts/docs-meta new adr "Use Append-Only Worktree Journal"
@@ -101,6 +105,7 @@ The default naming model is independent IDs plus explicit relationships:
 
 ```text
 SPEC-0001
+IDEA-0001
 PLAN-0001
 IMPL-0001-01
 ADR-0001
@@ -111,12 +116,30 @@ Relationships belong in frontmatter:
 ```yaml
 related_specs:
   - SPEC-0001
+promoted_to:
+  - SPEC-0001
 parent_plan: PLAN-0001
 related_issues:
   - "#123"
 ```
 
-This avoids encoding a many-to-many relationship graph into filenames. A plan can relate to multiple specs, a spec can lead to multiple plans, and an implementation brief can remain visibly scoped to its parent plan.
+This avoids encoding a many-to-many relationship graph into filenames. An idea can be promoted to a spec, ADR, research note, or plan; a plan can relate to multiple specs; a spec can lead to multiple plans; and an implementation brief can remain visibly scoped to its parent plan.
+
+## File Metadata
+
+Filesystem metadata such as created time, modified time, and last opened time is useful locally, but it is not a reliable repo memory contract. It can change during copies, checkouts, rebases, restores, or editor operations, and it does not explain why a doc was reviewed.
+
+Use frontmatter for semantic metadata that should travel with the repo:
+
+```yaml
+created_at: "2026-04-25 10:44:01 JST +0900"
+updated_at: "2026-04-25 10:44:01 JST +0900"
+repo_state:
+  based_on_commit: <commit>
+  last_reviewed_commit: <commit>
+```
+
+Use generated views or local logs for derived activity such as "last viewed", per-file history, or stale-doc review queues. Those are observations about use, not canonical doc content.
 
 ## Repo State
 
@@ -134,8 +157,8 @@ Use this to understand which repository state a spec, plan, or implementation br
 
 Copy `scripts/docs-meta` into a repo that uses this docs workflow. Then:
 
-1. Ensure spec, plan, implementation brief, and ADR templates have `id`, `type`, `status`, `created_at`, `updated_at`, and relationship frontmatter.
-2. Prefer `scripts/docs-meta new ...` for new specs, plans, implementation briefs, and ADRs.
+1. Ensure idea, spec, plan, implementation brief, and ADR templates have `id`, `type`, `status`, `created_at`, `updated_at`, and relationship frontmatter.
+2. Prefer `scripts/docs-meta new ...` for new ideas, specs, plans, implementation briefs, and ADRs.
 3. Run `scripts/docs-meta update` after meaningful doc changes.
 4. Run `scripts/docs-meta check` before committing docs workflow changes.
 

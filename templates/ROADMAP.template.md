@@ -23,7 +23,8 @@ Ordered roadmap for what has shipped, what is being shaped now, and why work sit
 This doc is intentionally different from other docs:
 
 - `CURRENT_STATE.md` says what is built today.
-- `future-ideas.md` or equivalent backlog docs hold later or exploratory ideas.
+- `IDEAS.md` and topic-first `ideas/` folders hold later or exploratory ideas.
+- `IDEAS.md` holds the global `IDEA-####` registry; topic-first `ideas/` folders hold lightweight future possibilities.
 - `SPECS.md` holds the global `SPEC-####` registry; topic-first `specs/` folders hold review-first specs.
 - `plans/plan-*.md` holds milestone plans once a feature has a chosen execution shape.
 

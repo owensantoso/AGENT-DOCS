@@ -64,9 +64,9 @@ Area IDs and filenames should match exactly. `AREA-SYNC` lives in `docs/architec
 
 ```text
 docs/product/
+  ideas/
   specs/
   plans/
-  future-ideas/
 ```
 
 Use this for user-facing product behavior or product-enabling architecture.
@@ -184,6 +184,7 @@ Marketing can use the same plan/brief pattern when execution needs structure, bu
 ```text
 docs/
   README.md
+  IDEAS.md
   SPECS.md
   orientation/
     CURRENT_STATE.md
@@ -200,12 +201,13 @@ docs/
       plan-<id>-<slug>/
         plan.md
         impl-task-<task-ref>-<slug>.md
-    future-ideas/
+    ideas/
   decisions/
     adr/
     learnings/
     execution-readiness.md
   repo-health/
+    ideas/
     specs/
     plans/
       <repo-health-topic>/
@@ -214,8 +216,10 @@ docs/
     session-logs/
     state/
   research/
+    ideas/
     specs/
   operations/
+    ideas/
     specs/
   marketing/
     specs/
@@ -230,10 +234,10 @@ The important rule is topic first, artifact type second. A plan lives under the 
 Use the docs as the source of truth and GitHub as tracking:
 
 ```text
-SPEC -> PLAN -> IMPL -> Issue / PR
+IDEA -> SPEC -> PLAN -> IMPL -> Issue / PR
 ```
 
-- Specs own product or system requirements.
+- Ideas own early sparks, rambles, possible future work, and not-yet-formed thoughts.
 - Specs own durable requirements and language before implementation planning. They may describe features, bugs, improvements, architecture, repo-health work, or research-backed decisions.
 - Plans own intent, architecture, scope, sequencing, and the build-time interface choices that matter.
 - Implementation briefs own bounded execution detail.
@@ -245,15 +249,15 @@ SPEC -> PLAN -> IMPL -> Issue / PR
 
 When installed in a repo, [scripts/docs-meta](scripts/docs-meta) gives agents and humans a deterministic way to manage docs metadata. It scans Markdown filenames and frontmatter as the source of truth, then creates generated views from that state.
 
-This exists because agents are good at synthesis but unreliable at bookkeeping. They can forget the next `SPEC-*` number, miss a stale status, or hand-edit a registry that no longer matches the repo. `docs-meta` moves that work into a small script.
+This exists because agents are good at synthesis but unreliable at bookkeeping. They can forget the next `IDEA-*` or `SPEC-*` number, miss a stale status, or hand-edit a registry that no longer matches the repo. `docs-meta` moves that work into a small script.
 
 Use it for:
 
-- next `SPEC-*`, `PLAN-*`, `IMPL-*`, and `ADR-*` IDs
-- creating new specs, plans, implementation briefs, and ADRs
+- next `IDEA-*`, `SPEC-*`, `PLAN-*`, `IMPL-*`, and `ADR-*` IDs
+- creating new ideas, specs, plans, implementation briefs, and ADRs
 - updating frontmatter status
 - extracting Markdown todos
-- regenerating `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, and `AREAS.md`
+- regenerating `IDEAS.md`, `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, and `AREAS.md`
 - checking duplicate IDs, stale generated docs, metadata contracts, statuses, and mismatched filenames
 
 The repo tree remains the source of truth. Generated files are views, not separate state.
@@ -318,6 +322,8 @@ Use templates as starting points, not as mandatory paperwork. Copy only what the
 
 ### Product And Planning
 
+- [templates/IDEAS.template.md](templates/IDEAS.template.md) - global idea registry using one continuous `IDEA-####` sequence
+- [templates/idea.template.md](templates/idea.template.md) - lightweight capture template for early ideas and future possibilities
 - [templates/SPECS.template.md](templates/SPECS.template.md) - global spec registry using one continuous `SPEC-####` sequence
 - [templates/spec.template.md](templates/spec.template.md) - durable spec template for features, bugs, improvements, architecture, repo-health, and research
 - [templates/feature-spec.template.md](templates/feature-spec.template.md) - compatibility pointer for older feature-spec workflows

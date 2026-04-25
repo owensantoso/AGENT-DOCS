@@ -102,6 +102,22 @@ Should answer:
 - what verification ran?
 - what follow-up remains?
 
+## Idea
+
+Purpose:
+
+- preserve early sparks, rambles, and possible future work before they are ready for requirements
+- give fuzzy thoughts one globally unique `IDEA-####` paper-trail ID
+- keep speculative material out of specs, plans, and current-state docs
+
+Should answer:
+
+- what is the raw thought?
+- why might it matter?
+- what shape could it take?
+- what questions are unresolved?
+- what would need to be true before promoting it to a spec, research note, ADR, or plan?
+
 ## Spec
 
 Purpose:

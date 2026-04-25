@@ -4,6 +4,7 @@ This repo uses specs, plans, and implementation briefs on purpose.
 
 Starter templates live here:
 
+- `docs/IDEAS.md` and the repo's idea template
 - `docs/SPECS.md` and the repo's spec template
 - `docs/plans/templates/plan-template.md`
 - `docs/plans/templates/implementation-brief-template.md`
@@ -16,9 +17,11 @@ If this repo has `scripts/docs-meta`, use it for mechanical metadata:
 
 ```bash
 scripts/docs-meta next spec
+scripts/docs-meta next idea
 scripts/docs-meta next plan
 scripts/docs-meta next impl --plan PLAN-0000
 scripts/docs-meta new spec "<title>" --domain product --spec-type feature
+scripts/docs-meta new idea "<title>" --domain product
 scripts/docs-meta new plan "<title>" --domain product --spec SPEC-0000
 scripts/docs-meta new impl "<title>" --plan PLAN-0000
 scripts/docs-meta set-status PLAN-0000 in_progress
@@ -54,9 +57,10 @@ Use the old flat file convention only when the repo intentionally chooses simple
 Use this hierarchy:
 
 ```text
-SPEC -> PLAN -> IMPL -> Issues / PRs
+IDEA -> SPEC -> PLAN -> IMPL -> Issues / PRs
 ```
 
+- `IDEA` owns lightweight early capture: possible future work, rough product thoughts, and sparks that are not ready for requirements.
 - `SPEC` owns durable requirements and language: what should be true and why.
 - `PLAN` owns intent, architecture, scope, sequencing, dependencies, and validation strategy.
 - `IMPL` owns bounded execution detail for one task or grouped slice.
@@ -68,6 +72,7 @@ SPEC -> PLAN -> IMPL -> Issues / PRs
 Use independent IDs for specs and plans. Do not force plan numbers to match spec numbers.
 
 ```text
+IDEA-0001
 SPEC-0001
 PLAN-0001
 IMPL-0001-01
@@ -76,6 +81,7 @@ IMPL-0001-01
 Recommended paths:
 
 ```text
+docs/<domain>/ideas/IDEA-0001-<slug>.md
 docs/<domain>/specs/SPEC-0001-<slug>.md
 docs/<domain>/plans/PLAN-0001-<slug>/plan.md
 docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
@@ -84,6 +90,8 @@ docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
 Relationships belong in frontmatter:
 
 ```yaml
+promoted_to:
+  - SPEC-0001
 related_specs:
   - SPEC-0001
 parent_plan: PLAN-0001
@@ -115,7 +123,25 @@ Use Markdown checkboxes for local task lists. `docs-meta todos` can derive a rep
 
 ## The planning layers
 
-### 1. Specs
+### 1. Ideas
+
+Ideas preserve sparks before they are ready to become specs, research notes, ADRs, or plans.
+
+They define:
+
+- the raw thought
+- why it might matter
+- possible shape
+- unresolved questions
+- promotion criteria
+
+They should answer:
+
+> What should we not lose, even if it is not ready to act on?
+
+They should stay lightweight and cheap to capture.
+
+### 2. Specs
 
 Specs define durable requirements before implementation planning. They may describe features, bugs, improvements, architecture, repo-health work, or research-backed decisions.
 
@@ -135,7 +161,7 @@ They should answer:
 
 They should not define task sequencing or become a pseudo-plan.
 
-### 2. Architecture or milestone plans
+### 3. Architecture or milestone plans
 
 These are the main plan docs.
 
@@ -155,7 +181,7 @@ They should answer:
 
 They should not try to fully pre-author every code edit or turn into a pseudo-patch.
 
-### 3. Implementation briefs
+### 4. Implementation briefs
 
 Files named like:
 

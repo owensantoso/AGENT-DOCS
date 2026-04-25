@@ -9,7 +9,8 @@ Map of the documentation system.
 3. `<orientation/ROADMAP.md>` - sequence and rationale
 4. `<orientation/ARCHITECTURE.md>` - architecture and decision provenance
 5. `<architecture/README.md>` - architecture area registry and boundary map, if split out
-6. `<SPECS.md>` - global `SPEC-####` registry
+6. `<IDEAS.md>` - global `IDEA-####` registry
+7. `<SPECS.md>` - global `SPEC-####` registry
 7. `<product/specs/>`, `<architecture/specs/>`, or another topic-first specs folder
 8. `<domain>/plans/` - plan folders and implementation briefs
 
@@ -29,6 +30,7 @@ Map of the documentation system.
 ## Rules
 
 - Keep `CURRENT_STATE.md` short and link outward.
+- Keep `IDEAS.md` as the global registry for one continuous `IDEA-####` sequence.
 - Keep `SPECS.md` as the global registry for one continuous `SPEC-####` sequence.
 - Store specs in topic-first folders such as `product/specs/`, `architecture/specs/`, or `repo-health/specs/`.
 - Put plans under the domain that owns the outcome.

@@ -29,16 +29,20 @@ require_contains() {
   fi
 }
 
+idea_path="$(run_meta new idea "Repo Memory Timeline" --domain product)"
 spec_path="$(run_meta new spec "Shared Capture Workflow" --domain product --spec-type improvement)"
 plan_path="$(run_meta new plan "Shared Capture Implementation" --domain product --spec SPEC-0001)"
 impl_path="$(run_meta new impl "Persist Capture Drafts" --domain product --plan PLAN-0001 --spec SPEC-0001)"
 adr_path="$(run_meta new adr "Use Append Only Journal" --domain architecture --spec SPEC-0001)"
 
+require_file "$idea_path"
 require_file "$spec_path"
 require_file "$plan_path"
 require_file "$impl_path"
 require_file "$adr_path"
 
+require_contains "$idea_path" "id: IDEA-0001"
+require_contains "$idea_path" "status: captured"
 require_contains "$spec_path" "id: SPEC-0001"
 require_contains "$spec_path" "superseded_by: []"
 require_contains "$plan_path" "related_prs: []"
@@ -66,6 +70,12 @@ repo_state:
 - [ ] Define owner boundaries
 AREA
 
+next_idea="$(run_meta next idea)"
+if [[ "$next_idea" != "IDEA-0002" ]]; then
+  echo "Expected next IDEA-0002, got $next_idea" >&2
+  exit 1
+fi
+
 next_adr="$(run_meta next adr)"
 if [[ "$next_adr" != "ADR-0002" ]]; then
   echo "Expected next ADR-0002, got $next_adr" >&2
@@ -74,12 +84,16 @@ fi
 
 run_meta set-status ADR-0001 accepted >/dev/null
 require_contains "$adr_path" "status: accepted"
+run_meta set-status IDEA-0001 exploring >/dev/null
+require_contains "$idea_path" "status: exploring"
 
 run_meta update
+require_file "$docs_root/IDEAS.md"
 require_file "$docs_root/SPECS.md"
 require_file "$docs_root/DOCS-REGISTRY.md"
 require_file "$docs_root/TODOS.md"
 require_file "$docs_root/AREAS.md"
+require_contains "$docs_root/IDEAS.md" "IDEA-0001"
 require_contains "$docs_root/AREAS.md" "AREA-capture"
 require_contains "$docs_root/TODOS.md" "Define owner boundaries"
 

@@ -27,7 +27,7 @@ Short index. Read the file for your task.
 | Surface codebase orientation | `docs/CURRENT_STATE.md` + codebase map + surface `AGENTS.md` |
 | Model / repository seam question | `docs/CURRENT_STATE.md` + seams guide + `docs/ARCHITECTURE.md` |
 | Verification / test command question | testing guide + surface `AGENTS.md` + any execution-readiness doc |
-| Future feature request | `docs/future-ideas.md` or equivalent backlog doc |
+| Future feature request | `docs/IDEAS.md` + relevant `docs/<domain>/ideas/IDEA-####-<slug>.md` |
 
 ## Rules
 
@@ -36,6 +36,7 @@ Short index. Read the file for your task.
 - Keep `docs/CURRENT_STATE.md` short; move detailed history to state snapshots.
 - Add a timestamped session log for meaningful implementation, planning, or debugging sessions.
 - Use commit trailers for meaningful commits: `Plan:`, `Brief:`, `Spec:`, `ADR:`, `Session:`, `Area:`, and `Verification:` as applicable.
+- Capture early, fuzzy, or future-facing thoughts as `IDEA-*` docs instead of bloating specs or plans.
 - If the repo uses `docs/architecture/areas/AREA-*.md`, use those exact `AREA-*` IDs in plan frontmatter, session logs, PRs, issues, and `Area:` commit trailers.
 - Planning doc hierarchy matters.
   - Parent `plan-*` docs define scope, architecture, invariants, and non-goals.

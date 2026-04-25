@@ -31,8 +31,10 @@ These describe where the repo is going:
 
 - `orientation/ROADMAP.md`
 - `orientation/ARCHITECTURE.md`
+- `product/ideas/`
 - `product/specs/`
 - domain-specific specs or research notes
+- `docs/IDEAS.md` as the global registry for `IDEA-####` IDs
 - `docs/SPECS.md` as the global registry for `SPEC-####` IDs
 
 When available, use `scripts/docs-meta` to derive IDs, status, registries, and todos from the repo tree instead of manually maintaining counters.
