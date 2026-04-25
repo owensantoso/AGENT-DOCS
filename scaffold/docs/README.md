@@ -22,7 +22,7 @@ Map of the documentation system.
 | `architecture/` | Split architecture hub and `areas/AREA-*.md` boundary docs when one overview is too dense |
 | `product/` | Product ideas, specs, and plans |
 | `decisions/` | ADRs, learnings, execution-readiness notes |
-| `repo-health/` | Docs/workflow plans, session logs, state history, CI/test hygiene |
+| `repo-health/` | Docs/workflow plans, repo-health audits, session logs, state history, CI/test hygiene |
 | `research/` | Feasibility studies, spikes, findings |
 | `operations/` | Release, production, app-store, manual checks |
 | `marketing/` | Strategy, launch plans, campaign outputs |
@@ -34,6 +34,8 @@ Map of the documentation system.
 - Keep `SPECS.md` as the global registry for one continuous `SPEC-####` sequence.
 - Store specs in topic-first folders such as `product/specs/`, `architecture/specs/`, or `repo-health/specs/`.
 - Put plans under the domain that owns the outcome.
+- Use `sequence` frontmatter for roadmap order; keep `PLAN-*` IDs stable.
+- Use repo-health audits for periodic docs, architecture, duplication/refactor, test, tooling, and paper-trail checkups.
 - Give each meaningful plan its own folder.
 - Use session logs for per-session receipts.
 - Use ADRs for durable cross-plan decisions.

@@ -28,6 +28,7 @@ scripts/docs-meta set-status PLAN-0000 in_progress
 scripts/docs-meta todos
 scripts/docs-meta update
 scripts/docs-meta check
+scripts/docs-meta roadmap --write
 ```
 
 Do not ask agents to guess the next ID when the repo can derive it.
@@ -90,6 +91,11 @@ docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
 Relationships belong in frontmatter:
 
 ```yaml
+sequence:
+  roadmap: "3.5"
+  sort_key: "003.005"
+  lane: product
+  after: [PLAN-0034]
 promoted_to:
   - SPEC-0001
 related_specs:
@@ -98,6 +104,23 @@ parent_plan: PLAN-0001
 ```
 
 This keeps filenames readable while still supporting one-to-one, one-to-many, many-to-one, and no-spec plans.
+
+## Roadmap order
+
+`PLAN-*` IDs are stable identity. Do not rename plan IDs or folders just to change execution order; commits, PRs, issues, and session logs may already point at them.
+
+Use `sequence` frontmatter for order:
+
+```yaml
+sequence:
+  roadmap: "3.5.1"
+  sort_key: "003.005.001"
+  lane: product
+  after: [PLAN-0035]
+  before: [PLAN-0036]
+```
+
+Use `scripts/docs-meta roadmap --write` to generate `docs/ROADMAP-VIEW.md` from plan frontmatter.
 
 ## Status and todos
 

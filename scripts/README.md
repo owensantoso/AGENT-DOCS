@@ -42,6 +42,8 @@ docs/IDEAS.md
 docs/DOCS-REGISTRY.md
 docs/TODOS.md
 docs/AREAS.md
+docs/AUDITS.md
+docs/ROADMAP-VIEW.md
 docs/HEALTH.md
 ```
 
@@ -98,12 +100,22 @@ Show advisory docs-health warnings:
 
 ```bash
 scripts/docs-meta health
-scripts/docs-meta health --stale-days 30 --commit-threshold 20
+scripts/docs-meta health --stale-days 30 --commit-threshold 20 --audit-days 45
 scripts/docs-meta health --json
 scripts/docs-meta health --write
 ```
 
-`health` is intentionally softer than `check`. It flags docs that may be worth reviewing because they are old, still in an open status, missing a review commit, or many commits behind `repo_state.last_reviewed_commit`. It exits successfully even when warnings exist; treat the output as a review queue, not a CI failure.
+`health` is intentionally softer than `check`. It flags docs that may be worth reviewing because they are old, still in an open status, missing a review commit, many commits behind `repo_state.last_reviewed_commit`, or because the repo has no recent completed repo-health audit. It exits successfully even when warnings exist; treat the output as a review queue, not a CI failure.
+
+Show or write the plan roadmap view:
+
+```bash
+scripts/docs-meta roadmap
+scripts/docs-meta roadmap --json
+scripts/docs-meta roadmap --write
+```
+
+`roadmap` sorts `type: plan` docs by `sequence` frontmatter. `PLAN-*` stays stable identity; `sequence.roadmap`, `sequence.sort_key`, `sequence.after`, and `sequence.before` own execution order.
 
 Run the smoke test after changing `docs-meta` behavior:
 
@@ -131,6 +143,11 @@ related_specs:
 promoted_to:
   - SPEC-0001
 parent_plan: PLAN-0001
+sequence:
+  roadmap: "3.5.1"
+  sort_key: "003.005.001"
+  lane: product
+  after: [PLAN-0035]
 related_issues:
   - "#123"
 ```

@@ -11,6 +11,12 @@ planned_execution_end:
 actual_execution_start:
 actual_execution_end:
 owner:
+sequence:
+  roadmap: "0.0"
+  sort_key: "000.000"
+  lane: product
+  after: []
+  before: []
 areas: []
 related_specs: []
 related_adrs: []

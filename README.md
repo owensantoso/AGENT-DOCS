@@ -213,6 +213,7 @@ docs/
       <repo-health-topic>/
         plan.md
         impl-task-1-<slug>.md
+    audits/
     session-logs/
     state/
   research/
@@ -257,9 +258,10 @@ Use it for:
 - creating new ideas, specs, plans, implementation briefs, and ADRs
 - updating frontmatter status
 - extracting Markdown todos
-- regenerating `IDEAS.md`, `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, and `AREAS.md`
+- regenerating `IDEAS.md`, `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, `AREAS.md`, `AUDITS.md`, and `ROADMAP-VIEW.md`
 - checking duplicate IDs, stale generated docs, metadata contracts, statuses, and mismatched filenames
 - showing advisory docs-health warnings for docs that may be stale or worth reviewing
+- producing a stable-ID plan roadmap from `sequence` frontmatter
 
 The repo tree remains the source of truth. Generated files are views, not separate state.
 
@@ -301,7 +303,7 @@ Add `product/`, `repo-health/`, `research/`, `operations/`, or `marketing/` only
 
 The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. For a new repo, copy the parts of that folder you need instead of translating a flat template list into paths by hand.
 
-Use scaffold files as starting points, not as mandatory paperwork. Keep one canonical home for each doc, then use generated registries like `IDEAS.md`, `SPECS.md`, `AREAS.md`, and `HEALTH.md` for cross-cutting views.
+Use scaffold files as starting points, not as mandatory paperwork. Keep one canonical home for each doc, then use generated registries like `IDEAS.md`, `SPECS.md`, `AREAS.md`, `AUDITS.md`, `ROADMAP-VIEW.md`, and `HEALTH.md` for cross-cutting views.
 
 ### Entry Points
 
@@ -342,6 +344,8 @@ Use scaffold files as starting points, not as mandatory paperwork. Keep one cano
 - [scaffold/docs/decisions/adr/ADR-0000-decision-title.md](scaffold/docs/decisions/adr/ADR-0000-decision-title.md) - durable decision record example
 - [scaffold/docs/repo-health/session-logs/README.md](scaffold/docs/repo-health/session-logs/README.md) - timestamped session-log convention
 - [scaffold/docs/repo-health/session-logs/YYYY-MM-DD-session-title.md](scaffold/docs/repo-health/session-logs/YYYY-MM-DD-session-title.md) - session receipt example
+- [scaffold/docs/repo-health/audits/README.md](scaffold/docs/repo-health/audits/README.md) - periodic repo-health checkup convention
+- [scaffold/docs/repo-health/audits/YYYY-MM-DD-repo-health-audit.md](scaffold/docs/repo-health/audits/YYYY-MM-DD-repo-health-audit.md) - broad docs/architecture/maintenance/test/tooling audit receipt
 - [scaffold/docs/repo-health/state/README.md](scaffold/docs/repo-health/state/README.md) - state-history snapshot guide
 
 ### Domain-Specific Work

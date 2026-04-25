@@ -70,6 +70,35 @@ repo_state:
 - [ ] Define owner boundaries
 AREA
 
+mkdir -p "$docs_root/repo-health/audits"
+cat > "$docs_root/repo-health/audits/2026-04-25-repo-health-audit.md" <<'AUDIT'
+---
+type: repo-health-audit
+title: Repo Health Audit
+status: completed
+created_at: "2026-04-25 10:00:00 JST +0900"
+updated_at: "2026-04-25 10:30:00 JST +0900"
+audit_started_at: "2026-04-25 10:00:00 JST +0900"
+audit_ended_at: "2026-04-25 10:30:00 JST +0900"
+timezone: "JST +0900"
+auditor: smoke-test
+scope:
+  - docs
+  - metadata
+checks:
+  - scripts/docs-meta check
+  - scripts/docs-meta health --write
+related_issues: []
+related_prs: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+next_audit_due:
+---
+
+# 2026-04-25 - Repo Health Audit
+AUDIT
+
 next_idea="$(run_meta next idea)"
 if [[ "$next_idea" != "IDEA-0002" ]]; then
   echo "Expected next IDEA-0002, got $next_idea" >&2
@@ -93,11 +122,17 @@ require_file "$docs_root/SPECS.md"
 require_file "$docs_root/DOCS-REGISTRY.md"
 require_file "$docs_root/TODOS.md"
 require_file "$docs_root/AREAS.md"
+require_file "$docs_root/AUDITS.md"
+require_file "$docs_root/ROADMAP-VIEW.md"
 require_contains "$docs_root/IDEAS.md" "IDEA-0001"
 require_contains "$docs_root/AREAS.md" "AREA-capture"
+require_contains "$docs_root/AUDITS.md" "Repo Health Audit"
+require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001"
 require_contains "$docs_root/TODOS.md" "Define owner boundaries"
 
 run_meta check
+run_meta roadmap --json >/tmp/docs-meta-roadmap.json
+require_contains /tmp/docs-meta-roadmap.json "\"id\": \"PLAN-0001\""
 
 perl -0pi -e 's/updated_at: "[^"]+"/updated_at: "2026-01-01 00:00:00 JST +0900"/' "$docs_root/architecture/areas/AREA-capture.md"
 run_meta health --stale-days 1 >/tmp/docs-meta-health.out
