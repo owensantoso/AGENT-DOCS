@@ -260,7 +260,8 @@ Use it for:
 - next `IDEA-*`, `SPEC-*`, `PLAN-*`, `IMPL-*`, and `ADR-*` IDs
 - creating new ideas, specs, plans, implementation briefs, and ADRs
 - updating frontmatter status
-- extracting Markdown todos
+- extracting Markdown todos, including structured `TODO-*` items for durable coordination
+- validating structured todo IDs, lifecycle states, owner/skill metadata, and plan/brief references
 - regenerating `IDEAS.md`, `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, `AREAS.md`, `AUDITS.md`, and `ROADMAP-VIEW.md`
 - checking duplicate IDs, stale generated docs, metadata contracts, statuses, and mismatched filenames
 - inspecting docs links, backlinks, broken repo-local links, and orphan docs

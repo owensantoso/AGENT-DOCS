@@ -43,6 +43,7 @@ Use this when setting up this workflow in a new repository.
 - Use commit trailers for meaningful commits.
 - Use `scripts/docs-meta move ... --dry-run` before moving or renaming docs when the repo has `docs-meta`.
 - Run `scripts/docs-meta check-links` after docs layout changes.
+- Run `scripts/docs-meta check-todos` when the repo uses structured `TODO-*` items for durable work.
 - Keep roadmap ordering intentional.
 - Move over-detailed execution notes out of parent plans and into briefs.
 - Move over-detailed state history out of `CURRENT_STATE.md` and into `state/`.
@@ -58,6 +59,7 @@ Use this when setting up this workflow in a new repository.
 - the testing guide promises checks the repo does not actually have
 - agents keep implementing from old plans that contradict the codebase
 - tasks marked parallel still fight over the same files
+- durable cross-session work is tracked only by line-number checkboxes instead of stable `TODO-*` IDs
 - the same correction appears in chat more than once but never becomes a doc, template, check, or skill update
 
 If you see these, the docs need simplification, not more layers.

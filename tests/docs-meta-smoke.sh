@@ -70,6 +70,19 @@ repo_state:
 - [ ] Define owner boundaries
 AREA
 
+cat >> "$plan_path" <<'TODOS'
+
+## Structured Todo Smoke
+
+- [ ] TODO-0001 [ready] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0001] Define stable todo model
+- [ ] TODO-0002 [blocked] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0001] [brief:IMPL-0001-01] [blocker:TODO-0001] Wire todo checks
+- [x] TODO-0003 [done] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0001] [verification:tests/docs-meta-smoke.sh] Document todo workflow
+
+```text
+- [ ] TODO-9999 [bogus] This example should not be parsed.
+```
+TODOS
+
 mkdir -p "$docs_root/repo-health/audits"
 cat > "$docs_root/repo-health/audits/2026-04-25-repo-health-audit.md" <<'AUDIT'
 ---
@@ -132,8 +145,20 @@ require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001-shared-capture-implemen
 require_contains "$docs_root/ROADMAP-VIEW.md" "type: generated-view"
 require_contains "$docs_root/ROADMAP-VIEW.md" "updated_at:"
 require_contains "$docs_root/TODOS.md" "Define owner boundaries"
+require_contains "$docs_root/TODOS.md" "Structured Todos"
+require_contains "$docs_root/TODOS.md" "TODO-0001"
 
 run_meta check
+run_meta check-todos >/tmp/docs-meta-check-todos.out 2>&1
+require_contains /tmp/docs-meta-check-todos.out "WARN:"
+run_meta todos --status ready >/tmp/docs-meta-todos-ready.out
+require_contains /tmp/docs-meta-todos-ready.out "TODO-0001"
+run_meta todos --owner main-agent --structured-only >/tmp/docs-meta-todos-owner.out
+require_contains /tmp/docs-meta-todos-owner.out "TODO-0002"
+run_meta todos --plan PLAN-0001 --json >/tmp/docs-meta-todos.json
+require_contains /tmp/docs-meta-todos.json "\"id\": \"TODO-0001\""
+run_meta todos TODO-0003 --all >/tmp/docs-meta-todos-id.out
+require_contains /tmp/docs-meta-todos-id.out "TODO-0003"
 run_meta roadmap --json >/tmp/docs-meta-roadmap.json
 require_contains /tmp/docs-meta-roadmap.json "\"id\": \"PLAN-0001\""
 require_contains /tmp/docs-meta-roadmap.json "\"plan_name\": \"PLAN-0001-shared-capture-implementation\""
@@ -141,6 +166,27 @@ require_file "$docs_root/ROADMAP-VIEW.md"
 run_meta view todos >/tmp/docs-meta-view-todos.md
 require_contains /tmp/docs-meta-view-todos.md "Docs Todos"
 require_contains "$docs_root/TODOS.md" "updated_at:"
+
+cat >> "$plan_path" <<'BADTODO'
+
+- [ ] TODO-0001 [ready] Duplicate todo ID
+- [x] TODO-0004 [in_progress] [owner:main-agent] Checked but active
+- [ ] TODO-0005 [done] Open but done
+- [ ] TODO-0006 [nonsense] Invalid status
+- [ ] TODO-0007 [in_progress] Missing owner
+- [ ] TODO-0008 [blocked] Missing blocker reason
+- [ ] TODO-0009 [ready] [plan:PLAN-9999] Missing plan
+BADTODO
+if run_meta check-todos >/tmp/docs-meta-bad-todos.out 2>&1; then
+  echo "Expected invalid structured todos to fail validation" >&2
+  exit 1
+fi
+require_contains /tmp/docs-meta-bad-todos.out "Duplicate todo ID TODO-0001"
+require_contains /tmp/docs-meta-bad-todos.out "invalid todo status"
+require_contains /tmp/docs-meta-bad-todos.out "in_progress status without owner"
+require_contains /tmp/docs-meta-bad-todos.out "blocked status without blocker"
+require_contains /tmp/docs-meta-bad-todos.out "references missing plan PLAN-9999"
+perl -0pi -e 's/\n- \[ \] TODO-0001 \[ready\] Duplicate todo ID\n- \[x\] TODO-0004 \[in_progress\] \[owner:main-agent\] Checked but active\n- \[ \] TODO-0005 \[done\] Open but done\n- \[ \] TODO-0006 \[nonsense\] Invalid status\n- \[ \] TODO-0007 \[in_progress\] Missing owner\n- \[ \] TODO-0008 \[blocked\] Missing blocker reason\n- \[ \] TODO-0009 \[ready\] \[plan:PLAN-9999\] Missing plan\n//' "$plan_path"
 
 mkdir -p "$docs_root/link-fixtures"
 cat > "$docs_root/link-fixtures/target.md" <<'TARGET'

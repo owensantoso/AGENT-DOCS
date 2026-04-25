@@ -167,6 +167,12 @@ Manual smoke if relevant:
 
 ## Done checklist
 
+- Use structured `TODO-*` IDs here only when this brief needs durable cross-session or delegated progress tracking.
 - [ ] <done condition>
 - [ ] <done condition>
+
+```markdown
+- [ ] TODO-0001 [ready] [owner:<owner>] [skill:<skill-name>] [plan:PLAN-0000] [brief:IMPL-0000-00] <durable coordination item, if needed>
+```
+
 - [ ] <verification complete>

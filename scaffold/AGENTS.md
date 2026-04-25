@@ -24,6 +24,7 @@ Short index. Read the file for your task.
 | Implementing a plan | `docs/plans/README.md` + parent `plan-*` doc + relevant `impl-*` brief(s) |
 | Starting a fresh implementation session | `docs/plans/reusable-implementer-handoff-prompt.md` |
 | Closing a meaningful work session | `<session logs guide path>` |
+| Resuming or delegating todo-backed work | `docs/TODOS.md` or `scripts/docs-meta todos` + parent plan/brief |
 | Surface codebase orientation | `docs/CURRENT_STATE.md` + codebase map + surface `AGENTS.md` |
 | Model / repository seam question | `docs/CURRENT_STATE.md` + seams guide + `docs/ARCHITECTURE.md` |
 | Verification / test command question | testing guide + surface `AGENTS.md` + any execution-readiness doc |
@@ -45,6 +46,9 @@ Short index. Read the file for your task.
   - Implementation briefs win on execution order and verification details.
 - Do not implement from an implementation brief alone without first reading its parent plan.
 - Parent plans and implementation briefs should explicitly call out dependencies and safe parallelization.
+- Use structured `TODO-*` items only for durable coordination across sessions, agents, skills, or reviews; keep tiny checklist items as local checkboxes.
+- `TODO-*` IDs coordinate progress, but parent plans and implementation briefs still define scope and verification.
+- When completing durable todo-backed work, update the source checkbox line and run the repo's todo checks before closeout.
 - When feedback reveals a missed rule, wrong assumption, ambiguous docs, or workflow failure, use `reflect-and-improve` and update the smallest durable source that would prevent a repeat.
 
 ## Behavioral guidelines

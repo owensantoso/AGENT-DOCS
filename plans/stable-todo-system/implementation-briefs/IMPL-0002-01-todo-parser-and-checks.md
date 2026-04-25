@@ -3,13 +3,13 @@ type: implementation-brief
 id: IMPL-0002-01
 title: Todo Parser, Checks, and Agent Guidance
 domain: docs-meta
-status: draft
+status: completed
 created_at: "2026-04-25 20:24:23 JST +0900"
-updated_at: "2026-04-25 20:24:23 JST +0900"
+updated_at: "2026-04-25 20:37:06 JST +0900"
 planned_execution_start:
 planned_execution_end:
 actual_execution_start:
-actual_execution_end:
+actual_execution_end: "2026-04-25 20:36:19 JST +0900"
 parent_plan: PLAN-0002
 task_refs:
   - task-1
@@ -31,7 +31,7 @@ related_issues: []
 related_prs: []
 repo_state:
   based_on_commit: d58cd8e44d046d219b8cf97a6827fa7293eafa2b
-  last_reviewed_commit: d58cd8e44d046d219b8cf97a6827fa7293eafa2b
+  last_reviewed_commit: 10e7099e31b50652143610c1800d4b681e40d3cd
 ---
 
 # IMPL-0002-01 - Todo Parser, Checks, and Agent Guidance
@@ -311,12 +311,12 @@ Manual review:
 
 ## Done checklist
 
-- [ ] Structured todo parser implemented.
-- [ ] Local checkbox extraction preserved.
-- [ ] Todo filters and JSON output implemented.
-- [ ] Todo validation implemented and documented.
-- [ ] Generated `TODOS.md` updated and regenerated.
-- [ ] Plan/brief templates show durable todo usage without over-template creep.
-- [ ] AGENTS.md and subagent guidance updated concisely.
-- [ ] Smoke tests cover valid structured todos, invalid structured todos, filters, JSON, and local checkboxes.
-- [ ] Verification commands pass.
+- [x] Structured todo parser implemented.
+- [x] Local checkbox extraction preserved.
+- [x] Todo filters and JSON output implemented.
+- [x] Todo validation implemented and documented.
+- [x] Generated `TODOS.md` updated and regenerated.
+- [x] Plan/brief templates show durable todo usage without over-template creep.
+- [x] AGENTS.md and subagent guidance updated concisely.
+- [x] Smoke tests cover valid structured todos, invalid structured todos, filters, JSON, and local checkboxes.
+- [x] Verification commands pass.

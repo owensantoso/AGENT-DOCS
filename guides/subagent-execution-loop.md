@@ -14,6 +14,8 @@ This workflow assumes one main agent may coordinate one or more smaller agents.
 8. Update state docs, checklists, and the session log.
 9. Use commit trailers for meaningful commits.
 
+When a repo uses structured `TODO-*` items, cite relevant todo IDs in delegation prompts and closeout notes. Parent plans and implementation briefs own scope; `TODO-*` IDs own progress references. `skill:<name>` todo metadata can guide skill routing, but it is not a substitute for reading the plan or brief.
+
 ## How to decide task grouping
 
 Group tasks into one implementation brief when they share most of the following:
@@ -84,6 +86,7 @@ It should:
 - resolve plan/code mismatches
 - integrate shared seams
 - keep docs and checklists truthful
+- update source `TODO-*` checkboxes and run todo checks when delegated work is todo-backed
 
 ## A simple heuristic
 

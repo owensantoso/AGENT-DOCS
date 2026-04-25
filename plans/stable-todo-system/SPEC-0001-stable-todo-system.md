@@ -4,9 +4,9 @@ id: SPEC-0001
 title: Stable Todo System
 spec_type: improvement
 domain: docs-meta
-status: draft
+status: implemented
 created_at: "2026-04-25 20:18:11 JST +0900"
-updated_at: "2026-04-25 20:18:11 JST +0900"
+updated_at: "2026-04-25 20:37:05 JST +0900"
 owner:
 source:
   type: conversation
@@ -25,7 +25,7 @@ supersedes: []
 superseded_by: []
 repo_state:
   based_on_commit: 66aa243b0355baa41045e6b71ece8b1c31185945
-  last_reviewed_commit: 66aa243b0355baa41045e6b71ece8b1c31185945
+  last_reviewed_commit: 10e7099e31b50652143610c1800d4b681e40d3cd
 ---
 
 # SPEC-0001 - Stable Todo System

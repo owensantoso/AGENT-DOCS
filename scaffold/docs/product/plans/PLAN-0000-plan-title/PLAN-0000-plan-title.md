@@ -109,6 +109,8 @@ Likely modify:
 
 ## Implementation Tasks
 
+Use structured `TODO-*` checkboxes only for durable cross-session coordination. Keep small local checklist items as ordinary Markdown checkboxes.
+
 ### Task 1: <Task title>
 
 **Goal:** <one-sentence task goal>
@@ -122,6 +124,12 @@ Dependencies / parallelization:
 - Depends on: <task numbers or "prerequisites only">
 - Can run in parallel with: <task numbers or "none">
 - Notes: <ownership split or why it is coupled>
+
+Durable todo, if needed:
+
+```markdown
+- [ ] TODO-0001 [ready] [owner:<owner>] [skill:<skill-name>] [plan:PLAN-0000] <coordination task>
+```
 
 ### Task 2: <Task title>
 

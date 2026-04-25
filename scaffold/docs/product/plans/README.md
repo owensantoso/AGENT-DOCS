@@ -142,7 +142,13 @@ superseded
 archived
 ```
 
-Use Markdown checkboxes for local task lists. `docs-meta todos` can derive a repo-level task view without making a second source of truth.
+Use Markdown checkboxes for local task lists. Use structured `TODO-*` checkboxes only when work needs durable coordination across sessions, subagents, skills, commits, or reviews:
+
+```markdown
+- [ ] TODO-0001 [ready] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0002] Define stable todo lifecycle states.
+```
+
+Keep parent plans and implementation briefs authoritative for scope. Use `TODO-*` IDs for progress references, handoff, filtering, and closeout. `docs-meta todos` derives a repo-level task view without making a second source of truth.
 
 ## The planning layers
 

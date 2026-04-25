@@ -85,7 +85,60 @@ List todos:
 scripts/docs-meta todos
 scripts/docs-meta todos PLAN-0001
 scripts/docs-meta todos --all
+scripts/docs-meta todos --status ready
+scripts/docs-meta todos --owner main-agent
+scripts/docs-meta todos --skill docs-writer
+scripts/docs-meta todos --plan PLAN-0001
+scripts/docs-meta todos TODO-0001 --all
+scripts/docs-meta todos --json
+scripts/docs-meta check-todos
 ```
+
+### Structured todos
+
+Use ordinary Markdown checkboxes for local, low-ceremony checklists. Use structured `TODO-*` items only when work needs durable coordination across sessions, agents, subagents, skills, commits, or reviews.
+
+Structured todo syntax stays Markdown-readable:
+
+```markdown
+- [ ] TODO-0001 [ready] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0002] Define stable todo lifecycle states.
+- [ ] TODO-0002 [blocked] [blocker:TODO-0001] [brief:IMPL-0002-01] Add todo validation checks.
+- [x] TODO-0003 [done] [verification:tests/docs-meta-smoke.sh] Document AGENTS.md routing rules.
+```
+
+Allowed lifecycle states:
+
+```text
+backlog
+ready
+in_progress
+blocked
+review
+done
+superseded
+archived
+```
+
+Common metadata keys:
+
+```text
+owner
+skill
+plan
+brief
+depends
+depends_on
+blocks
+blocker
+blocked_by
+reason
+verification
+updated
+```
+
+Source docs remain canonical. `TODOS.md` is a generated dashboard; regenerate it instead of editing it by hand.
+
+`check-todos` validates duplicate IDs, lifecycle/checkbox contradictions, missing owners for `in_progress`, missing blockers or reasons for `blocked`, missing plan/brief references, and missing referenced `TODO-*` dependencies. It may warn about helpful but optional metadata such as `skill` or `updated`.
 
 Regenerate and check generated views:
 
@@ -230,8 +283,9 @@ Copy `scripts/docs-meta` into a repo that uses this docs workflow. Then:
 2. Prefer `scripts/docs-meta new ...` for new ideas, specs, plans, implementation briefs, and ADRs.
 3. Run `scripts/docs-meta update` after meaningful doc changes.
 4. Run `scripts/docs-meta check` before committing docs workflow changes.
+5. Run `scripts/docs-meta check-todos` when the repo uses structured `TODO-*` items for durable coordination.
 
-For stricter repos, wire `scripts/docs-meta check` into CI or a pre-commit hook. Keep the hook as verification; do not hide surprising doc rewrites inside an automatic commit step.
+For stricter repos, wire `scripts/docs-meta check`, `scripts/docs-meta check-links`, and `scripts/docs-meta check-todos` into CI or a pre-commit hook. Keep hooks as verification; do not hide surprising doc or todo rewrites inside an automatic commit step.
 
 ## Limits
 

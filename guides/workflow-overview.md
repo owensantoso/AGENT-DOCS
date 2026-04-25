@@ -37,7 +37,7 @@ These describe where the repo is going:
 - `docs/IDEAS.md` as the global registry for `IDEA-####` IDs
 - `docs/SPECS.md` as the global registry for `SPEC-####` IDs
 
-When available, use `scripts/docs-meta` to derive IDs, status, registries, and todos from the repo tree instead of manually maintaining counters.
+When available, use `scripts/docs-meta` to derive IDs, status, registries, and todos from the repo tree instead of manually maintaining counters. Use structured `TODO-*` items for durable cross-session coordination; keep one-off local checklist items as ordinary Markdown checkboxes.
 
 Use these to understand sequencing, target shape, and feature intent.
 
