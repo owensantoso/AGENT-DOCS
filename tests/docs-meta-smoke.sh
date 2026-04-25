@@ -128,16 +128,25 @@ require_contains "$docs_root/IDEAS.md" "IDEA-0001"
 require_contains "$docs_root/AREAS.md" "AREA-capture"
 require_contains "$docs_root/AUDITS.md" "Repo Health Audit"
 require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001"
+require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001-shared-capture-implementation"
+require_contains "$docs_root/ROADMAP-VIEW.md" "type: generated-view"
+require_contains "$docs_root/ROADMAP-VIEW.md" "updated_at:"
 require_contains "$docs_root/TODOS.md" "Define owner boundaries"
 
 run_meta check
 run_meta roadmap --json >/tmp/docs-meta-roadmap.json
 require_contains /tmp/docs-meta-roadmap.json "\"id\": \"PLAN-0001\""
+require_contains /tmp/docs-meta-roadmap.json "\"plan_name\": \"PLAN-0001-shared-capture-implementation\""
+require_file "$docs_root/ROADMAP-VIEW.md"
+run_meta view todos >/tmp/docs-meta-view-todos.md
+require_contains /tmp/docs-meta-view-todos.md "Docs Todos"
+require_contains "$docs_root/TODOS.md" "updated_at:"
 
 perl -0pi -e 's/updated_at: "[^"]+"/updated_at: "2026-01-01 00:00:00 JST +0900"/' "$docs_root/architecture/areas/AREA-capture.md"
 run_meta health --stale-days 1 >/tmp/docs-meta-health.out
 require_contains /tmp/docs-meta-health.out "stale-by-time"
 require_contains /tmp/docs-meta-health.out "AREA-capture"
+require_contains "$docs_root/HEALTH.md" "updated_at:"
 run_meta health --stale-days 1 --write >/tmp/docs-meta-health-write.out
 require_file "$docs_root/HEALTH.md"
 require_contains "$docs_root/HEALTH.md" "Docs Health"

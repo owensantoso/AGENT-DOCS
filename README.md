@@ -262,6 +262,7 @@ Use it for:
 - checking duplicate IDs, stale generated docs, metadata contracts, statuses, and mismatched filenames
 - showing advisory docs-health warnings for docs that may be stale or worth reviewing
 - producing a stable-ID plan roadmap from `sequence` frontmatter
+- printing generated views in the CLI while refreshing their Markdown cache and `updated_at` metadata
 
 The repo tree remains the source of truth. Generated files are views, not separate state.
 

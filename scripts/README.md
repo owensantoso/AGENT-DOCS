@@ -105,7 +105,7 @@ scripts/docs-meta health --json
 scripts/docs-meta health --write
 ```
 
-`health` is intentionally softer than `check`. It flags docs that may be worth reviewing because they are old, still in an open status, missing a review commit, many commits behind `repo_state.last_reviewed_commit`, or because the repo has no recent completed repo-health audit. It exits successfully even when warnings exist; treat the output as a review queue, not a CI failure.
+`health` is intentionally softer than `check`. It flags docs that may be worth reviewing because they are old, still in an open status, missing a review commit, many commits behind `repo_state.last_reviewed_commit`, or because the repo has no recent completed repo-health audit. It exits successfully even when warnings exist; treat the output as a review queue, not a CI failure. Running it also refreshes `docs/HEALTH.md`.
 
 Show or write the plan roadmap view:
 
@@ -115,7 +115,19 @@ scripts/docs-meta roadmap --json
 scripts/docs-meta roadmap --write
 ```
 
-`roadmap` sorts `type: plan` docs by `sequence` frontmatter. `PLAN-*` stays stable identity; `sequence.roadmap`, `sequence.sort_key`, `sequence.after`, and `sequence.before` own execution order.
+`roadmap` sorts `type: plan` docs by `sequence` frontmatter. `PLAN-*` stays stable identity; `sequence.roadmap`, `sequence.sort_key`, `sequence.after`, and `sequence.before` own execution order. Running it also refreshes `docs/ROADMAP-VIEW.md`.
+
+Print and refresh any generated Markdown view:
+
+```bash
+scripts/docs-meta view specs
+scripts/docs-meta view todos
+scripts/docs-meta view audits
+scripts/docs-meta view roadmap
+scripts/docs-meta view health
+```
+
+Generated views include YAML frontmatter with `type: generated-view`, `status: generated`, and `updated_at`. The `updated_at` field changes whenever the view is regenerated.
 
 Run the smoke test after changing `docs-meta` behavior:
 
