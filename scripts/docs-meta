@@ -99,7 +99,7 @@ REQUIRED_FIELDS_BY_TYPE = {
     "plan": {"type", "id", "title", "domain", "status", "created_at", "updated_at", "areas", "related_specs", "repo_state"},
     "implementation-brief": {"type", "id", "title", "domain", "status", "created_at", "updated_at", "parent_plan", "task_refs", "repo_state"},
     "adr": {"type", "id", "title", "domain", "status", "created_at", "updated_at", "areas", "deciders", "repo_state"},
-    "session-log": {"type", "title", "status", "created_at", "updated_at", "started_at", "ended_at", "timezone", "participants"},
+    "session-log": {"type", "title", "status", "created_at", "updated_at", "started_at", "ended_at", "timezone", "participants", "related_todos"},
     "research-note": {"type", "title", "domain", "status", "created_at", "updated_at", "owner", "question", "links", "repo_state"},
     "release-checklist": {"type", "title", "domain", "status", "created_at", "updated_at", "release_target", "owner", "repo_state"},
     "marketing-plan": {"type", "title", "domain", "status", "created_at", "updated_at", "campaign", "owner", "repo_state"},
@@ -211,6 +211,7 @@ class TodoItem:
     todo_id: str = ""
     status: str = ""
     owner: str = ""
+    agent: str = ""
     skill: str = ""
     plan: str = ""
     brief: str = ""
@@ -224,6 +225,7 @@ class TodoItem:
             "status": self.status,
             "state": self.state,
             "owner": self.owner,
+            "agent": self.agent,
             "skill": self.skill,
             "plan": self.plan,
             "brief": self.brief,
@@ -244,7 +246,7 @@ def parse_args() -> argparse.Namespace:
     sub = parser.add_subparsers(dest="command", required=True)
 
     next_cmd = sub.add_parser("next", help="Print next ID for a doc family.")
-    next_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr"])
+    next_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr", "todo"])
     next_cmd.add_argument("--plan", help="Required for impl IDs, e.g. PLAN-0034")
 
     new_cmd = sub.add_parser("new", help="Create a new idea, spec, plan, impl doc, or ADR.")
@@ -271,6 +273,7 @@ def parse_args() -> argparse.Namespace:
     todos_cmd.add_argument("--all", action="store_true", help="Include completed todos.")
     todos_cmd.add_argument("--status", help="Filter structured todos by lifecycle status.")
     todos_cmd.add_argument("--owner", help="Filter structured todos by owner.")
+    todos_cmd.add_argument("--agent", help="Filter structured todos by agent/session identifier.")
     todos_cmd.add_argument("--skill", help="Filter structured todos by skill.")
     todos_cmd.add_argument("--plan", help="Filter structured todos by PLAN-* reference.")
     todos_cmd.add_argument("--brief", help="Filter structured todos by IMPL-* reference.")
@@ -281,6 +284,7 @@ def parse_args() -> argparse.Namespace:
     sub.add_parser("check", help="Validate IDs, statuses, and generated docs.")
     check_todos_cmd = sub.add_parser("check-todos", help="Validate structured TODO-* metadata.")
     check_todos_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+    check_todos_cmd.add_argument("--strict", action="store_true", help="Warn on optional metadata that improves routing and freshness.")
 
     health_cmd = sub.add_parser("health", help="Show advisory docs freshness and workflow warnings.")
     health_cmd.add_argument("--stale-days", type=int, default=14, help="Flag selected docs not updated in this many days. Default: 14")
@@ -881,6 +885,17 @@ def next_id(family: str, docs: list[Doc], plan: str | None = None) -> str:
     return f"{family.upper()}-{max_num + 1:04d}"
 
 
+def next_todo_id(docs: list[Doc]) -> str:
+    max_num = 0
+    for item in todo_items(docs, include_done=True):
+        if not item.todo_id:
+            continue
+        match = TODO_ID_RE.fullmatch(item.todo_id)
+        if match:
+            max_num = max(max_num, int(match.group(1)))
+    return f"TODO-{max_num + 1:04d}"
+
+
 def find_doc(docs: list[Doc], doc_id: str) -> Doc | None:
     for doc in docs:
         if doc.primary_id == doc_id or doc_id in doc.ids:
@@ -1253,6 +1268,7 @@ def todo_items_for_doc(doc: Doc, include_done: bool = False) -> list[TodoItem]:
             todo_id=todo_id,
             status=status,
             owner=metadata.get("owner", ""),
+            agent=metadata.get("agent", ""),
             skill=metadata.get("skill", ""),
             plan=metadata.get("plan", ""),
             brief=metadata.get("brief", ""),
@@ -1290,6 +1306,8 @@ def filter_todos(items: list[TodoItem], args: argparse.Namespace) -> list[TodoIt
         selected = [item for item in selected if item.status == args.status]
     if getattr(args, "owner", None):
         selected = [item for item in selected if item.owner == args.owner]
+    if getattr(args, "agent", None):
+        selected = [item for item in selected if item.agent == args.agent]
     if getattr(args, "skill", None):
         selected = [item for item in selected if item.skill == args.skill]
     if getattr(args, "plan", None):
@@ -1313,6 +1331,7 @@ def format_todo_rows(items: list[TodoItem]) -> str:
                         item.status,
                         item.todo_id,
                         item.owner,
+                        item.agent,
                         item.skill,
                         item.source,
                         f"{item.path}:{item.line}",
@@ -1451,18 +1470,21 @@ def todos_markdown(docs: list[Doc]) -> str:
     if structured:
         lines.extend(
             [
-                "| ID | Status | Owner | Skill | Source | Line | Plan | Brief | Task |",
-                "|---|---|---|---|---|---:|---|---|---|",
+                "| ID | Status | Owner | Agent | Updated | Skill | Source | Path | Line | Plan | Brief | Task |",
+                "|---|---|---|---|---|---|---|---|---:|---|---|---|",
             ]
         )
         for item in structured:
             lines.append(
-                "| {id} | {status} | {owner} | {skill} | {source} | {line} | {plan} | {brief} | {task} |".format(
+                "| {id} | {status} | {owner} | {agent} | {updated} | {skill} | {source} | {path} | {line} | {plan} | {brief} | {task} |".format(
                     id=markdown_table_cell(item.todo_id),
                     status=markdown_table_cell(item.status),
                     owner=markdown_table_cell(item.owner),
+                    agent=markdown_table_cell(item.agent),
+                    updated=markdown_table_cell(item.metadata.get("updated", "")),
                     skill=markdown_table_cell(item.skill),
                     source=markdown_table_cell(item.source),
+                    path=markdown_table_cell(f"`{item.path}`"),
                     line=item.line,
                     plan=markdown_table_cell(item.plan),
                     brief=markdown_table_cell(item.brief),
@@ -1896,7 +1918,7 @@ def check(root: Path, docs: list[Doc]) -> int:
     return 1 if errors else 0
 
 
-def todo_validation_issues(docs: list[Doc]) -> tuple[list[str], list[str]]:
+def todo_validation_issues(docs: list[Doc], strict: bool = False) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
     items = todo_items(docs, include_done=True)
@@ -1917,10 +1939,23 @@ def todo_validation_issues(docs: list[Doc]) -> tuple[list[str], list[str]]:
             errors.append(f"{where} has checked checkbox but active status {item.status!r} for {item.todo_id}")
         if item.state == "open" and item.status == "done":
             errors.append(f"{where} has open checkbox but done status for {item.todo_id}")
-        if item.status == "in_progress" and not item.owner:
-            errors.append(f"{where} has in_progress status without owner for {item.todo_id}")
+        if item.status == "in_progress":
+            if not item.owner:
+                errors.append(f"{where} has in_progress status without owner for {item.todo_id}")
+            if not item.agent:
+                errors.append(f"{where} has in_progress status without agent for {item.todo_id}")
+            if not item.metadata.get("updated"):
+                errors.append(f"{where} has in_progress status without updated timestamp for {item.todo_id}")
+        if item.status == "review" and not item.metadata.get("updated"):
+            errors.append(f"{where} has review status without updated timestamp for {item.todo_id}")
         if item.status == "blocked" and not any(item.metadata.get(key) for key in ("blocker", "blocked_by", "reason")):
             errors.append(f"{where} has blocked status without blocker, blocked_by, or reason for {item.todo_id}")
+        if item.status == "done" and not any(item.metadata.get(key) for key in ("verification", "evidence", "reason")):
+            errors.append(f"{where} has done status without verification, evidence, or reason for {item.todo_id}")
+        if item.status == "superseded" and not any(item.metadata.get(key) for key in ("replacement", "reason")):
+            errors.append(f"{where} has superseded status without replacement or reason for {item.todo_id}")
+        if item.status == "archived" and not item.metadata.get("reason"):
+            errors.append(f"{where} has archived status without reason for {item.todo_id}")
         if item.plan and item.plan not in doc_ids:
             errors.append(f"{where} references missing plan {item.plan} for {item.todo_id}")
         if item.brief and item.brief not in doc_ids:
@@ -1933,16 +1968,16 @@ def todo_validation_issues(docs: list[Doc]) -> tuple[list[str], list[str]]:
                 ref_id = ref_id.strip()
                 if ref_id.startswith("TODO-") and ref_id not in by_id and not find_todo(structured, ref_id):
                     errors.append(f"{where} references missing todo {ref_id} in {key} for {item.todo_id}")
-        if not item.skill:
+        if strict and not item.skill:
             warnings.append(f"{where} has no skill metadata for {item.todo_id}")
-        if not item.metadata.get("updated"):
+        if strict and item.status in {"blocked", "ready"} and not item.metadata.get("updated"):
             warnings.append(f"{where} has no updated metadata for {item.todo_id}")
 
     return errors, warnings
 
 
-def check_todos(docs: list[Doc], use_json: bool = False) -> int:
-    errors, warnings = todo_validation_issues(docs)
+def check_todos(docs: list[Doc], use_json: bool = False, strict: bool = False) -> int:
+    errors, warnings = todo_validation_issues(docs, strict=strict)
     payload = {"errors": errors, "warnings": warnings}
     if use_json:
         print(json.dumps(payload, indent=2))
@@ -2004,6 +2039,9 @@ def main() -> int:
     docs = read_docs(root)
 
     if args.command == "next":
+        if args.family == "todo":
+            print(next_todo_id(docs))
+            return 0
         print(next_id(args.family, docs, args.plan))
         return 0
     if args.command == "new":
@@ -2034,7 +2072,7 @@ def main() -> int:
         print_json_or_text([item.as_dict() for item in items], format_todo_rows(items), args.json)
         return 0
     if args.command == "check-todos":
-        return check_todos(docs, args.json)
+        return check_todos(docs, args.json, args.strict)
     if args.command == "links":
         refs = link_graph(root, docs)
         if args.target:

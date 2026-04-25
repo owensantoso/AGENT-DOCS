@@ -89,7 +89,7 @@ Common domains:
 
 If a broad router skill exists for the domain, read it first, then follow its map to the needed leaf skill or skills. Router skills should stay concise; leaf skills own detailed workflow.
 
-When a repo uses structured `TODO-*` items, `skill:<name>` metadata can inform skill routing, but the parent plan or implementation brief still defines scope and verification.
+When a repo uses structured `TODO-*` items, `skill:<name>` metadata can inform skill routing, but the parent plan or implementation brief still defines scope and verification. When claiming one, add `owner:`, `agent:`, and `updated:` so future agents can trace the work to the exact runner or session.
 
 ## Orchestration Reflex
 

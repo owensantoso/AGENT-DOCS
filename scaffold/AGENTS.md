@@ -36,7 +36,7 @@ Short index. Read the file for your task.
 - Update `docs/CURRENT_STATE.md` at the end of any plan or multi-task change.
 - Keep `docs/CURRENT_STATE.md` short; move detailed history to state snapshots.
 - Add a timestamped session log for meaningful implementation, planning, or debugging sessions.
-- Use commit trailers for meaningful commits: `Plan:`, `Brief:`, `Spec:`, `ADR:`, `Session:`, `Area:`, and `Verification:` as applicable.
+- Use commit trailers for meaningful commits: `Plan:`, `Brief:`, `Spec:`, `ADR:`, `Todo:`, `Session:`, `Area:`, and `Verification:` as applicable.
 - Capture early, fuzzy, or future-facing thoughts as `IDEA-*` docs instead of bloating specs or plans.
 - If the repo uses `docs/architecture/areas/AREA-*.md`, use those exact `AREA-*` IDs in plan frontmatter, session logs, PRs, issues, and `Area:` commit trailers.
 - Planning doc hierarchy matters.
@@ -48,6 +48,8 @@ Short index. Read the file for your task.
 - Parent plans and implementation briefs should explicitly call out dependencies and safe parallelization.
 - Use structured `TODO-*` items only for durable coordination across sessions, agents, skills, or reviews; keep tiny checklist items as local checkboxes.
 - `TODO-*` IDs coordinate progress, but parent plans and implementation briefs still define scope and verification.
+- When claiming a `TODO-*`, add `owner:`, `agent:`, and `updated:` on the source checkbox line so future agents can find the exact runner/session in chat logs.
+- Cite todo-backed work in session logs, commit trailers, PRs, and issues with `Todo: TODO-####` or equivalent references.
 - Keep source-code TODO comments local; promote them to structured Markdown `TODO-*` items when they need ownership, delegation, review, or cross-session tracking.
 - When completing durable todo-backed work, update the source checkbox line and run the repo's todo checks before closeout.
 - When feedback reveals a missed rule, wrong assumption, ambiguous docs, or workflow failure, use `reflect-and-improve` and update the smallest durable source that would prevent a repeat.

@@ -87,11 +87,14 @@ scripts/docs-meta todos PLAN-0001
 scripts/docs-meta todos --all
 scripts/docs-meta todos --status ready
 scripts/docs-meta todos --owner main-agent
+scripts/docs-meta todos --agent 019dc454-98e1-7b22-9e79-56226fba0039
 scripts/docs-meta todos --skill docs-writer
 scripts/docs-meta todos --plan PLAN-0001
 scripts/docs-meta todos TODO-0001 --all
 scripts/docs-meta todos --json
 scripts/docs-meta check-todos
+scripts/docs-meta check-todos --strict
+scripts/docs-meta next todo
 ```
 
 ### Structured todos
@@ -101,7 +104,7 @@ Use ordinary Markdown checkboxes for local, low-ceremony checklists. Use structu
 Structured todo syntax stays Markdown-readable:
 
 ```markdown
-- [ ] TODO-0001 [ready] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0002] Define stable todo lifecycle states.
+- [ ] TODO-0001 [ready] [skill:docs-writer] [plan:PLAN-0002] Define stable todo lifecycle states.
 - [ ] TODO-0002 [blocked] [blocker:TODO-0001] [brief:IMPL-0002-01] Add todo validation checks.
 - [x] TODO-0003 [done] [verification:tests/docs-meta-smoke.sh] Document AGENTS.md routing rules.
 ```
@@ -123,6 +126,7 @@ Common metadata keys:
 
 ```text
 owner
+agent
 skill
 plan
 brief
@@ -133,14 +137,52 @@ blocker
 blocked_by
 reason
 verification
+evidence
+issue
+pr
+session
+replacement
 updated
 ```
+
+Use `owner:` for the accountable person, role, or coordinating agent. Use `agent:` for the exact runner, chat, thread, subagent, or tool-session identifier when a TODO is claimed so the work is searchable in chat logs. Use `updated:` as an exact local timestamp, for example `2026-04-25 16:20:00 JST +0900`.
+
+### Where structured todos live
+
+Place each `TODO-*` in the lowest durable doc that owns the work:
+
+| Work shape | Put the `TODO-*` in |
+|---|---|
+| Milestone, work package, dependency, or cross-brief progress | Parent plan |
+| One bounded execution slice | Implementation brief |
+| Operational checklist, repo-health pass, or temporary maintenance queue | Checklist, state, audit, or repo-health doc |
+| Inline code note that now needs ownership, delegation, review, or a paper trail | Promote to the related plan or brief; leave a short code comment pointing to the `TODO-*` only if useful |
+
+Parent plans and implementation briefs remain the scope authority. `TODO-*` IDs are progress handles, not replacement requirements.
+
+### Lifecycle actions
+
+Use these edits on the source checkbox line:
+
+| Action | Required update |
+|---|---|
+| Create | Add `TODO-#### [backlog]` or `[ready]` in the owning doc. Use `scripts/docs-meta next todo` for the next ID. |
+| Claim | Change status to `[in_progress]` and add `owner:`, `agent:`, and `updated:`. |
+| Block | Change status to `[blocked]` and add `blocker:`, `blocked_by:`, or `reason:`. |
+| Send to review | Change status to `[review]` and refresh `updated:`. |
+| Close | Check the box, set `[done]`, and add `verification:`, `evidence:`, or `reason:`. |
+| Supersede | Set `[superseded]` and add `replacement:` or `reason:`. |
+| Archive | Set `[archived]` and add `reason:`. |
+
+IMPORTANT: edit the source doc, not `TODOS.md`. `TODOS.md` is generated from source checkboxes.
 
 Source docs remain canonical. `TODOS.md` is a generated dashboard; regenerate it instead of editing it by hand.
 
 Source-code TODO comments are intentionally not scanned by `docs-meta`. Keep inline TODO comments for local implementation notes that only matter near that code. If an inline TODO needs ownership, delegation, review, cross-session tracking, or commit/PR/session-log references, promote it to a structured Markdown `TODO-*` in the relevant plan, implementation brief, checklist, or state doc, and leave a short code comment pointing to that ID only when it helps the next reader.
 
-`check-todos` validates duplicate IDs, lifecycle/checkbox contradictions, missing owners for `in_progress`, missing blockers or reasons for `blocked`, missing plan/brief references, and missing referenced `TODO-*` dependencies. It may warn about helpful but optional metadata such as `skill` or `updated`.
+When a commit, PR, issue, or session log is todo-backed, cite the `TODO-*` ID there too. Use source-doc metadata such as `issue:#123`, `pr:#456`, and `session:repo-health/session-logs/YYYY-MM-DD-session-title.md` when it helps future lookup, but do not make GitHub the only source of task truth.
+
+`check-todos` validates duplicate IDs, lifecycle/checkbox contradictions, missing claim metadata for `in_progress`, missing freshness for `review`, missing blockers or reasons for `blocked`, missing closeout evidence for `done`, missing plan/brief references, and missing referenced `TODO-*` dependencies. `check-todos --strict` also warns about helpful routing/freshness metadata such as `skill` and `updated` on ready or blocked work.
 
 Regenerate and check generated views:
 

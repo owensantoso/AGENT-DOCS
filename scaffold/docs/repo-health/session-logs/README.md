@@ -80,6 +80,7 @@ Plan: <plan path>
 Brief: <brief path>
 Spec: <spec path>
 ADR: <adr path>
+Todo: TODO-####
 Session: <session log path>
 Area: <area>
 Verification: <commands/checks>

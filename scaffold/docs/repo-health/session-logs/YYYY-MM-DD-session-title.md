@@ -14,6 +14,7 @@ related_plans: []
 related_briefs: []
 related_specs: []
 related_adrs: []
+related_todos: []
 related_issues: []
 related_prs: []
 commits: []
@@ -27,6 +28,7 @@ commits: []
 - Ended: YYYY-MM-DD HH:MM:SS TZ +0000
 - Timezone: TZ +0000
 - Participants: Human, agent/tooling names if useful
+- Todo-backed work: `TODO-*` IDs claimed, reviewed, closed, or created in this session
 
 ## Goal
 

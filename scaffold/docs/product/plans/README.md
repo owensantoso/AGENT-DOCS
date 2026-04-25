@@ -145,12 +145,23 @@ archived
 Use Markdown checkboxes for local task lists. Use structured `TODO-*` checkboxes only when work needs durable coordination across sessions, subagents, skills, commits, or reviews:
 
 ```markdown
-- [ ] TODO-0001 [ready] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0002] Define stable todo lifecycle states.
+- [ ] TODO-0001 [ready] [skill:docs-writer] [plan:PLAN-0002] Define stable todo lifecycle states.
 ```
 
 Keep parent plans and implementation briefs authoritative for scope. Use `TODO-*` IDs for progress references, handoff, filtering, and closeout. `docs-meta todos` derives a repo-level task view without making a second source of truth.
 
 `docs-meta` does not scan source-code TODO comments. Keep those comments for local implementation notes. Promote an in-file TODO to a structured Markdown `TODO-*` when it needs ownership, delegation, review, or cross-session tracking.
+
+Place structured todos in the lowest durable doc that owns the work:
+
+| Work shape | Put the `TODO-*` in |
+|---|---|
+| Milestone, dependency, or cross-brief progress | Parent plan |
+| One bounded execution slice | Implementation brief |
+| Operational checklist, repo-health pass, or temporary maintenance queue | Checklist, state, audit, or repo-health doc |
+| Inline code TODO that now needs ownership or review | Promote it to the related plan or brief |
+
+When claiming a `TODO-*`, add `owner:`, `agent:`, and `updated:` on the source checkbox line. Use `owner:` for accountability and `agent:` for the exact runner/session ID when available.
 
 ## The planning layers
 
@@ -299,6 +310,7 @@ When GitHub issues are used:
 - decision sub-issues track unresolved choices
 - investigation sub-issues track ambiguity reduction
 - issues should link to the source docs in a paper trail
+- issue bodies and PR descriptions may cite `TODO-*` IDs for progress references, but should still link the parent plan or implementation brief as the scope authority
 
 Do not make issues the only memory system when specs, plans, or implementation briefs exist.
 

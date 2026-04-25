@@ -172,7 +172,7 @@ Manual smoke if relevant:
 - [ ] <done condition>
 
 ```markdown
-- [ ] TODO-0001 [ready] [owner:<owner>] [skill:<skill-name>] [plan:PLAN-0000] [brief:IMPL-0000-00] <durable coordination item, if needed>
+- [ ] TODO-0001 [ready] [skill:<skill-name>] [plan:PLAN-0000] [brief:IMPL-0000-00] <durable coordination item, if needed>
 ```
 
 - [ ] <verification complete>

@@ -77,6 +77,7 @@ cat >> "$plan_path" <<'TODOS'
 - [ ] TODO-0001 [ready] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0001] Define stable todo model
 - [ ] TODO-0002 [blocked] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0001] [brief:IMPL-0001-01] [blocker:TODO-0001] Wire todo checks
 - [x] TODO-0003 [done] [owner:main-agent] [skill:docs-writer] [plan:PLAN-0001] [verification:tests/docs-meta-smoke.sh] Document todo workflow
+- [ ] TODO-0004 [in_progress] [owner:main-agent] [agent:smoke-agent] [updated:2026-04-25 10:20:00 JST +0900] [skill:docs-writer] [plan:PLAN-0001] Claim todo work
 - [ ] Follow up on TODO-0001 in review notes
 - [ ] Local task with a | pipe
 
@@ -126,6 +127,12 @@ if [[ "$next_adr" != "ADR-0002" ]]; then
   exit 1
 fi
 
+next_todo="$(run_meta next todo)"
+if [[ "$next_todo" != "TODO-0005" ]]; then
+  echo "Expected next TODO-0005, got $next_todo" >&2
+  exit 1
+fi
+
 run_meta set-status ADR-0001 accepted >/dev/null
 require_contains "$adr_path" "status: accepted"
 run_meta set-status IDEA-0001 exploring >/dev/null
@@ -153,13 +160,18 @@ require_contains "$docs_root/TODOS.md" "Local task with a \\| pipe"
 
 run_meta check
 run_meta check-todos >/tmp/docs-meta-check-todos.out 2>&1
-require_contains /tmp/docs-meta-check-todos.out "WARN:"
+require_contains /tmp/docs-meta-check-todos.out "No todo issues found."
+run_meta check-todos --strict >/tmp/docs-meta-check-todos-strict.out 2>&1
+require_contains /tmp/docs-meta-check-todos-strict.out "WARN:"
 run_meta todos --status ready >/tmp/docs-meta-todos-ready.out
 require_contains /tmp/docs-meta-todos-ready.out "TODO-0001"
 run_meta todos --owner main-agent --structured-only >/tmp/docs-meta-todos-owner.out
 require_contains /tmp/docs-meta-todos-owner.out "TODO-0002"
+run_meta todos --agent smoke-agent --structured-only >/tmp/docs-meta-todos-agent.out
+require_contains /tmp/docs-meta-todos-agent.out "TODO-0004"
 run_meta todos --plan PLAN-0001 --json >/tmp/docs-meta-todos.json
 require_contains /tmp/docs-meta-todos.json "\"id\": \"TODO-0001\""
+require_contains /tmp/docs-meta-todos.json "\"agent\": \"smoke-agent\""
 run_meta todos TODO-0003 --all >/tmp/docs-meta-todos-id.out
 require_contains /tmp/docs-meta-todos-id.out "TODO-0003"
 run_meta todos --structured-only --all >/tmp/docs-meta-todos-structured.out
@@ -178,12 +190,14 @@ require_contains "$docs_root/TODOS.md" "updated_at:"
 cat >> "$plan_path" <<'BADTODO'
 
 - [ ] TODO-0001 [ready] Duplicate todo ID
-- [x] TODO-0004 [in_progress] [owner:main-agent] Checked but active
-- [ ] TODO-0005 [done] Open but done
-- [ ] TODO-0006 [nonsense] Invalid status
-- [ ] TODO-0007 [in_progress] Missing owner
-- [ ] TODO-0008 [blocked] Missing blocker reason
-- [ ] TODO-0009 [ready] [plan:PLAN-9999] Missing plan
+- [x] TODO-0005 [in_progress] [owner:main-agent] Checked but active
+- [ ] TODO-0006 [done] Open but done
+- [ ] TODO-0007 [nonsense] Invalid status
+- [ ] TODO-0008 [in_progress] Missing owner
+- [ ] TODO-0009 [in_progress] [owner:main-agent] Missing agent and timestamp
+- [ ] TODO-0010 [blocked] Missing blocker reason
+- [x] TODO-0011 [done] Missing done evidence
+- [ ] TODO-0012 [ready] [plan:PLAN-9999] Missing plan
 BADTODO
 if run_meta check-todos >/tmp/docs-meta-bad-todos.out 2>&1; then
   echo "Expected invalid structured todos to fail validation" >&2
@@ -192,9 +206,12 @@ fi
 require_contains /tmp/docs-meta-bad-todos.out "Duplicate todo ID TODO-0001"
 require_contains /tmp/docs-meta-bad-todos.out "invalid todo status"
 require_contains /tmp/docs-meta-bad-todos.out "in_progress status without owner"
+require_contains /tmp/docs-meta-bad-todos.out "in_progress status without agent"
+require_contains /tmp/docs-meta-bad-todos.out "in_progress status without updated timestamp"
 require_contains /tmp/docs-meta-bad-todos.out "blocked status without blocker"
+require_contains /tmp/docs-meta-bad-todos.out "done status without verification"
 require_contains /tmp/docs-meta-bad-todos.out "references missing plan PLAN-9999"
-perl -0pi -e 's/\n- \[ \] TODO-0001 \[ready\] Duplicate todo ID\n- \[x\] TODO-0004 \[in_progress\] \[owner:main-agent\] Checked but active\n- \[ \] TODO-0005 \[done\] Open but done\n- \[ \] TODO-0006 \[nonsense\] Invalid status\n- \[ \] TODO-0007 \[in_progress\] Missing owner\n- \[ \] TODO-0008 \[blocked\] Missing blocker reason\n- \[ \] TODO-0009 \[ready\] \[plan:PLAN-9999\] Missing plan\n//' "$plan_path"
+perl -0pi -e 's/\n- \[ \] TODO-0001 \[ready\] Duplicate todo ID\n- \[x\] TODO-0005 \[in_progress\] \[owner:main-agent\] Checked but active\n- \[ \] TODO-0006 \[done\] Open but done\n- \[ \] TODO-0007 \[nonsense\] Invalid status\n- \[ \] TODO-0008 \[in_progress\] Missing owner\n- \[ \] TODO-0009 \[in_progress\] \[owner:main-agent\] Missing agent and timestamp\n- \[ \] TODO-0010 \[blocked\] Missing blocker reason\n- \[x\] TODO-0011 \[done\] Missing done evidence\n- \[ \] TODO-0012 \[ready\] \[plan:PLAN-9999\] Missing plan\n//' "$plan_path"
 
 mkdir -p "$docs_root/link-fixtures"
 cat > "$docs_root/link-fixtures/target.md" <<'TARGET'

@@ -128,7 +128,7 @@ Dependencies / parallelization:
 Durable todo, if needed:
 
 ```markdown
-- [ ] TODO-0001 [ready] [owner:<owner>] [skill:<skill-name>] [plan:PLAN-0000] <coordination task>
+- [ ] TODO-0001 [ready] [skill:<skill-name>] [plan:PLAN-0000] <coordination task>
 ```
 
 ### Task 2: <Task title>

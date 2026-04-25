@@ -16,6 +16,15 @@ This workflow assumes one main agent may coordinate one or more smaller agents.
 
 When a repo uses structured `TODO-*` items, cite relevant todo IDs in delegation prompts and closeout notes. Parent plans and implementation briefs own scope; `TODO-*` IDs own progress references. `skill:<name>` todo metadata can guide skill routing, but it is not a substitute for reading the plan or brief.
 
+For todo-backed delegation, the main agent should usually claim or assign the TODO before handing it off:
+
+- set `[in_progress]`
+- add `owner:` for the accountable role or person
+- add `agent:` for the exact runner, subagent, chat, thread, or tool-session identifier when available
+- add `updated:` with an exact local timestamp
+
+Subagents should report the TODO IDs they touched and the verification they ran. They should not mark a source TODO done unless the delegation prompt explicitly gives them that authority.
+
 ## How to decide task grouping
 
 Group tasks into one implementation brief when they share most of the following:
