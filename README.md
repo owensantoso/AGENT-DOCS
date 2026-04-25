@@ -16,11 +16,31 @@ This kit is useful when:
 ## Read This First
 
 1. [AGENTS.md](AGENTS.md) - local instructions for working in this repo
-2. [guides/workflow-overview.md](guides/workflow-overview.md) - the workflow in one pass
-3. [guides/doc-types-and-responsibilities.md](guides/doc-types-and-responsibilities.md) - what each doc type owns
-4. [guides/subagent-execution-loop.md](guides/subagent-execution-loop.md) - how to split, delegate, and integrate work
-5. [guides/adoption-checklist.md](guides/adoption-checklist.md) - how to install the workflow in another repo
-6. [plans/README.md](plans/README.md) - upstream AGENT-DOCS and docs-meta improvement plans
+2. [INSTALL.md](INSTALL.md) - exact copy, edit, handoff, and verification steps for another repo
+3. [guides/workflow-overview.md](guides/workflow-overview.md) - the workflow in one pass
+4. [guides/doc-types-and-responsibilities.md](guides/doc-types-and-responsibilities.md) - what each doc type owns
+5. [guides/subagent-execution-loop.md](guides/subagent-execution-loop.md) - how to split, delegate, and integrate work
+6. [guides/adoption-checklist.md](guides/adoption-checklist.md) - setup checklist for adapting the workflow
+7. [plans/README.md](plans/README.md) - upstream AGENT-DOCS and docs-meta improvement plans
+
+## Install In Another Repo
+
+If your immediate job is "make another repository use this workflow," start with [INSTALL.md](INSTALL.md).
+
+Short version:
+
+```bash
+AGENT_DOCS=/path/to/AGENT-DOCS
+cp "$AGENT_DOCS/scaffold/AGENTS.md" ./AGENTS.md
+mkdir -p docs
+rsync -av "$AGENT_DOCS/scaffold/docs/" ./docs/
+mkdir -p scripts tests
+cp "$AGENT_DOCS/scripts/docs-meta" ./scripts/docs-meta
+cp "$AGENT_DOCS/tests/docs-meta-smoke.sh" ./tests/docs-meta-smoke.sh
+chmod +x ./scripts/docs-meta ./tests/docs-meta-smoke.sh
+```
+
+Then adapt placeholders, delete irrelevant examples, and make `AGENTS.md` plus `docs/orientation/CURRENT_STATE.md` truthful for that repo.
 
 Reusable global and surface-level agent instructions live under `scaffold/agent-instructions/`. Keep those separate from repo-specific docs so personal defaults, project rules, and future persona files can evolve without crowding every target repo root.
 

@@ -2,7 +2,11 @@
 
 This folder is shaped like the repo docs tree it creates.
 
-Copy the parts you need into a target repo, then delete examples that do not apply. The scaffold is intentionally topic-first:
+Copy the parts you need into a target repo, then delete examples that do not apply. For exact safe copy commands, use the upstream [../INSTALL.md](../INSTALL.md) guide.
+
+Do not copy this whole folder directly into a target repo root. This folder contains its own `README.md`; copy `AGENTS.md`, `docs/`, optional `agent-instructions/`, and optional tools deliberately.
+
+The scaffold is intentionally topic-first:
 
 ```text
 docs/

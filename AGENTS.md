@@ -5,11 +5,12 @@ This folder is a reusable documentation kit for agent-driven software work.
 ## Read order
 
 1. `README.md`
-2. `guides/workflow-overview.md`
-3. `guides/doc-types-and-responsibilities.md`
-4. `guides/subagent-execution-loop.md`
-5. `guides/adoption-checklist.md`
-6. the files under `templates/` that match the repo you are setting up
+2. `INSTALL.md` when setting this workflow up in another repo
+3. `guides/workflow-overview.md`
+4. `guides/doc-types-and-responsibilities.md`
+5. `guides/subagent-execution-loop.md`
+6. `guides/adoption-checklist.md`
+7. the files under `scaffold/` that match the repo you are setting up
 
 ## Purpose
 
@@ -25,6 +26,7 @@ Use this pack when you want to bootstrap a repo that supports:
 ## Rules
 
 - Do not copy templates blindly. Adapt naming, paths, verification commands, and stack-specific guidance.
+- Do not copy the whole `scaffold/` folder into a target repo root. Use `INSTALL.md` so target repo files such as `README.md` are not overwritten accidentally.
 - Keep parent plans architectural. Do not turn them into pseudo-patches.
 - Only create implementation briefs when they make delegation, resumability, or verification meaningfully safer.
 - Group tasks when they share one seam, one hot file set, one verification path, or one tightly coupled invariant.

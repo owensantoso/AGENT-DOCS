@@ -2,6 +2,18 @@
 
 Use this when setting up this workflow in a new repository.
 
+For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.md](../INSTALL.md). This checklist is the readiness test after the scaffold has been copied and adapted.
+
+## Copy steps
+
+- Set `AGENT_DOCS=/path/to/AGENT-DOCS` in the target repo shell.
+- Copy `scaffold/AGENTS.md` to the target repo root, merging if one already exists.
+- Copy `scaffold/docs/` into the target repo's `docs/` folder.
+- Optionally copy `scripts/docs-meta` and `tests/docs-meta-smoke.sh`.
+- Optionally copy `scaffold/agent-instructions/` into a repo-health or team instructions folder.
+- Do not copy `scaffold/README.md` over the target repo's root README.
+- Delete or rewrite example `0000` files before treating the docs as target-repo truth.
+
 ## Minimum setup
 
 - Create a root `AGENTS.md`.
