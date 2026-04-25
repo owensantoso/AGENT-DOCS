@@ -209,7 +209,7 @@ scripts/docs-meta view questions
 
 Do not use learning records for routine implementation narration. Use session logs for what happened, ADRs for durable decisions, research notes for investigations, specs for requirements, and plans or briefs for execution scope.
 
-Keep local open questions in the owning spec, plan, implementation brief, research note, session log, explainer, or learning record. Create a `QST-*` when the question needs durable status, ownership, links, or resolution history. Promote a question to `TODO-*` only when it needs action, verification, or closeout.
+Ask ordinary clarification questions in chat. Keep local open questions in the owning spec, plan, implementation brief, research note, session log, explainer, or learning record. Create a `QST-*` only when unresolved uncertainty needs durable status, ownership, links, or resolution history across sessions. Promote a question to `TODO-*` only when it needs action, verification, or closeout.
 
 Use `EXPL-*` explainers for reusable human-facing teaching material. Include a visualization-pass-style diagram when structure, flow, state, ownership, or behavior is clearer visually than in prose.
 

@@ -140,6 +140,8 @@ Should answer:
 
 Questions are not tasks by default. Promote a question to `TODO-*` only when it needs action, ownership, verification, or closeout.
 
+Do not create `QST-*` records for ordinary clarification. Ask short-lived questions in chat, or keep local open questions in the owning spec, plan, implementation brief, research note, session log, explainer, or learning record. Promote a question to `QST-*` only when the unresolved uncertainty needs durable status, ownership, links, or resolution history across sessions.
+
 ## Session log
 
 Purpose:

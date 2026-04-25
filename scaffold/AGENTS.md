@@ -43,7 +43,7 @@ Short index. Read the file for your task.
 - Capture early, fuzzy, or future-facing thoughts as `IDEA-*` docs instead of bloating specs or plans.
 - Capture lessons learned as `LRN-*` records instead of leaving them trapped in chat.
 - Capture reusable human-facing explanations as `EXPL-*` docs. Use visualization-pass-style diagrams when structure, flow, state, ownership, or behavior is clearer visually.
-- Capture durable unresolved questions as `QST-*` docs when they need status, ownership, links, or resolution history.
+- Capture durable unresolved questions as `QST-*` docs only when they need status, ownership, links, or resolution history across sessions. Ask ordinary clarification questions in chat.
 - If the repo uses `docs/architecture/areas/AREA-*.md`, use those exact `AREA-*` IDs in plan frontmatter, session logs, PRs, issues, and `Area:` commit trailers.
 - Planning doc hierarchy matters.
   - Parent `plan-*` docs define scope, architecture, invariants, and non-goals.

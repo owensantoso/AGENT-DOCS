@@ -48,6 +48,6 @@ Map of the documentation system.
 - Use ADRs for durable cross-plan decisions.
 - Use `LRN-*` records for lessons learned, not routine session narration.
 - Use `EXPL-*` docs for durable human-facing explanations; include visualization-pass-style diagrams when structure or flow is clearer visually.
-- Use `QST-*` records for durable questions that need status, ownership, links, or resolution history.
+- Use `QST-*` records only for durable unresolved questions that need status, ownership, links, or resolution history across sessions.
 - Keep local open questions in the owning spec, plan, brief, research note, session log, explainer, or learning record until they need `QST-*` tracking or `TODO-*` ownership.
 - If architecture is split, make `AREA-*` IDs match `docs/architecture/areas/AREA-*.md` filenames exactly.

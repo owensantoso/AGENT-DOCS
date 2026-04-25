@@ -35,7 +35,7 @@ repo_state:
 
 ## Question
 
-State the unresolved question clearly.
+State the unresolved question clearly. This should be durable uncertainty, not an ordinary clarification question that belongs in chat.
 
 ## Why It Matters
 
