@@ -86,7 +86,7 @@ For current commands, use:
 ## Where To Look
 
 | Need | Read |
-|---|---|---|
+|---|---|
 | First orientation | `<onboarding-path>` |
 | Current architecture | `<architecture-path>` |
 | Roadmap order | `<roadmap-path>` |

@@ -4,7 +4,7 @@ This surface is one of the main implementation areas in the repo.
 
 ## Read first
 
-- `docs/CURRENT_STATE.md`
+- `docs/orientation/CURRENT_STATE.md`
 - `<surface codebase map doc>`
 - `<seams guide doc>`
 - `<testing guide doc>`

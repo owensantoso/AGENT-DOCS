@@ -27,7 +27,7 @@ This kit is useful when:
 
 If your immediate job is "make another repository use this workflow," start with [INSTALL.md](INSTALL.md).
 
-Short version:
+Short version for a repo that also wants `docs-meta`:
 
 ```bash
 AGENT_DOCS=/path/to/AGENT-DOCS
@@ -42,7 +42,7 @@ chmod +x ./scripts/docs-meta ./tests/docs-meta-smoke.sh
 
 Then adapt placeholders, delete irrelevant examples, and make `AGENTS.md` plus `docs/orientation/CURRENT_STATE.md` truthful for that repo.
 
-Reusable global and surface-level agent instructions live under `scaffold/agent-instructions/`. Keep those separate from repo-specific docs so personal defaults, project rules, and future persona files can evolve without crowding every target repo root.
+Reusable global and surface-level agent instructions live under `scaffold/agent-instructions/`. These are reusable `AGENTS.md` templates, not Codex `SKILL.md` skills. Keep them separate from repo-specific docs so personal defaults, project rules, and future persona files can evolve without crowding every target repo root.
 
 ## The Folder Model
 

@@ -13,6 +13,7 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 - Optionally copy `scaffold/agent-instructions/` into a repo-health or team instructions folder.
 - Do not copy `scaffold/README.md` over the target repo's root README.
 - Delete or rewrite example `0000` files before treating the docs as target-repo truth.
+- Search for unreplaced placeholders such as `<path>`, `<command>`, or `<repo name>` before handoff.
 
 ## Minimum setup
 
@@ -30,7 +31,7 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 ## Strongly recommended setup
 
 - Create a reusable implementer handoff prompt.
-- Create at least one surface-level `AGENTS.md`.
+- Create at least one surface-level `AGENTS.md`, placed at the root of the surface it governs, such as `apps/web/AGENTS.md`, `packages/api/AGENTS.md`, or `docs/AGENTS.md`.
 - Create a codebase map for the main app or service surface.
 - Create a testing guide that lists the real verification commands.
 - Create a seams guide if the repo has compatibility layers or transitional models.

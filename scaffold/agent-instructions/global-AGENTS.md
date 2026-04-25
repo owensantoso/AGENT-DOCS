@@ -75,6 +75,8 @@ When the correction creates durable understanding that future humans or agents s
 
 ## Skill Routing Reflex
 
+In this workflow, `AGENTS.md` files are instruction docs. "Skills" here means actual environment-provided Codex skills, not these reusable `AGENTS.md` templates.
+
 Before selecting specific skills, classify the request into one or more broad domains.
 
 Common domains:

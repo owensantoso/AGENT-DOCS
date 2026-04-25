@@ -20,13 +20,13 @@ Short index. Read the file for your task.
 
 | Task | Read |
 |---|---|
-| Any code change | `docs/CURRENT_STATE.md` + relevant surface `AGENTS.md` |
-| Implementing a plan | `docs/plans/README.md` + parent `plan-*` doc + relevant `impl-*` brief(s) |
-| Starting a fresh implementation session | `docs/plans/reusable-implementer-handoff-prompt.md` |
+| Any code change | `docs/orientation/CURRENT_STATE.md` + relevant surface `AGENTS.md` |
+| Implementing a plan | relevant `<domain>/plans/README.md` + parent `PLAN-*` doc + relevant `IMPL-*` brief(s) |
+| Starting a fresh implementation session | `docs/repo-health/prompts/reusable-implementer-handoff-prompt.md` |
 | Closing a meaningful work session | `<session logs guide path>` |
 | Resuming or delegating todo-backed work | `docs/TODOS.md` or `scripts/docs-meta todos` + parent plan/brief |
-| Surface codebase orientation | `docs/CURRENT_STATE.md` + codebase map + surface `AGENTS.md` |
-| Model / repository seam question | `docs/CURRENT_STATE.md` + seams guide + `docs/ARCHITECTURE.md` |
+| Surface codebase orientation | `docs/orientation/CURRENT_STATE.md` + codebase map + surface `AGENTS.md` |
+| Model / repository seam question | `docs/orientation/CURRENT_STATE.md` + seams guide + `docs/orientation/ARCHITECTURE.md` |
 | Verification / test command question | testing guide + surface `AGENTS.md` + any execution-readiness doc |
 | Future feature request | `docs/IDEAS.md` + relevant `docs/<domain>/ideas/IDEA-####-<slug>.md` |
 | Repeated confusion or corrected understanding | `docs/LEARNINGS.md` + relevant `docs/decisions/learnings/LRN-####-<slug>.md` |
@@ -36,8 +36,8 @@ Short index. Read the file for your task.
 ## Rules
 
 - Never invent scope. If it is not in a spec or plan, ask.
-- Update `docs/CURRENT_STATE.md` at the end of any plan or multi-task change.
-- Keep `docs/CURRENT_STATE.md` short; move detailed history to state snapshots.
+- Update `docs/orientation/CURRENT_STATE.md` at the end of any plan or multi-task change.
+- Keep `docs/orientation/CURRENT_STATE.md` short; move detailed history to state snapshots.
 - Add a timestamped session log for meaningful implementation, planning, or debugging sessions.
 - Use commit trailers for meaningful commits: `Plan:`, `Brief:`, `Spec:`, `ADR:`, `Todo:`, `Session:`, `Area:`, and `Verification:` as applicable.
 - Capture early, fuzzy, or future-facing thoughts as `IDEA-*` docs instead of bloating specs or plans.

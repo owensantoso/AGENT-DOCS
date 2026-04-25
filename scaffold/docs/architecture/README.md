@@ -18,7 +18,7 @@ These docs should not hold:
 - session journals
 - long rationale that belongs in ADRs
 
-Put current reality in `../CURRENT_STATE.md`, execution details in plans or implementation briefs, and durable decisions in ADRs.
+Put current reality in `../orientation/CURRENT_STATE.md`, execution details in plans or implementation briefs, and durable decisions in ADRs.
 
 ## Reading Order
 

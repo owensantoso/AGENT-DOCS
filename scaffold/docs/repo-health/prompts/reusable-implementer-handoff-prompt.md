@@ -7,10 +7,10 @@ Use this when starting a new implementation session or handing a milestone to a 
 ```text
 Start by reading, in order:
 
-1. docs/CURRENT_STATE.md
-2. docs/ONBOARDING.md or equivalent orientation doc
-3. docs/ROADMAP.md
-4. docs/ARCHITECTURE.md
+1. docs/orientation/CURRENT_STATE.md
+2. docs/orientation/ONBOARDING.md or equivalent orientation doc
+3. docs/orientation/ROADMAP.md
+4. docs/orientation/ARCHITECTURE.md
 5. the relevant `SPEC-*` doc
 6. the parent plan doc
 7. the relevant implementation brief(s)

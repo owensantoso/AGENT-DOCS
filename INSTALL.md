@@ -79,6 +79,8 @@ scaffold/agent-instructions/
 
 Use `global-AGENTS.md` as personal or organization-level Codex guidance. Use `surface-AGENTS.md` for a specific app, package, service, or docs area inside the target repo.
 
+These are `AGENTS.md` instruction templates, not Codex `SKILL.md` packages. `skill:<name>` TODO metadata is routing metadata unless the target environment separately provides matching skills.
+
 For example:
 
 ```bash
@@ -87,6 +89,7 @@ cp "$AGENT_DOCS/scaffold/agent-instructions/"*.md ./docs/repo-health/agent-instr
 ```
 
 Then adapt the placeholders before relying on them.
+These copied files are reference templates until you rename or place them as real surface-level `AGENTS.md` files where they govern active work.
 
 ## What To Keep Or Delete
 
@@ -121,6 +124,7 @@ Before handing off the target repo, make these true:
 - Implementation briefs exist only for bounded work that benefits from delegation or resumability.
 - Session logs exist for meaningful setup, planning, debugging, or implementation sessions.
 - Generated files such as `IDEAS.md`, `SPECS.md`, `LEARNINGS.md`, `EXPLAINERS.md`, `QUESTIONS.md`, `TODOS.md`, and `ROADMAP-VIEW.md` are treated as views, not hand-maintained source.
+- A quick search for unreplaced placeholder text such as `<path>` or `<command>` comes back clean enough for handoff.
 
 ## Paste This Prompt To Another Agent
 

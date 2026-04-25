@@ -18,7 +18,7 @@ repo_state:
 
 # Architecture
 
-System overview for <repo or product>. This document describes the intended forward architecture. For what is actually built today, see `docs/CURRENT_STATE.md`.
+System overview for <repo or product>. This document describes the intended forward architecture. For what is actually built today, see `docs/orientation/CURRENT_STATE.md`.
 
 Keep this file as the architecture hub or short overview. Put stable subsystem boundaries in `docs/architecture/areas/AREA-*.md` files when the architecture is large enough to split.
 
