@@ -243,7 +243,9 @@ SPEC -> PLAN -> IMPL -> Issue / PR
 
 ## Deterministic Metadata
 
-When installed in a repo, [scripts/docs-meta](scripts/docs-meta) derives doc metadata from Markdown files and frontmatter instead of relying on agents to remember counters.
+When installed in a repo, [scripts/docs-meta](scripts/docs-meta) gives agents and humans a deterministic way to manage docs metadata. It scans Markdown filenames and frontmatter as the source of truth, then creates generated views from that state.
+
+This exists because agents are good at synthesis but unreliable at bookkeeping. They can forget the next `SPEC-*` number, miss a stale status, or hand-edit a registry that no longer matches the repo. `docs-meta` moves that work into a small script.
 
 Use it for:
 
@@ -255,6 +257,8 @@ Use it for:
 - checking duplicate IDs, stale generated docs, and mismatched filenames
 
 The repo tree remains the source of truth. Generated files are views, not separate state.
+
+Read [scripts/README.md](scripts/README.md) for the rationale, command reference, and adoption notes.
 
 ## Smaller Project Shape
 
