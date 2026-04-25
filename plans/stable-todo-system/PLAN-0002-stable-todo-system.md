@@ -5,7 +5,7 @@ title: Stable Todo System
 domain: docs-meta
 status: draft
 created_at: "2026-04-25 20:18:11 JST +0900"
-updated_at: "2026-04-25 20:18:11 JST +0900"
+updated_at: "2026-04-25 20:24:23 JST +0900"
 planned_execution_start:
 planned_execution_end:
 actual_execution_start:
@@ -90,6 +90,11 @@ repo_state:
 - Task 5 depends on Task 4: AGENTS.md, skills guidance, and subagent handoff rules.
 - Task 6 is optional/later: mutation commands and GitHub mirroring design.
 - Net: parser foundation, read/check surfaces, docs rollout, then optional automation.
+
+## Implementation Briefs
+
+- [IMPL-0002-01 - Todo Parser, Checks, and Agent Guidance](implementation-briefs/IMPL-0002-01-todo-parser-and-checks.md) covers Tasks 1-5.
+- Task 6 should become a separate brief, follow-up plan, or ADR after the foundation lands.
 
 ## Out Of Scope
 
