@@ -93,16 +93,16 @@ Out of scope:
 
 ## Entry Point
 
-- Start from: [scripts/docs-meta](../../../../../scripts/docs-meta)
+- Start from: [scripts/docs-meta](../../../scripts/docs-meta)
 - Main seam to extend: docs-meta scan/update/check command structure.
 
 ## Files To Read First
 
-- [scripts/docs-meta](../../../../../scripts/docs-meta)
-- [docs/README.md](../../../README.md)
-- [docs/repo-health/README.md](../../README.md)
-- [docs/repo-health/planning/README.md](../../planning/README.md)
-- [docs/repo-health/plans/docs-system-migration/migration-map.md](../docs-system-migration/migration-map.md)
+- [scripts/docs-meta](../../../scripts/docs-meta)
+- [README.md](../../../README.md)
+- [guides/workflow-overview.md](../../../guides/workflow-overview.md)
+- [guides/adoption-checklist.md](../../../guides/adoption-checklist.md)
+- [plans/README.md](../../README.md)
 
 ## Files Likely To Change
 
