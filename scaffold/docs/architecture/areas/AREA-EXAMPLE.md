@@ -1,7 +1,7 @@
 ---
 type: architecture-area
-id: AREA-<NAME>
-title: <Area Title>
+id: AREA-EXAMPLE
+title: Example
 domain: architecture
 status: draft
 created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
@@ -18,12 +18,12 @@ repo_state:
   last_reviewed_commit:
 ---
 
-# AREA-<NAME> - <Area Title>
+# AREA-EXAMPLE - Example
 
 Use this doc for one stable architecture area. The `id` and filename must match:
 
 ```text
-docs/architecture/areas/AREA-<NAME>.md
+docs/architecture/areas/AREA-EXAMPLE.md
 ```
 
 ## Owns

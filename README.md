@@ -297,56 +297,58 @@ AGENTS.md
 
 Add `product/`, `repo-health/`, `research/`, `operations/`, or `marketing/` only when those categories start competing for space. The hierarchy should reduce ambiguity, not advertise sophistication.
 
-## Template Map
+## Scaffold Map
 
-Use templates as starting points, not as mandatory paperwork. Copy only what the repo needs.
+The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. For a new repo, copy the parts of that folder you need instead of translating a flat template list into paths by hand.
+
+Use scaffold files as starting points, not as mandatory paperwork. Keep one canonical home for each doc, then use generated registries like `IDEAS.md`, `SPECS.md`, `AREAS.md`, and `HEALTH.md` for cross-cutting views.
 
 ### Entry Points
 
-- [templates/AGENTS.template.md](templates/AGENTS.template.md) - root agent index and repo rules
-- [templates/global-AGENTS.template.md](templates/global-AGENTS.template.md) - personal/global Codex instructions for always-on orchestration habits
-- [templates/surface-AGENTS.template.md](templates/surface-AGENTS.template.md) - local instructions for one app, package, or service
-- [templates/DOCS-README.template.md](templates/DOCS-README.template.md) - map for a repo's `docs/` folder
+- [scaffold/AGENTS.md](scaffold/AGENTS.md) - root agent index and repo rules
+- [scaffold/agent-instructions/global-AGENTS.md](scaffold/agent-instructions/global-AGENTS.md) - personal/global Codex instructions for always-on orchestration habits
+- [scaffold/agent-instructions/surface-AGENTS.md](scaffold/agent-instructions/surface-AGENTS.md) - local instructions for one app, package, or service
+- [scaffold/docs/README.md](scaffold/docs/README.md) - map for a repo's `docs/` folder
 - [scripts/docs-meta](scripts/docs-meta) - deterministic docs metadata CLI
 
 ### Orientation And Reality
 
-- [templates/orientation/ONBOARDING.template.md](templates/orientation/ONBOARDING.template.md) - non-code product/system walkthrough
-- [templates/CURRENT_STATE.template.md](templates/CURRENT_STATE.template.md) - compact truth page and fanout
-- [templates/ROADMAP.template.md](templates/ROADMAP.template.md) - ordered sequence and rationale
-- [templates/ARCHITECTURE.template.md](templates/ARCHITECTURE.template.md) - system shape and decision provenance
-- [templates/architecture/README.template.md](templates/architecture/README.template.md) - split architecture hub and area registry
-- [templates/architecture/area-template.md](templates/architecture/area-template.md) - `AREA-*` boundary doc template
-- [templates/codebase-map.template.md](templates/codebase-map.template.md) - current module map and entry points
-- [templates/data-seams.template.md](templates/data-seams.template.md) - canonical seams, compatibility layers, and extension rules
-- [templates/testing-guide.template.md](templates/testing-guide.template.md) - real verification commands and limits
+- [scaffold/docs/orientation/ONBOARDING.md](scaffold/docs/orientation/ONBOARDING.md) - non-code product/system walkthrough
+- [scaffold/docs/orientation/CURRENT_STATE.md](scaffold/docs/orientation/CURRENT_STATE.md) - compact truth page and fanout
+- [scaffold/docs/orientation/ROADMAP.md](scaffold/docs/orientation/ROADMAP.md) - ordered sequence and rationale
+- [scaffold/docs/orientation/ARCHITECTURE.md](scaffold/docs/orientation/ARCHITECTURE.md) - system shape and decision provenance
+- [scaffold/docs/architecture/README.md](scaffold/docs/architecture/README.md) - split architecture hub and area registry
+- [scaffold/docs/architecture/areas/AREA-EXAMPLE.md](scaffold/docs/architecture/areas/AREA-EXAMPLE.md) - `AREA-*` boundary doc example
+- [scaffold/docs/repo-health/codebase-map.md](scaffold/docs/repo-health/codebase-map.md) - current module map and entry points
+- [scaffold/docs/repo-health/data-seams.md](scaffold/docs/repo-health/data-seams.md) - canonical seams, compatibility layers, and extension rules
+- [scaffold/docs/repo-health/testing-guide.md](scaffold/docs/repo-health/testing-guide.md) - real verification commands and limits
 
 ### Product And Planning
 
-- [templates/IDEAS.template.md](templates/IDEAS.template.md) - global idea registry using one continuous `IDEA-####` sequence
-- [templates/idea.template.md](templates/idea.template.md) - lightweight capture template for early ideas and future possibilities
-- [templates/SPECS.template.md](templates/SPECS.template.md) - global spec registry using one continuous `SPEC-####` sequence
-- [templates/spec.template.md](templates/spec.template.md) - durable spec template for features, bugs, improvements, architecture, repo-health, and research
-- [templates/feature-spec.template.md](templates/feature-spec.template.md) - compatibility pointer for older feature-spec workflows
-- [templates/plans/README.template.md](templates/plans/README.template.md) - guide for parent plans and implementation briefs
-- [templates/plans/plan-template.md](templates/plans/plan-template.md) - parent plan template
-- [templates/plans/implementation-brief-template.md](templates/plans/implementation-brief-template.md) - bounded execution brief template
-- [templates/plans/implementation-briefs/README.template.md](templates/plans/implementation-briefs/README.template.md) - optional central brief-folder guide for repos that keep briefs separate
-- [templates/reusable-implementer-handoff-prompt.template.md](templates/reusable-implementer-handoff-prompt.template.md) - boot prompt for fresh implementation sessions
+- [scaffold/docs/IDEAS.md](scaffold/docs/IDEAS.md) - global idea registry using one continuous `IDEA-####` sequence
+- [scaffold/docs/product/ideas/IDEA-0000-idea-title.md](scaffold/docs/product/ideas/IDEA-0000-idea-title.md) - lightweight capture example for early ideas and future possibilities
+- [scaffold/docs/SPECS.md](scaffold/docs/SPECS.md) - global spec registry using one continuous `SPEC-####` sequence
+- [scaffold/docs/product/specs/SPEC-0000-spec-title.md](scaffold/docs/product/specs/SPEC-0000-spec-title.md) - durable spec example for features, bugs, improvements, architecture, repo-health, and research
+- [scaffold/docs/product/specs/feature-spec-compatibility.md](scaffold/docs/product/specs/feature-spec-compatibility.md) - compatibility pointer for older feature-spec workflows
+- [scaffold/docs/product/plans/README.md](scaffold/docs/product/plans/README.md) - guide for parent plans and implementation briefs
+- [scaffold/docs/product/plans/PLAN-0000-plan-title/plan.md](scaffold/docs/product/plans/PLAN-0000-plan-title/plan.md) - parent plan example
+- [scaffold/docs/product/plans/PLAN-0000-plan-title/IMPL-0000-00-implementation-brief-title.md](scaffold/docs/product/plans/PLAN-0000-plan-title/IMPL-0000-00-implementation-brief-title.md) - bounded execution brief example
+- [scaffold/optional/central-implementation-briefs/README.md](scaffold/optional/central-implementation-briefs/README.md) - optional central brief-folder guide for repos that keep briefs separate
+- [scaffold/docs/repo-health/prompts/reusable-implementer-handoff-prompt.md](scaffold/docs/repo-health/prompts/reusable-implementer-handoff-prompt.md) - boot prompt for fresh implementation sessions
 
 ### Memory And Decisions
 
-- [templates/adr/README.template.md](templates/adr/README.template.md) - ADR folder guide and decision index
-- [templates/adr/adr-template.md](templates/adr/adr-template.md) - durable decision record
-- [templates/session-logs/README.template.md](templates/session-logs/README.template.md) - timestamped session-log convention
-- [templates/session-logs/session-log-template.md](templates/session-logs/session-log-template.md) - session receipt template
-- [templates/state/README.template.md](templates/state/README.template.md) - state-history snapshot guide
+- [scaffold/docs/decisions/adr/README.md](scaffold/docs/decisions/adr/README.md) - ADR folder guide and decision index
+- [scaffold/docs/decisions/adr/ADR-0000-decision-title.md](scaffold/docs/decisions/adr/ADR-0000-decision-title.md) - durable decision record example
+- [scaffold/docs/repo-health/session-logs/README.md](scaffold/docs/repo-health/session-logs/README.md) - timestamped session-log convention
+- [scaffold/docs/repo-health/session-logs/YYYY-MM-DD-session-title.md](scaffold/docs/repo-health/session-logs/YYYY-MM-DD-session-title.md) - session receipt example
+- [scaffold/docs/repo-health/state/README.md](scaffold/docs/repo-health/state/README.md) - state-history snapshot guide
 
 ### Domain-Specific Work
 
-- [templates/research/research-note-template.md](templates/research/research-note-template.md) - research question, findings, recommendation
-- [templates/operations/release-checklist-template.md](templates/operations/release-checklist-template.md) - release or operational checklist
-- [templates/marketing/marketing-plan-template.md](templates/marketing/marketing-plan-template.md) - launch or growth campaign plan
+- [scaffold/docs/research/notes/research-note.md](scaffold/docs/research/notes/research-note.md) - research question, findings, recommendation
+- [scaffold/docs/operations/checklists/release-checklist.md](scaffold/docs/operations/checklists/release-checklist.md) - release or operational checklist
+- [scaffold/docs/marketing/plans/marketing-plan.md](scaffold/docs/marketing/plans/marketing-plan.md) - launch or growth campaign plan
 
 ## What Is Most Reusable
 

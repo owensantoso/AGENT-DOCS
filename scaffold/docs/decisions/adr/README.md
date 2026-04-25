@@ -4,7 +4,7 @@ Architecture decision records capture durable product/data-model/system decision
 
 Use ADRs for decisions that are expected to outlive one implementation task or affect multiple future plans. Do not use ADRs for routine execution notes, small UI choices, or one-off implementation details; use plans, implementation briefs, session logs, or learnings for those.
 
-Start new ADRs from `adr-template.md`.
+Start new ADRs from the nearby `ADR-0000-decision-title.md` example or with `scripts/docs-meta new adr "<title>"`.
 
 New ADRs should start with YAML frontmatter:
 

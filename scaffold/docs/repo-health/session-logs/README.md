@@ -35,7 +35,7 @@ YYYY-MM-DD-<short-slug>.md
 
 ## Required Shape
 
-Start from `session-log-template.md`.
+Start from the nearby `YYYY-MM-DD-session-title.md` example.
 
 New session logs should start with YAML frontmatter:
 

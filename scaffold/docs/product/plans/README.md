@@ -2,16 +2,16 @@
 
 This repo uses specs, plans, and implementation briefs on purpose.
 
-Starter templates live here:
+Starter examples live here:
 
 - `docs/IDEAS.md` and the repo's idea template
 - `docs/SPECS.md` and the repo's spec template
-- `docs/plans/templates/plan-template.md`
-- `docs/plans/templates/implementation-brief-template.md`
+- `docs/product/plans/PLAN-0000-plan-title/plan.md`
+- `docs/product/plans/PLAN-0000-plan-title/IMPL-0000-00-implementation-brief-title.md`
 
 Reusable implementation-session handoff prompt:
 
-- `docs/plans/reusable-implementer-handoff-prompt.md`
+- `docs/repo-health/prompts/reusable-implementer-handoff-prompt.md`
 
 If this repo has `scripts/docs-meta`, use it for mechanical metadata:
 

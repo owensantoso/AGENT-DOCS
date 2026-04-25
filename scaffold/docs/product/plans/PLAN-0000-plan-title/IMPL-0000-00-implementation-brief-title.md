@@ -1,9 +1,3 @@
-# Implementation Brief Template
-
-Use this for new `impl-*` docs.
-
-Keep it concrete enough for delegation, but do not turn it into a pseudo-patch.
-
 ---
 type: implementation-brief
 id: IMPL-0000-00
@@ -16,7 +10,7 @@ planned_execution_start:
 planned_execution_end:
 actual_execution_start:
 actual_execution_end:
-parent_plan:
+parent_plan: PLAN-0000
 task_refs: []
 owner:
 areas: []
@@ -33,6 +27,8 @@ repo_state:
 ---
 
 # IMPL-0000-00 - <Implementation Brief Title>
+
+Use this for new `IMPL-*` docs. Keep it concrete enough for delegation, but do not turn it into a pseudo-patch.
 
 File path:
 

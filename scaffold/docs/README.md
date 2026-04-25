@@ -11,8 +11,8 @@ Map of the documentation system.
 5. `<architecture/README.md>` - architecture area registry and boundary map, if split out
 6. `<IDEAS.md>` - global `IDEA-####` registry
 7. `<SPECS.md>` - global `SPEC-####` registry
-7. `<product/specs/>`, `<architecture/specs/>`, or another topic-first specs folder
-8. `<domain>/plans/` - plan folders and implementation briefs
+8. `<product/specs/>`, `<architecture/specs/>`, or another topic-first specs folder
+9. `<domain>/plans/` - plan folders and implementation briefs
 
 ## Top-Level Areas
 
@@ -20,7 +20,7 @@ Map of the documentation system.
 |---|---|
 | `orientation/` | Current state, onboarding, roadmap, architecture |
 | `architecture/` | Split architecture hub and `areas/AREA-*.md` boundary docs when one overview is too dense |
-| `product/` | Product specs, product plans, future ideas |
+| `product/` | Product ideas, specs, and plans |
 | `decisions/` | ADRs, learnings, execution-readiness notes |
 | `repo-health/` | Docs/workflow plans, session logs, state history, CI/test hygiene |
 | `research/` | Feasibility studies, spikes, findings |

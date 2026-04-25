@@ -1,9 +1,3 @@
-# Plan Template
-
-Use this for new parent `plan-*` docs.
-
-Keep it architectural and milestone-oriented. Point detailed execution into `impl-*` briefs when useful. If there is a source spec, treat that spec as requirements truth and link it in frontmatter.
-
 ---
 type: plan
 id: PLAN-0000
@@ -29,6 +23,8 @@ repo_state:
 ---
 
 # PLAN-0000 - <Plan Title>
+
+Use this for new parent `PLAN-*` docs. Keep it architectural and milestone-oriented. Point detailed execution into `IMPL-*` briefs when useful. If there is a source spec, treat that spec as requirements truth and link it in frontmatter.
 
 File path:
 

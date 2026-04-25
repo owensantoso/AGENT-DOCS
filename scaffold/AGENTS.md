@@ -10,7 +10,7 @@ Short index. Read the file for your task.
 4. `<architecture path>` - system overview, boundaries, data flow, and decision provenance.
 5. `<approved spec path>` - current approved product or technical spec.
 6. `<planning guide path>` - how parent plans differ from implementation briefs.
-7. `<plan templates path>` - default templates for new plans and briefs.
+7. `docs/product/plans/` - plan guide and examples for new plans and briefs.
 8. `<session logs guide path>` - timestamped session receipts and commit-trailer convention.
 9. `<surface codebase map path>` - current module map and entry points.
 10. `<seams guide path>` - canonical versus compatibility seam guidance.
