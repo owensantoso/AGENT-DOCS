@@ -8,7 +8,7 @@ It exists to keep repository memory queryable without asking a human or AI agent
 
 Agent-driven projects tend to accumulate small bits of comprehension debt:
 
-- the next `IDEA-*`, `SPEC-*`, `PLAN-*`, or `ADR-*` number is guessed instead of derived
+- the next `IDEA-*`, `CONC-*`, `SPEC-*`, `PLAN-*`, or `ADR-*` number is guessed instead of derived
 - plan and implementation statuses drift from reality
 - generated registries are hand-edited and quietly become stale
 - todos are scattered across specs, plans, and implementation briefs
@@ -23,6 +23,7 @@ Canonical state lives in docs files:
 ```text
 docs/<domain>/specs/SPEC-0001-<slug>.md
 docs/<domain>/ideas/IDEA-0001-<slug>.md
+docs/<domain>/concepts/CONC-0001-<slug>.md
 docs/<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
 docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
 ```
@@ -39,6 +40,7 @@ It writes generated views:
 ```text
 docs/SPECS.md
 docs/IDEAS.md
+docs/CONCEPTS.md
 docs/LEARNINGS.md
 docs/EXPLAINERS.md
 docs/QUESTIONS.md
@@ -65,6 +67,7 @@ scripts/docs-meta next adr
 scripts/docs-meta next lrn
 scripts/docs-meta next expl
 scripts/docs-meta next qst
+scripts/docs-meta next conc
 ```
 
 Create new docs:
@@ -72,6 +75,7 @@ Create new docs:
 ```bash
 scripts/docs-meta new spec "Shared Capture Workflow" --domain product --spec-type feature
 scripts/docs-meta new idea "Repo Memory Timeline" --domain product
+scripts/docs-meta new concept "Selections, Snapshots, And Dynamic Sections" --domain product
 scripts/docs-meta new plan "Shared Capture Implementation" --domain product --spec SPEC-0001
 scripts/docs-meta new impl "Persist Capture Drafts" --plan PLAN-0001
 scripts/docs-meta new adr "Use Append-Only Worktree Journal"
@@ -213,6 +217,8 @@ Ask ordinary clarification questions in chat. Keep local open questions in the o
 
 Use `EXPL-*` explainers for reusable human-facing teaching material. Include a visualization-pass-style diagram when structure, flow, state, ownership, or behavior is clearer visually than in prose.
 
+Use `CONC-*` concept notes for semi-mature domain models, taxonomy, ontology, naming, or source-of-truth sketches. Concepts are more reasoned than raw ideas, but they are not yet binding specs, ADRs, plans, or user-facing explainers.
+
 Regenerate and check generated views:
 
 ```bash
@@ -302,6 +308,7 @@ The default naming model is independent IDs plus explicit relationships:
 ```text
 SPEC-0001
 IDEA-0001
+CONC-0001
 PLAN-0001
 IMPL-0001-01
 ADR-0001
@@ -324,7 +331,7 @@ related_issues:
   - "#123"
 ```
 
-This avoids encoding a many-to-many relationship graph into filenames. An idea can be promoted to a spec, ADR, research note, or plan; a plan can relate to multiple specs; a spec can lead to multiple plans; and an implementation brief can remain visibly scoped to its parent plan.
+This avoids encoding a many-to-many relationship graph into filenames. An idea can be promoted to a concept, spec, ADR, research note, or plan; a concept can be promoted to a spec, ADR, plan, architecture doc, or explainer; a plan can relate to multiple specs; a spec can lead to multiple plans; and an implementation brief can remain visibly scoped to its parent plan.
 
 ## File Metadata
 

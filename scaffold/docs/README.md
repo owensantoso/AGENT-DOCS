@@ -11,11 +11,12 @@ Map of the documentation system.
 5. `<architecture/README.md>` - architecture area registry and boundary map, if split out
 6. `<IDEAS.md>` - global `IDEA-####` registry
 7. `<SPECS.md>` - global `SPEC-####` registry
-8. `<EXPLAINERS.md>` - global `EXPL-####` registry, if explainers exist
-9. `<QUESTIONS.md>` - global `QST-####` registry, if durable questions exist
-10. `<LEARNINGS.md>` - global `LRN-####` registry, if learning records exist
-11. `<product/specs/>`, `<architecture/specs/>`, or another topic-first specs folder
-12. `<domain>/plans/` - plan folders and implementation briefs
+8. `<CONCEPTS.md>` - global `CONC-####` registry, if concept notes exist
+9. `<EXPLAINERS.md>` - global `EXPL-####` registry, if explainers exist
+10. `<QUESTIONS.md>` - global `QST-####` registry, if durable questions exist
+11. `<LEARNINGS.md>` - global `LRN-####` registry, if learning records exist
+12. `<product/specs/>`, `<architecture/specs/>`, or another topic-first specs folder
+13. `<domain>/plans/` - plan folders and implementation briefs
 
 ## Top-Level Areas
 
@@ -24,7 +25,7 @@ Map of the documentation system.
 | `orientation/` | Current state, onboarding, roadmap, architecture |
 | `orientation/explainers/` | `EXPL-*` human-facing explanations and visual walkthroughs that are too detailed for onboarding |
 | `architecture/` | Split architecture hub and `areas/AREA-*.md` boundary docs when one overview is too dense |
-| `product/` | Product ideas, specs, and plans |
+| `product/` | Product ideas, concept notes, specs, and plans |
 | `decisions/` | ADRs, `LRN-*` learning records, `QST-*` questions, execution-readiness notes |
 | `repo-health/` | Docs/workflow plans, repo-health audits, session logs, state history, CI/test hygiene |
 | `research/` | Feasibility studies, spikes, findings |
@@ -35,6 +36,7 @@ Map of the documentation system.
 
 - Keep `CURRENT_STATE.md` short and link outward.
 - Keep `IDEAS.md` as the global registry for one continuous `IDEA-####` sequence.
+- Keep `CONCEPTS.md` as the global registry for one continuous `CONC-####` sequence when the repo uses concept notes.
 - Keep `SPECS.md` as the global registry for one continuous `SPEC-####` sequence.
 - Keep `EXPLAINERS.md` as the global registry for one continuous `EXPL-####` sequence when the repo uses explainers.
 - Keep `QUESTIONS.md` as the global registry for one continuous `QST-####` sequence when the repo uses durable questions.
@@ -46,6 +48,7 @@ Map of the documentation system.
 - Give each meaningful plan its own folder.
 - Use session logs for per-session receipts.
 - Use ADRs for durable cross-plan decisions.
+- Use `CONC-*` notes for semi-mature domain models, taxonomy, ontology, naming, or source-of-truth sketches before they harden into specs, ADRs, plans, architecture docs, or explainers.
 - Use `LRN-*` records for lessons learned, not routine session narration.
 - Use `EXPL-*` docs for durable human-facing explanations; include visualization-pass-style diagrams when structure or flow is clearer visually.
 - Use `QST-*` records only for durable unresolved questions that need status, ownership, links, or resolution history across sessions.

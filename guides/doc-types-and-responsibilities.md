@@ -122,6 +122,24 @@ Should answer:
 
 Explainers use `EXPL-####` IDs when reusable teaching material needs stable links. Use a visualization pass when structure, flow, state, ownership, or behavior is clearer visually than in prose.
 
+## Concept
+
+Purpose:
+
+- preserve semi-mature domain models, taxonomy, ontology, naming, and source-of-truth sketches with a globally unique `CONC-####` paper-trail ID
+- make a candidate model concrete before it becomes authoritative
+- keep concept exploration out of raw ideas, specs, ADRs, plans, and human-facing explainers
+
+Should answer:
+
+- what confusion, naming problem, or model gap does this clarify?
+- what candidate concepts and relationships are being proposed?
+- what is canonical, derived, cached, rendered, or explicitly undecided?
+- what concrete examples prove the model is understandable?
+- where should this concept be promoted if it hardens?
+
+Concepts are not binding decisions or requirements. Promote stable rules into an ADR, spec, plan, architecture doc, or explainer when they become durable.
+
 ## Question
 
 Purpose:

@@ -73,6 +73,8 @@ These files should be skimmable. If one starts becoming a history journal, move 
 
 Use `orientation/explainers/` for reusable `EXPL-*` human-facing explanations that are too detailed for onboarding but not authoritative decisions, requirements, or plans. Include visualization-pass-style diagrams when they clarify structure or flow.
 
+Use `product/concepts/` or another domain's `concepts/` folder for `CONC-*` concept notes: semi-mature domain models, taxonomy, ontology, naming, and source-of-truth sketches that are no longer raw ideas but are not yet binding specs, ADRs, plans, or explainers.
+
 When architecture gets too dense for one overview, split it into an architecture hub plus area docs:
 
 ```text
@@ -211,6 +213,7 @@ Marketing can use the same plan/brief pattern when execution needs structure, bu
 docs/
   README.md
   IDEAS.md
+  CONCEPTS.md
   SPECS.md
   orientation/
     CURRENT_STATE.md
@@ -224,6 +227,8 @@ docs/
     areas/
       AREA-<NAME>.md
   product/
+    concepts/
+      CONC-<id>-<slug>.md
     specs/
     plans/
       PLAN-<id>-<slug>/
@@ -285,16 +290,16 @@ QST -> durable open question
 
 When installed in a repo, [scripts/docs-meta](scripts/docs-meta) gives agents and humans a deterministic way to manage docs metadata. It scans Markdown filenames and frontmatter as the source of truth, then creates generated views from that state.
 
-This exists because agents are good at synthesis but unreliable at bookkeeping. They can forget the next `IDEA-*` or `SPEC-*` number, miss a stale status, or hand-edit a registry that no longer matches the repo. `docs-meta` moves that work into a small script.
+This exists because agents are good at synthesis but unreliable at bookkeeping. They can forget the next `IDEA-*`, `CONC-*`, or `SPEC-*` number, miss a stale status, or hand-edit a registry that no longer matches the repo. `docs-meta` moves that work into a small script.
 
 Use it for:
 
-- next `IDEA-*`, `SPEC-*`, `PLAN-*`, `IMPL-*`, and `ADR-*` IDs
-- creating new ideas, specs, plans, implementation briefs, and ADRs
+- next `IDEA-*`, `CONC-*`, `SPEC-*`, `PLAN-*`, `IMPL-*`, and `ADR-*` IDs
+- creating new ideas, concepts, specs, plans, implementation briefs, and ADRs
 - updating frontmatter status
 - extracting Markdown todos, including structured `TODO-*` items for durable coordination
 - validating structured todo IDs, lifecycle states, owner/skill metadata, and plan/brief references
-- regenerating `IDEAS.md`, `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, `AREAS.md`, `AUDITS.md`, and `ROADMAP-VIEW.md`
+- regenerating `IDEAS.md`, `CONCEPTS.md`, `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, `AREAS.md`, `AUDITS.md`, and `ROADMAP-VIEW.md`
 - checking duplicate IDs, stale generated docs, metadata contracts, statuses, and mismatched filenames
 - inspecting docs links, backlinks, broken repo-local links, and orphan docs
 - normalizing repo-local Markdown hrefs to relative links
@@ -371,6 +376,8 @@ Use scaffold files as starting points, not as mandatory paperwork. Keep one cano
 
 - [scaffold/docs/IDEAS.md](scaffold/docs/IDEAS.md) - global idea registry using one continuous `IDEA-####` sequence
 - [scaffold/docs/product/ideas/IDEA-0000-idea-title.md](scaffold/docs/product/ideas/IDEA-0000-idea-title.md) - lightweight capture example for early ideas and future possibilities
+- [scaffold/docs/CONCEPTS.md](scaffold/docs/CONCEPTS.md) - global concept registry using one continuous `CONC-####` sequence
+- [scaffold/docs/product/concepts/CONC-0000-concept-title.md](scaffold/docs/product/concepts/CONC-0000-concept-title.md) - semi-mature domain model, taxonomy, ontology, naming, and source-of-truth sketch example
 - [scaffold/docs/SPECS.md](scaffold/docs/SPECS.md) - global spec registry using one continuous `SPEC-####` sequence
 - [scaffold/docs/product/specs/SPEC-0000-spec-title.md](scaffold/docs/product/specs/SPEC-0000-spec-title.md) - durable spec example for features, bugs, improvements, architecture, repo-health, and research
 - [scaffold/docs/product/specs/feature-spec-compatibility.md](scaffold/docs/product/specs/feature-spec-compatibility.md) - compatibility pointer for older feature-spec workflows

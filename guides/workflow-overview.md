@@ -69,7 +69,7 @@ These keep reasoning durable after the chat disappears:
 
 Use these to reconstruct why a change happened.
 
-Use `LRN-*` learning records for lessons learned that should change future behavior. Use `EXPL-*` explainers for reusable human-facing teaching material. Use `QST-*` questions only for durable uncertainty that needs status, ownership, links, or resolution history across sessions. Ask ordinary clarification questions in chat, and keep local open questions in the owning doc until they outgrow it. Keep authoritative truth in the owning orientation, architecture, spec, plan, ADR, or testing doc.
+Use `LRN-*` learning records for lessons learned that should change future behavior. Use `CONC-*` concept notes for semi-mature domain models, taxonomy, ontology, naming, or source-of-truth sketches that are not yet binding. Use `EXPL-*` explainers for reusable human-facing teaching material. Use `QST-*` questions only for durable uncertainty that needs status, ownership, links, or resolution history across sessions. Ask ordinary clarification questions in chat, and keep local open questions in the owning doc until they outgrow it. Keep authoritative truth in the owning orientation, architecture, spec, plan, ADR, or testing doc.
 
 ### 5. Entry-point docs
 

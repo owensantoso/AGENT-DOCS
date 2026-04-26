@@ -37,6 +37,7 @@ adr_path="$(run_meta new adr "Use Append Only Journal" --domain architecture --s
 lrn_path="$(run_meta new learning "Specs And Plans Stay Separate" --domain repo-health)"
 expl_path="$(run_meta new explainer "Specs Plans And Briefs" --domain orientation)"
 qst_path="$(run_meta new question "Should Specs And Plans Be One To One" --domain repo-health)"
+conc_path="$(run_meta new concept "Selections Snapshots And Dynamic Sections" --domain product)"
 
 require_file "$idea_path"
 require_file "$spec_path"
@@ -46,6 +47,7 @@ require_file "$adr_path"
 require_file "$lrn_path"
 require_file "$expl_path"
 require_file "$qst_path"
+require_file "$conc_path"
 
 require_contains "$idea_path" "id: IDEA-0001"
 require_contains "$idea_path" "status: captured"
@@ -65,6 +67,9 @@ require_contains "$expl_path" "explainer_type: concept"
 require_contains "$qst_path" "id: QST-0001"
 require_contains "$qst_path" "status: open"
 require_contains "$qst_path" "question_type: product"
+require_contains "$conc_path" "id: CONC-0001"
+require_contains "$conc_path" "type: concept"
+require_contains "$conc_path" "concept_type: domain-model"
 
 cat > "$docs_root/architecture/areas/AREA-capture.md" <<'AREA'
 ---
@@ -160,6 +165,12 @@ if [[ "$next_qst" != "QST-0002" ]]; then
   exit 1
 fi
 
+next_conc="$(run_meta next conc)"
+if [[ "$next_conc" != "CONC-0002" ]]; then
+  echo "Expected next CONC-0002, got $next_conc" >&2
+  exit 1
+fi
+
 next_todo="$(run_meta next todo)"
 if [[ "$next_todo" != "TODO-0005" ]]; then
   echo "Expected next TODO-0005, got $next_todo" >&2
@@ -179,6 +190,7 @@ require_file "$docs_root/SPECS.md"
 require_file "$docs_root/LEARNINGS.md"
 require_file "$docs_root/EXPLAINERS.md"
 require_file "$docs_root/QUESTIONS.md"
+require_file "$docs_root/CONCEPTS.md"
 require_file "$docs_root/DOCS-REGISTRY.md"
 require_file "$docs_root/TODOS.md"
 require_file "$docs_root/AREAS.md"
@@ -193,6 +205,8 @@ require_contains "$docs_root/EXPLAINERS.md" "EXPL-0001"
 require_contains "$docs_root/EXPLAINERS.md" "Specs Plans And Briefs"
 require_contains "$docs_root/QUESTIONS.md" "QST-0001"
 require_contains "$docs_root/QUESTIONS.md" "Should Specs And Plans Be One To One"
+require_contains "$docs_root/CONCEPTS.md" "CONC-0001"
+require_contains "$docs_root/CONCEPTS.md" "Selections Snapshots And Dynamic Sections"
 require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001"
 require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001-shared-capture-implementation"
 require_contains "$docs_root/ROADMAP-VIEW.md" "type: generated-view"

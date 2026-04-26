@@ -123,7 +123,7 @@ Before handing off the target repo, make these true:
 - Parent plans explain scope, non-goals, dependencies, and safe parallelization.
 - Implementation briefs exist only for bounded work that benefits from delegation or resumability.
 - Session logs exist for meaningful setup, planning, debugging, or implementation sessions.
-- Generated files such as `IDEAS.md`, `SPECS.md`, `LEARNINGS.md`, `EXPLAINERS.md`, `QUESTIONS.md`, `TODOS.md`, and `ROADMAP-VIEW.md` are treated as views, not hand-maintained source.
+- Generated files such as `IDEAS.md`, `CONCEPTS.md`, `SPECS.md`, `LEARNINGS.md`, `EXPLAINERS.md`, `QUESTIONS.md`, `TODOS.md`, and `ROADMAP-VIEW.md` are treated as views, not hand-maintained source.
 - A quick search for unreplaced placeholder text such as `<path>` or `<command>` comes back clean enough for handoff.
 
 ## Paste This Prompt To Another Agent

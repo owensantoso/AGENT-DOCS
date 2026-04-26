@@ -30,6 +30,7 @@ ID_PATTERNS = {
     "lrn": re.compile(r"\bLRN-(\d{4})\b"),
     "expl": re.compile(r"\bEXPL-(\d{4})\b"),
     "qst": re.compile(r"\bQST-(\d{4})\b"),
+    "conc": re.compile(r"\bCONC-(\d{4})\b"),
 }
 
 TODO_ID_RE = re.compile(r"\bTODO-(\d{4})\b")
@@ -46,6 +47,7 @@ TYPE_BY_PREFIX = {
     "LRN": "learning",
     "EXPL": "explainer",
     "QST": "question",
+    "CONC": "concept",
 }
 
 COMMON_STATUSES = {
@@ -53,6 +55,7 @@ COMMON_STATUSES = {
     "captured",
     "exploring",
     "proposed",
+    "promoted",
     "ready",
     "in_progress",
     "in-progress",
@@ -84,6 +87,7 @@ STATUS_BY_TYPE = {
     "learning": {"draft", "active", "superseded", "archived"},
     "explainer": {"draft", "active", "stale", "superseded", "archived"},
     "question": {"open", "investigating", "answered", "deferred", "superseded", "archived"},
+    "concept": {"draft", "active", "promoted", "superseded", "archived"},
     "session-log": {"in_progress", "in-progress", "completed", "archived"},
     "architecture-area": {"draft", "active", "stale", "superseded", "archived"},
     "research-note": {"draft", "completed", "superseded", "archived"},
@@ -132,6 +136,7 @@ REQUIRED_FIELDS_BY_TYPE = {
         "resolved_by",
         "repo_state",
     },
+    "concept": {"type", "id", "title", "domain", "status", "concept_type", "created_at", "updated_at", "source", "repo_state"},
     "session-log": {"type", "title", "status", "created_at", "updated_at", "started_at", "ended_at", "timezone", "participants", "related_todos"},
     "research-note": {"type", "title", "domain", "status", "created_at", "updated_at", "owner", "question", "links", "repo_state"},
     "release-checklist": {"type", "title", "domain", "status", "created_at", "updated_at", "release_target", "owner", "repo_state"},
@@ -190,7 +195,7 @@ class Doc:
         match = re.search(r"^#\s+(.+)$", self.content, re.MULTILINE)
         if match:
             title = match.group(1).strip()
-            return re.sub(r"^(IDEA|SPEC|PLAN|IMPL|ADR)-\d{4}(?:-\d{2})?\s*-\s*", "", title)
+            return re.sub(r"^(IDEA|SPEC|PLAN|IMPL|ADR|LRN|EXPL|QST|CONC)-\d{4}(?:-\d{2})?\s*-\s*", "", title)
         return self.path.stem
 
 
@@ -279,11 +284,11 @@ def parse_args() -> argparse.Namespace:
     sub = parser.add_subparsers(dest="command", required=True)
 
     next_cmd = sub.add_parser("next", help="Print next ID for a doc family.")
-    next_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr", "lrn", "expl", "qst", "todo"])
+    next_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr", "lrn", "expl", "qst", "conc", "todo"])
     next_cmd.add_argument("--plan", help="Required for impl IDs, e.g. PLAN-0034")
 
-    new_cmd = sub.add_parser("new", help="Create a new idea, spec, plan, impl doc, ADR, learning, explainer, or question.")
-    new_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr", "learning", "lrn", "explainer", "expl", "question", "qst"])
+    new_cmd = sub.add_parser("new", help="Create a new idea, spec, plan, impl doc, ADR, learning, explainer, question, or concept.")
+    new_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr", "learning", "lrn", "explainer", "expl", "question", "qst", "concept", "conc"])
     new_cmd.add_argument("title")
     new_cmd.add_argument("--domain", default="product")
     new_cmd.add_argument("--spec-type", default="feature")
@@ -331,7 +336,7 @@ def parse_args() -> argparse.Namespace:
     roadmap_cmd.add_argument("--write", action="store_true", help="Write docs/ROADMAP-VIEW.md as a generated plan-order view.")
 
     view_cmd = sub.add_parser("view", help="Print and refresh a generated Markdown view.")
-    view_cmd.add_argument("name", choices=["ideas", "specs", "learnings", "explainers", "questions", "registry", "todos", "areas", "audits", "roadmap", "health"])
+    view_cmd.add_argument("name", choices=["ideas", "specs", "learnings", "explainers", "questions", "concepts", "registry", "todos", "areas", "audits", "roadmap", "health"])
     view_cmd.add_argument("--stale-days", type=int, default=14, help="Health view stale-days threshold. Default: 14")
     view_cmd.add_argument("--commit-threshold", type=int, default=10, help="Health view commit threshold. Default: 10")
     view_cmd.add_argument("--audit-days", type=int, default=30, help="Health view audit threshold. Default: 30")
@@ -634,6 +639,7 @@ def link_graph(root: Path, docs: list[Doc]) -> list[LinkRef]:
 def is_generated_doc(doc: Doc) -> bool:
     return doc.doc_type == "generated-view" or doc.path.name in {
         "IDEAS.md",
+        "CONCEPTS.md",
         "SPECS.md",
         "DOCS-REGISTRY.md",
         "TODOS.md",
@@ -946,6 +952,10 @@ def new_doc(args: argparse.Namespace, root: Path, docs: list[Doc]) -> Path:
         doc_id = next_id("idea", docs)
         path = root / args.domain / "ideas" / f"{doc_id}-{slug}.md"
         body = idea_doc(doc_id, title, args, timestamp, commit)
+    elif args.family in {"concept", "conc"}:
+        doc_id = next_id("conc", docs)
+        path = root / args.domain / "concepts" / f"{doc_id}-{slug}.md"
+        body = concept_doc(doc_id, title, args, timestamp, commit)
     elif args.family == "spec":
         doc_id = next_id("spec", docs)
         path = root / args.domain / "specs" / f"{doc_id}-{slug}.md"
@@ -1229,6 +1239,58 @@ superseded_by: []
 ## Alternatives Considered
 
 ## Guardrails
+"""
+
+
+def concept_doc(doc_id: str, title: str, args: argparse.Namespace, timestamp: str, commit: str) -> str:
+    status = status_for_new(args, "concept")
+    return f"""---
+type: concept
+id: {doc_id}
+title: {title}
+domain: {args.domain}
+status: {status}
+concept_type: domain-model
+created_at: "{timestamp}"
+updated_at: "{timestamp}"
+owner: {args.owner}
+source:
+  type: {args.source_type}
+  link: {args.source_link}
+  notes:
+areas: []
+related_specs: []
+related_plans: []
+related_briefs: []
+related_adrs: []
+related_ideas: []
+related_questions: []
+related_sessions: []
+promoted_to: []
+supersedes: []
+superseded_by: []
+repo_state:
+  based_on_commit: {commit}
+  last_reviewed_commit: {commit}
+---
+
+# {doc_id} - {title}
+
+## Purpose
+
+## Candidate Model
+
+## Terms And Boundaries
+
+## Source-Of-Truth Rules
+
+## Examples
+
+## Non-Decisions
+
+## Promotion Paths
+
+## Related Docs
 """
 
 
@@ -1611,6 +1673,36 @@ def ideas_markdown(docs: list[Doc]) -> str:
         )
     lines.append("")
     return generated_view("generated-view", "Idea Registry", lines)
+
+
+def concepts_markdown(docs: list[Doc]) -> str:
+    concepts = sorted((doc for doc in docs if doc.primary_id.startswith("CONC-")), key=lambda d: d.primary_id)
+    lines = [
+        "# Concept Registry",
+        "",
+        GENERATED_HEADER,
+        "",
+        "Global registry for semi-mature concept notes. Concepts incubate domain models, taxonomy, ontology, and naming before they become specs, ADRs, plans, or explainers.",
+        "",
+        "| ID | Title | Type | Domain | Status | Path | Promoted To |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for doc in concepts:
+        lines.append(
+            "| {id} | {title} | {typ} | {domain} | {status} | `{path}` | {promoted_to} |".format(
+                id=markdown_table_cell(doc.primary_id),
+                title=markdown_table_cell(doc.title),
+                typ=markdown_table_cell(doc.frontmatter.get("concept_type", "")),
+                domain=markdown_table_cell(doc.frontmatter.get("domain", "")),
+                status=markdown_table_cell(doc.status),
+                path=markdown_table_cell(doc.relpath),
+                promoted_to=markdown_table_cell(field_summary(doc.frontmatter.get("promoted_to", ""))),
+            )
+        )
+    if not concepts:
+        lines.append("|  |  |  |  |  | No concept notes found. |  |")
+    lines.append("")
+    return generated_view("generated-view", "Concept Registry", lines)
 
 
 def specs_markdown(docs: list[Doc]) -> str:
@@ -2123,6 +2215,7 @@ def health_text(issues: list[HealthIssue]) -> str:
 def generated_view_path(root: Path, name: str) -> Path:
     paths = {
         "ideas": root / "IDEAS.md",
+        "concepts": root / "CONCEPTS.md",
         "specs": root / "SPECS.md",
         "learnings": root / "LEARNINGS.md",
         "explainers": root / "EXPLAINERS.md",
@@ -2140,6 +2233,8 @@ def generated_view_path(root: Path, name: str) -> Path:
 def generated_view_markdown(root: Path, name: str, docs: list[Doc], args: argparse.Namespace | None = None) -> str:
     if name == "ideas":
         return ideas_markdown(docs)
+    if name == "concepts":
+        return concepts_markdown(docs)
     if name == "specs":
         return specs_markdown(docs)
     if name == "learnings":
@@ -2176,6 +2271,8 @@ def write_generated_view(root: Path, name: str, docs: list[Doc], args: argparse.
 def update(root: Path, docs: list[Doc]) -> None:
     if any(doc.primary_id.startswith("IDEA-") for doc in docs) or (root / "IDEAS.md").exists():
         write_generated_view(root, "ideas", docs)
+    if any(doc.primary_id.startswith("CONC-") for doc in docs) or (root / "CONCEPTS.md").exists():
+        write_generated_view(root, "concepts", docs)
     if any(doc.primary_id.startswith("LRN-") for doc in docs) or (root / "LEARNINGS.md").exists():
         write_generated_view(root, "learnings", docs)
     if any(doc.primary_id.startswith("EXPL-") for doc in docs) or (root / "EXPLAINERS.md").exists():
@@ -2214,6 +2311,8 @@ def check(root: Path, docs: list[Doc]) -> int:
     }
     if any(doc.primary_id.startswith("IDEA-") for doc in docs) or (root / "IDEAS.md").exists():
         generated[root / "IDEAS.md"] = ideas_markdown(docs)
+    if any(doc.primary_id.startswith("CONC-") for doc in docs) or (root / "CONCEPTS.md").exists():
+        generated[root / "CONCEPTS.md"] = concepts_markdown(docs)
     if any(doc.primary_id.startswith("LRN-") for doc in docs) or (root / "LEARNINGS.md").exists():
         generated[root / "LEARNINGS.md"] = learnings_markdown(docs)
     if any(doc.primary_id.startswith("EXPL-") for doc in docs) or (root / "EXPLAINERS.md").exists():
