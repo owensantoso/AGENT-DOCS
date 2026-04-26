@@ -12,3 +12,9 @@ Do not park target-repo product work here. Product, app, or service plans belong
 |---|---|
 | [PLAN-0001 - Docs Link Graph and Safe Move Tooling](docs-meta-link-graph-and-safe-move/PLAN-0001-docs-meta-link-graph-and-safe-move.md) | Extend `docs-meta` with backlinks, broken-link checks, orphan checks, link normalization, and safe doc move previews. |
 | [PLAN-0002 - Stable Todo System](stable-todo-system/PLAN-0002-stable-todo-system.md) | Add stable Markdown-native todo IDs, lifecycle states, owner/skill metadata, generated views, and checks for agent coordination. |
+
+## Related Concepts
+
+| Concept | Purpose |
+|---|---|
+| [CONC-0001 - Read-Only SQLite Docs Index](../concepts/CONC-0001-read-only-sqlite-docs-index.md) | Evaluate a generated, read-only SQLite cache for richer docs-meta queries while keeping Markdown canonical. |

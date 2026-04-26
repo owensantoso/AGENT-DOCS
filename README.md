@@ -22,6 +22,7 @@ This kit is useful when:
 5. [guides/subagent-execution-loop.md](guides/subagent-execution-loop.md) - how to split, delegate, and integrate work
 6. [guides/adoption-checklist.md](guides/adoption-checklist.md) - setup checklist for adapting the workflow
 7. [plans/README.md](plans/README.md) - upstream AGENT-DOCS and docs-meta improvement plans
+8. [concepts/CONC-0001-read-only-sqlite-docs-index.md](concepts/CONC-0001-read-only-sqlite-docs-index.md) - candidate generated SQLite read model for richer docs-meta queries
 
 ## Install In Another Repo
 
