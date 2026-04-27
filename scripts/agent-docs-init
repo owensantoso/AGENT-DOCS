@@ -316,7 +316,7 @@ def tree_lines(entries: list[str], stylize: bool = False) -> list[str]:
             suffix = "/" if children or child_path in explicit_dirs else ""
             label = f"{name}{suffix}"
             if stylize and (name in IMPORTANT_DOCS or child_path in IMPORTANT_FOLDERS):
-                label = terminal_style(label, "1")
+                label = terminal_style(label, "36")
             elif stylize and child_path in QUIET_FOLDERS:
                 label = terminal_style(label, "2")
             lines.append(f"{prefix}{branch}{label}")
@@ -384,7 +384,8 @@ def choose_profile() -> str:
         preview = tree_lines(structure_entries(selected, selected.docs_meta_default), stylize=True)
         footer = ["", f"docs-meta default: {docs_meta}"]
         available_preview_rows = terminal_size.lines - len(lines) - 2 - len(footer)
-        lines.extend(["", "Preview:"])
+        preview_header = f"Preview: {terminal_style('start here', '36')}, {terminal_style('tooling', '2')}"
+        lines.extend(["", preview_header])
         lines.extend(capped_preview_lines(preview, available_preview_rows, terminal_size.columns))
         lines.extend(footer)
         print("\n".join(lines))

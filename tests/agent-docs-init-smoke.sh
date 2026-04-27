@@ -158,10 +158,14 @@ if "\x1b[1;7m> growing" not in text:
     raise SystemExit("Expected selected profile row to be styled")
 if "├── docs/" not in text:
     raise SystemExit("Expected interactive preview to render a tree")
-if "│   └── \x1b[1morientation/\x1b[0m" not in text:
+if "Preview: \x1b[36mstart here\x1b[0m, \x1b[2mtooling\x1b[0m" not in text:
+    raise SystemExit("Expected preview to label visual categories")
+if "│   └── \x1b[36morientation/\x1b[0m" not in text:
     raise SystemExit("Expected interactive tree to include nested folders")
-if "│       └── \x1b[1mROADMAP.md\x1b[0m" not in text:
+if "│       └── \x1b[36mROADMAP.md\x1b[0m" not in text:
     raise SystemExit("Expected interactive tree to include the growing roadmap")
+if "\x1b[1mROADMAP.md" in text:
+    raise SystemExit("Expected preview to avoid bold-only start-here styling")
 if ".gitkeep" in text:
     raise SystemExit("Expected interactive preview to hide .gitkeep placeholders")
 if "── README.md" in text:
@@ -171,7 +175,7 @@ if text.count("\x1b[2J") > 1:
 PY
 require_contains "$tmpdir/interactive-picker.out" "Profile: growing"
 require_contains "$tmpdir/interactive-picker.out" "├── docs/"
-require_contains "$tmpdir/interactive-picker.out" $'│       └── \033[1mROADMAP.md\033[0m'
+require_contains "$tmpdir/interactive-picker.out" $'│       └── \033[36mROADMAP.md\033[0m'
 
 python3 - "$installer" "$tmpdir/small-terminal-app" >"$tmpdir/small-terminal-picker.out" <<'PY'
 import os
