@@ -97,10 +97,20 @@ require_contains "$tmpdir/cwd-dry-run.out" "Would create: docs/CURRENT_STATE.md"
 full_target="$tmpdir/full-app"
 "$installer" "$full_target" --profile full --dry-run >"$tmpdir/full-dry-run.out"
 require_contains "$tmpdir/full-dry-run.out" "├── docs/"
-require_contains "$tmpdir/full-dry-run.out" "areas: architecture/, decisions/, marketing/"
-require_contains "$tmpdir/full-dry-run.out" "operations/, orientation/, product/"
-require_contains "$tmpdir/full-dry-run.out" "repo-health/, research/"
-require_contains "$tmpdir/full-dry-run.out" "tooling: scripts/docs-meta, tests/docs-meta-smoke.sh"
+require_contains "$tmpdir/full-dry-run.out" "│   ├── architecture/"
+require_contains "$tmpdir/full-dry-run.out" "│   ├── decisions/"
+require_contains "$tmpdir/full-dry-run.out" "│   ├── marketing/"
+require_contains "$tmpdir/full-dry-run.out" "│   ├── operations/"
+require_contains "$tmpdir/full-dry-run.out" "│   ├── orientation/"
+require_contains "$tmpdir/full-dry-run.out" "│   ├── product/"
+require_contains "$tmpdir/full-dry-run.out" "│   ├── repo-health/"
+require_contains "$tmpdir/full-dry-run.out" "│   └── research/"
+require_contains "$tmpdir/full-dry-run.out" "├── scripts/"
+require_contains "$tmpdir/full-dry-run.out" "│   └── docs-meta"
+if grep -Fq -- "areas:" "$tmpdir/full-dry-run.out"; then
+  echo "Expected full profile preview to show docs areas as tree rows, not an inline areas list" >&2
+  exit 1
+fi
 require_contains "$tmpdir/full-dry-run.out" "Would create: docs/orientation/CURRENT_STATE.md"
 require_contains "$tmpdir/full-dry-run.out" "Would create: docs/marketing/plans/marketing-plan.md"
 require_contains "$tmpdir/full-dry-run.out" "Would create: docs/operations/checklists/release-checklist.md"
@@ -286,9 +296,10 @@ if "Structure summary" not in screen or "exact file list after Enter" not in scr
     raise SystemExit("Expected full picker to describe the structure as a summary")
 if "ADR-0000" in screen or "AREA-EXAMPLE.md" in screen:
     raise SystemExit("Expected full picker summary to hide example leaf files")
-for major_area in ("architecture/", "decisions/", "marketing/", "operations/", "orientation/", "product/", "repo-health/", "research/"):
-    if major_area not in screen:
-        raise SystemExit(f"Expected full picker summary to show {major_area}")
+if "areas:" in screen:
+    raise SystemExit("Expected full picker summary to show doc areas as tree rows")
+if "architecture/" not in screen or "decisions/" not in screen:
+    raise SystemExit("Expected full picker summary to start listing major doc areas")
 if "\x1b[36mProduct work" in screen or "\x1b[36mPlanning" in screen:
     raise SystemExit("Expected template group headers not to reuse start-here color")
 PY
