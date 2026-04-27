@@ -1,0 +1,364 @@
+#!/usr/bin/env python3
+"""Install an AGENT-DOCS scaffold profile into a target repository."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import shutil
+import sys
+import termios
+import tty
+from dataclasses import dataclass
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCAFFOLD = REPO_ROOT / "scaffold"
+
+
+@dataclass(frozen=True)
+class Profile:
+    key: str
+    label: str
+    summary: str
+    implications: tuple[str, ...]
+    structure: tuple[str, ...]
+    docs_meta_default: bool
+
+
+PROFILES = {
+    "tiny": Profile(
+        key="tiny",
+        label="Tiny",
+        summary="prototype, script, or single-person experiment",
+        implications=(
+            "Lowest ceremony.",
+            "No generated views by default.",
+            "Architecture stays in one small file.",
+        ),
+        structure=("AGENTS.md", "docs/CURRENT_STATE.md", "docs/ARCHITECTURE.md"),
+        docs_meta_default=False,
+    ),
+    "small": Profile(
+        key="small",
+        label="Small / MVP",
+        summary="real app with a few features and occasional agents",
+        implications=(
+            "Still flat enough to scan quickly.",
+            "Plans, decisions, and session logs exist only when useful.",
+            "Good default when you are unsure.",
+        ),
+        structure=(
+            "AGENTS.md",
+            "docs/README.md",
+            "docs/CURRENT_STATE.md",
+            "docs/ARCHITECTURE.md",
+            "docs/ROADMAP.md",
+            "docs/plans/.gitkeep",
+            "docs/decisions/.gitkeep",
+            "docs/session-logs/.gitkeep",
+        ),
+        docs_meta_default=False,
+    ),
+    "growing": Profile(
+        key="growing",
+        label="Growing",
+        summary="multiple surfaces, recurring handoffs, bugs, or decisions",
+        implications=(
+            "Introduces topic folders and evidence docs.",
+            "Useful once flat docs start competing for space.",
+            "Installs docs-meta by default for IDs and generated views.",
+        ),
+        structure=(
+            "AGENTS.md",
+            "docs/README.md",
+            "docs/orientation/CURRENT_STATE.md",
+            "docs/orientation/ARCHITECTURE.md",
+            "docs/product/plans/README.md",
+            "docs/decisions/adr/README.md",
+            "docs/repo-health/session-logs/README.md",
+            "docs/repo-health/debugging/README.md",
+            "docs/research/README.md",
+        ),
+        docs_meta_default=True,
+    ),
+    "full": Profile(
+        key="full",
+        label="Full",
+        summary="long-lived repo with many agents, plans, domains, and generated views",
+        implications=(
+            "Copies the full scaffold tree.",
+            "Best for multi-surface or long-running repos.",
+            "Installs docs-meta by default.",
+        ),
+        structure=("AGENTS.md", "docs/", "scripts/docs-meta", "tests/docs-meta-smoke.sh"),
+        docs_meta_default=True,
+    ),
+}
+
+
+@dataclass(frozen=True)
+class Action:
+    relpath: Path
+    content: str | None = None
+    source: Path | None = None
+    executable: bool = False
+
+
+def tiny_files(profile: Profile) -> list[Action]:
+    return [
+        Action(
+            Path("AGENTS.md"),
+            f"""# {profile.label} Project - Agent Notes
+
+Read `docs/CURRENT_STATE.md` first. Keep docs small and truthful.
+
+## Rules
+
+- Prefer the smallest useful doc.
+- Update `docs/CURRENT_STATE.md` when reality changes.
+- Add more AGENT-DOCS structure only when missing structure is causing confusion.
+""",
+        ),
+        Action(
+            Path("docs/CURRENT_STATE.md"),
+            """# Current State
+
+What is true today?
+
+## Built
+
+## Important Paths
+
+## Current Risks
+
+## Next Best Step
+""",
+        ),
+        Action(
+            Path("docs/ARCHITECTURE.md"),
+            """# Architecture
+
+Keep this short. For a tiny project, this file should answer:
+
+- What are the main parts?
+- Where does state live?
+- What external systems does this touch?
+- What decisions should future agents preserve?
+""",
+        ),
+    ]
+
+
+def small_files(profile: Profile) -> list[Action]:
+    actions = tiny_files(profile)
+    actions.extend(
+        [
+            Action(
+                Path("docs/README.md"),
+                """# Docs
+
+Start here:
+
+1. `CURRENT_STATE.md` - what is true today
+2. `ARCHITECTURE.md` - system shape and state
+3. `ROADMAP.md` - likely sequence
+4. `plans/` - only when work needs a plan
+5. `decisions/` - only when a choice should survive future work
+6. `session-logs/` - only for meaningful work receipts
+""",
+            ),
+            Action(
+                Path("docs/ROADMAP.md"),
+                """# Roadmap
+
+Use this for sequence and rationale, not as a dumping ground.
+
+## Now
+
+## Next
+
+## Later
+""",
+            ),
+            Action(Path("docs/plans/.gitkeep"), ""),
+            Action(Path("docs/decisions/.gitkeep"), ""),
+            Action(Path("docs/session-logs/.gitkeep"), ""),
+        ]
+    )
+    return actions
+
+
+def copy_actions(relpaths: tuple[str, ...]) -> list[Action]:
+    actions: list[Action] = []
+    for rel in relpaths:
+        source = SCAFFOLD / rel
+        if source.is_file():
+            actions.append(Action(Path(rel), source=source, executable=os.access(source, os.X_OK)))
+    return actions
+
+
+def growing_files(_: Profile) -> list[Action]:
+    rels = (
+        "AGENTS.md",
+        "docs/README.md",
+        "docs/orientation/CURRENT_STATE.md",
+        "docs/orientation/ARCHITECTURE.md",
+        "docs/orientation/ROADMAP.md",
+        "docs/product/plans/README.md",
+        "docs/decisions/adr/README.md",
+        "docs/repo-health/session-logs/README.md",
+        "docs/repo-health/debugging/README.md",
+        "docs/research/README.md",
+    )
+    return copy_actions(rels)
+
+
+def full_files(_: Profile) -> list[Action]:
+    actions = [Action(Path("AGENTS.md"), source=SCAFFOLD / "AGENTS.md")]
+    for path in sorted((SCAFFOLD / "docs").rglob("*")):
+        if path.is_file():
+            actions.append(Action(path.relative_to(SCAFFOLD), source=path, executable=os.access(path, os.X_OK)))
+    return actions
+
+
+def docs_meta_actions() -> list[Action]:
+    return [
+        Action(Path("scripts/docs-meta"), source=REPO_ROOT / "scripts" / "docs-meta", executable=True),
+        Action(Path("tests/docs-meta-smoke.sh"), source=REPO_ROOT / "tests" / "docs-meta-smoke.sh", executable=True),
+    ]
+
+
+def profile_actions(profile: Profile, include_docs_meta: bool) -> list[Action]:
+    builders = {
+        "tiny": tiny_files,
+        "small": small_files,
+        "growing": growing_files,
+        "full": full_files,
+    }
+    actions = builders[profile.key](profile)
+    if include_docs_meta:
+        actions.extend(docs_meta_actions())
+    return actions
+
+
+def render_profile(profile: Profile, include_docs_meta: bool, target: Path, write: bool) -> str:
+    lines = [
+        f"Profile: {profile.key} - {profile.label}",
+        f"Use when: {profile.summary}",
+        "",
+        "Implications:",
+    ]
+    lines.extend(f"- {item}" for item in profile.implications)
+    lines.extend(["", "Structure preview:"])
+    lines.extend(f"- {item}" for item in profile.structure)
+    if include_docs_meta:
+        lines.extend(["- scripts/docs-meta", "- tests/docs-meta-smoke.sh"])
+    lines.extend(["", f"Target: {target}", "Mode: write" if write else "Mode: dry-run"])
+    return "\n".join(lines)
+
+
+def choose_profile() -> str:
+    keys = list(PROFILES)
+    index = 1
+
+    def draw() -> None:
+        print("\033[2J\033[H", end="")
+        print("Choose AGENT-DOCS project size")
+        print("Use arrow keys or j/k, then Enter. Recommended default: small.\n")
+        for i, key in enumerate(keys):
+            profile = PROFILES[key]
+            marker = ">" if i == index else " "
+            print(f"{marker} {profile.key:7} {profile.label} - {profile.summary}")
+        selected = PROFILES[keys[index]]
+        print("\nPreview:")
+        for item in selected.structure:
+            print(f"  {item}")
+        default = "yes" if selected.docs_meta_default else "no"
+        print(f"\ndocs-meta default: {default}")
+
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        while True:
+            draw()
+            char = sys.stdin.read(1)
+            if char in {"\r", "\n"}:
+                return keys[index]
+            if char == "\x03":
+                raise KeyboardInterrupt
+            if char in {"k", "K"}:
+                index = (index - 1) % len(keys)
+            elif char in {"j", "J"}:
+                index = (index + 1) % len(keys)
+            elif char == "\x1b" and sys.stdin.read(1) == "[":
+                arrow = sys.stdin.read(1)
+                if arrow == "A":
+                    index = (index - 1) % len(keys)
+                elif arrow == "B":
+                    index = (index + 1) % len(keys)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Install an AGENT-DOCS scaffold profile into a target repository.")
+    parser.add_argument("target", type=Path, help="Target repository root.")
+    parser.add_argument("--profile", choices=sorted(PROFILES), help="Scaffold size. Recommended default when unsure: small.")
+    parser.add_argument("--docs-meta", choices=["auto", "yes", "no"], default="auto", help="Install scripts/docs-meta and its smoke test. Default: profile-specific.")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="Preview changes without writing. This is the default.")
+    mode.add_argument("--write", action="store_true", help="Write files.")
+    parser.add_argument("--force", action="store_true", help="Overwrite existing files.")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    profile_key = args.profile
+    if not profile_key:
+        if sys.stdin.isatty() and sys.stdout.isatty():
+            profile_key = choose_profile()
+        else:
+            print("--profile is required in non-interactive mode. Recommended default: --profile small", file=sys.stderr)
+            return 2
+
+    profile = PROFILES[profile_key]
+    include_docs_meta = profile.docs_meta_default if args.docs_meta == "auto" else args.docs_meta == "yes"
+    write = bool(args.write)
+    target = args.target.resolve()
+    actions = profile_actions(profile, include_docs_meta)
+
+    print(render_profile(profile, include_docs_meta, target, write))
+    print("")
+
+    conflicts = [action.relpath for action in actions if (target / action.relpath).exists() and not args.force]
+    if conflicts and write:
+        print("Refusing to overwrite existing files without --force:", file=sys.stderr)
+        for relpath in conflicts:
+            print(f"- {relpath}", file=sys.stderr)
+        return 1
+
+    verb = "Created" if write else "Would create"
+    for action in actions:
+        destination = target / action.relpath
+        print(f"{verb}: {action.relpath}")
+        if not write:
+            continue
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if action.source:
+            shutil.copy2(action.source, destination)
+        else:
+            destination.write_text(action.content or "", encoding="utf-8")
+        if action.executable:
+            destination.chmod(destination.stat().st_mode | 0o111)
+
+    if not write:
+        print("\nDry run only. Re-run with --write to create files.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

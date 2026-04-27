@@ -59,7 +59,23 @@ For a full AGENT-DOCS-style repo, use [scaffold/](scaffold/) as the source tree 
 
 ## Install
 
-If you want the full scaffold plus deterministic metadata tooling:
+Use the interactive installer when you want the CLI to explain profiles, show the structure preview, and copy the selected scaffold:
+
+```bash
+scripts/agent-docs-init /path/to/project
+```
+
+Non-interactive examples:
+
+```bash
+scripts/agent-docs-init /path/to/project --profile small --dry-run
+scripts/agent-docs-init /path/to/project --profile small --docs-meta yes --write
+scripts/agent-docs-init /path/to/project --profile full --write
+```
+
+`tiny` and `small` synthesize smaller files, including a simpler `ARCHITECTURE.md`. `growing` and `full` copy selected files from the full scaffold. This keeps small-project docs lighter without duplicating the whole scaffold tree.
+
+Manual install still works if you want the full scaffold plus deterministic metadata tooling:
 
 ```bash
 AGENT_DOCS=/path/to/AGENT-DOCS
@@ -200,6 +216,7 @@ The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. Copy 
 | [scaffold/docs/research/](scaffold/docs/research/) | `RSCH-*` convention and research notes |
 | [scaffold/docs/operations/](scaffold/docs/operations/) | release and operational checklists |
 | [scaffold/docs/marketing/](scaffold/docs/marketing/) | launch and campaign planning |
+| [scripts/agent-docs-init](scripts/agent-docs-init) | interactive selected scaffold installer |
 | [scripts/docs-meta](scripts/docs-meta) | deterministic docs metadata CLI |
 
 ## Docs Meta

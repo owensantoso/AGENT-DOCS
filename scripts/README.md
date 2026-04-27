@@ -1,5 +1,35 @@
 # Docs Meta
 
+This folder contains two scripts:
+
+| Script | Purpose |
+|---|---|
+| `agent-docs-init` | interactive selected scaffold installer for target repos |
+| `docs-meta` | deterministic metadata helper once docs are installed |
+
+## Agent Docs Init
+
+Use `agent-docs-init` to install the smallest useful AGENT-DOCS shape into another repo:
+
+```bash
+scripts/agent-docs-init /path/to/project
+scripts/agent-docs-init /path/to/project --profile small --dry-run
+scripts/agent-docs-init /path/to/project --profile small --docs-meta yes --write
+```
+
+Profiles:
+
+| Profile | Meaning | Default |
+|---|---|---|
+| `tiny` | prototype, script, or single-person experiment | smallest flat docs, no `docs-meta` |
+| `small` | real app with a few features and occasional agents | recommended default, no `docs-meta` |
+| `growing` | multiple surfaces, handoffs, bugs, or decisions | selected topic folders, `docs-meta` |
+| `full` | long-lived repo with many agents and generated views | full scaffold, `docs-meta` |
+
+The interactive selector explains each profile and previews the tree while you move through the choices. `tiny` and `small` synthesize lighter docs, including a smaller `ARCHITECTURE.md`; `growing` and `full` copy selected files from `scaffold/`.
+
+## Docs Meta
+
 `docs-meta` is a deterministic metadata helper for agent-friendly docs.
 
 It exists to keep repository memory queryable without asking a human or AI agent to manually maintain counters, status tables, generated registries, or todo dashboards. The important rule is simple: Markdown files, filenames, and frontmatter are the source of truth. Generated files are views.

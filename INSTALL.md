@@ -17,6 +17,21 @@ Do not copy the whole `scaffold/` folder into a target repo root. It contains it
 
 ## Minimum Install
 
+Recommended:
+
+```bash
+scripts/agent-docs-init /path/to/project
+```
+
+The installer asks for a project size, explains the tradeoffs, previews the resulting tree, and defaults to dry-run unless you pass `--write`. Use flags when an agent or script needs deterministic behavior:
+
+```bash
+scripts/agent-docs-init /path/to/project --profile small --dry-run
+scripts/agent-docs-init /path/to/project --profile full --write
+```
+
+Manual full-scaffold install:
+
 From the target repo root, set `AGENT_DOCS` to the path of this repo:
 
 ```bash
