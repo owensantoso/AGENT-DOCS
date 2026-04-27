@@ -86,9 +86,9 @@ require_contains "$tmpdir/cwd-dry-run.out" "Would create: docs/CURRENT_STATE.md"
 
 full_target="$tmpdir/full-app"
 "$installer" "$full_target" --profile full --dry-run >"$tmpdir/full-dry-run.out"
-require_contains "$tmpdir/full-dry-run.out" "|-- docs/"
-require_contains "$tmpdir/full-dry-run.out" "|-- scripts/"
-require_contains "$tmpdir/full-dry-run.out" "|   \`-- docs-meta"
+require_contains "$tmpdir/full-dry-run.out" "├── docs/"
+require_contains "$tmpdir/full-dry-run.out" "├── scripts/"
+require_contains "$tmpdir/full-dry-run.out" "│   └── docs-meta"
 docs_meta_action_count="$(grep -Fc -- "Would create: scripts/docs-meta" "$tmpdir/full-dry-run.out")"
 if [[ "$docs_meta_action_count" != "1" ]]; then
   echo "Expected full profile dry run to create scripts/docs-meta once, got $docs_meta_action_count" >&2
@@ -154,18 +154,18 @@ if process.returncode != 0:
     raise SystemExit(process.returncode)
 if "Profile: growing" not in text:
     raise SystemExit("Expected down-arrow interactive picker to choose growing")
-if "|-- docs/" not in text:
+if "├── docs/" not in text:
     raise SystemExit("Expected interactive preview to render a tree")
-if "|   |-- orientation/" not in text:
+if "│   ├── orientation/" not in text:
     raise SystemExit("Expected interactive tree to include nested folders")
-if "|   |   `-- ROADMAP.md" not in text:
+if "│   │   └── ROADMAP.md" not in text:
     raise SystemExit("Expected interactive tree to include the growing roadmap")
 if text.count("\x1b[2J") > 1:
     raise SystemExit("Expected interactive picker to avoid full-screen clear on every redraw")
 PY
 require_contains "$tmpdir/interactive-picker.out" "Profile: growing"
-require_contains "$tmpdir/interactive-picker.out" "|-- docs/"
-require_contains "$tmpdir/interactive-picker.out" "|   |   \`-- ROADMAP.md"
+require_contains "$tmpdir/interactive-picker.out" "├── docs/"
+require_contains "$tmpdir/interactive-picker.out" "│   │   └── ROADMAP.md"
 
 if "$installer" >"$tmpdir/no-profile.out" 2>&1; then
   echo "Expected non-interactive run without profile to fail" >&2

@@ -294,12 +294,12 @@ def tree_lines(entries: list[str]) -> list[str]:
         items = sorted(node.items(), key=lambda item: item[0].lower())
         for index, (name, children) in enumerate(items):
             last = index == len(items) - 1
-            branch = "`-- " if last else "|-- "
+            branch = "└── " if last else "├── "
             child_path = path + (name,)
             suffix = "/" if children or child_path in explicit_dirs else ""
             lines.append(f"{prefix}{branch}{name}{suffix}")
             if children:
-                extension = "    " if last else "|   "
+                extension = "    " if last else "│   "
                 lines.extend(walk(children, prefix + extension, child_path))
         return lines
 
