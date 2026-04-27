@@ -289,6 +289,7 @@ This exists because agents are good at synthesis but unreliable at bookkeeping. 
 | Update generated views | `scripts/docs-meta update` |
 | Validate metadata and generated views | `scripts/docs-meta check` |
 | Validate structured todos | `scripts/docs-meta check-todos` |
+| Review open loops | `scripts/docs-meta review` |
 | Inspect links | `scripts/docs-meta links`, `check-links`, `backlinks`, `orphans` |
 | Move docs safely | `scripts/docs-meta move OLD NEW --dry-run` |
 | Check freshness | `scripts/docs-meta health --write` |

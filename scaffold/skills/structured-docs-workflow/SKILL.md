@@ -38,7 +38,8 @@ If you are adopting the workflow in another repo:
 - deciding whether work belongs in an idea, spec, plan, implementation brief, ADR, session log, learning, explainer, or question
 - understanding the read order for a fresh agent
 - using structured `TODO-*` items
-- using `scripts/docs-meta` for IDs, status, generated views, todo checks, and link checks
+- using `scripts/docs-meta` for IDs, status, generated views, review queues, todo checks, and link checks
+- using `scripts/docs-meta review` to find audit findings, routed follow-ups, stale docs, and TODOs needing attention
 - explaining the workflow to another agent or installing it into another repo
 
 ## Start Here
@@ -110,6 +111,7 @@ scripts/docs-meta next spec
 scripts/docs-meta next todo
 scripts/docs-meta new plan "Title" --domain product --spec SPEC-0001
 scripts/docs-meta todos --status ready
+scripts/docs-meta review
 scripts/docs-meta check-todos
 scripts/docs-meta update
 scripts/docs-meta check

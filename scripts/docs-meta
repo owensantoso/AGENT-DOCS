@@ -3147,6 +3147,9 @@ def follow_up_review_item(finding: AuditFinding, root: Path, docs: list[Doc], to
         return review_item("audit-findings", "invalid-follow-up", severity, "routed", finding.reference, source, finding.line, f"Invalid follow-up target {finding.follow_up}", detail, finding.route, finding.follow_up)
     if target_status == "invalid-fragment":
         return review_item("audit-findings", "invalid-follow-up", severity, "routed", finding.reference, source, finding.line, f"Invalid follow-up fragment #{detail}", finding.follow_up, finding.route, finding.follow_up)
+    target_route = "TODO" if todo else (doc.primary_id.split("-", 1)[0] if doc and doc.primary_id else "")
+    if finding.route not in {"", "none"} and target_route and finding.route != target_route:
+        return review_item("audit-findings", "invalid-follow-up", severity, "routed", finding.reference, source, finding.line, f"Route {finding.route} does not match follow-up {finding.follow_up}", target_route, finding.route, finding.follow_up)
     if todo:
         if todo.status == "blocked":
             return review_item("audit-findings", "blocked-follow-up", severity, "routed", finding.reference, source, finding.line, f"Follow-up {finding.follow_up} is blocked", todo.metadata.get("blocker") or todo.metadata.get("blocked_by") or todo.metadata.get("reason", ""), finding.route, finding.follow_up)
@@ -3203,11 +3206,12 @@ def audit_review_items(root: Path, docs: list[Doc], stale_days: int) -> list[Rev
                     source,
                     finding.line,
                     "Malformed audit finding row",
-                    finding.raw,
-                    finding.route,
-                    finding.follow_up,
+                    "Row does not match the required audit finding table shape.",
+                    "",
+                    "",
                 )
             )
+            continue
         if key in seen_by_audit:
             items.append(
                 review_item(

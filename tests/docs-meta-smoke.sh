@@ -181,6 +181,7 @@ next_audit_due:
 | FINDING-010 | medium | routed | Freeform routed follow-up should stay visible | PLAN | Someone should look into this |  |
 | FINDING-011 | medium | routed | Markdown follow-up title should still resolve | PLAN | [Plan](../../product/plans/PLAN-0001-shared-capture-implementation/PLAN-0001-shared-capture-implementation.md#plan-0001-shared-capture-implementation "Open plan") |  |
 | FINDING-012 | low | routed | External Markdown issue link should be accepted | PLAN | [Issue](https://github.com/owensantoso/AGENT-DOCS/issues/1 "Issue") |  |
+| FINDING-013 | medium | routed | Route mismatch should stay visible | DIAG | PLAN-0001 |  |
 
 ```md
 | ID | Severity | Status | Finding | Route | Follow-up | Resolution |
@@ -219,7 +220,7 @@ repo_state:
 | FINDING-003 | low | accepted-risk | Accepted risk with route is invalid | PLAN | PLAN-0001 | Accepted by owner:docs for now |
 | FINDING-004 | low | deferred | Deferred risk lacks a revisit trigger | none |  | Deferred for later |
 | FINDING-005 | low | accepted-risk | Accepted risk lacks rationale | none |  | owner:docs |
-| FINDING-006 | low | open | Malformed row has an unescaped | pipe | PLAN | PLAN-0001 |  |
+| FINDING-006 | low | open | Malformed row has SECRET-AUDIT-PAYLOAD and an unescaped | pipe | PLAN | PLAN-0001 |  |
 | FINDING-007 | high | open | Row after malformed row should still parse | PLAN | PLAN-0001 |  |
 BADAUDIT
 
@@ -309,6 +310,7 @@ require_contains $tmpdir/docs-meta-review.out "stale-follow-up"
 require_contains $tmpdir/docs-meta-review.out "invalid-follow-up"
 require_contains $tmpdir/docs-meta-review.out "missing-anchor"
 require_contains $tmpdir/docs-meta-review.out "Someone should look into this"
+require_contains $tmpdir/docs-meta-review.out "Route DIAG does not match follow-up PLAN-0001"
 require_contains $tmpdir/docs-meta-review.out "Other open audit findings"
 if grep -Fq "Other review items" $tmpdir/docs-meta-review.out; then
   echo "Expected every smoke review item to be grouped into a known urgency bucket" >&2
@@ -339,6 +341,18 @@ require_contains $tmpdir/docs-meta-review.json "\"source\": \"repo-health/audits
 require_contains $tmpdir/docs-meta-review.json "\"code\": \"invalid-audit-finding\""
 require_contains $tmpdir/docs-meta-review.json "\"message\": \"Invalid severity 'urgent'\""
 require_contains $tmpdir/docs-meta-review.json "\"message\": \"Malformed audit finding row\""
+if grep -Fq "SECRET-AUDIT-PAYLOAD" $tmpdir/docs-meta-review.json; then
+  echo "Expected malformed audit row detail to avoid raw sensitive payloads" >&2
+  exit 1
+fi
+if grep -Fq "\"route\": \"pipe\"" $tmpdir/docs-meta-review.json || grep -Fq "\"follow_up\": \"PLAN\"" $tmpdir/docs-meta-review.json; then
+  echo "Expected malformed audit row shifted cells not to leak via route or follow_up" >&2
+  exit 1
+fi
+if grep -Fq "Invalid route 'pipe'" $tmpdir/docs-meta-review.json; then
+  echo "Expected malformed audit rows not to emit shifted validation noise" >&2
+  exit 1
+fi
 require_contains $tmpdir/docs-meta-review.json "\"code\": \"duplicate-audit-finding\""
 require_contains $tmpdir/docs-meta-review.json "\"code\": \"stale-doc\""
 require_contains $tmpdir/docs-meta-review.json "\"code\": \"blocked-follow-up\""
@@ -347,6 +361,7 @@ require_contains $tmpdir/docs-meta-review.json "\"message\": \"Deferred finding 
 require_contains $tmpdir/docs-meta-review.json "\"message\": \"Accepted risk needs rationale and owner\""
 require_contains $tmpdir/docs-meta-review.json "\"message\": \"Invalid follow-up fragment #missing-anchor\""
 require_contains $tmpdir/docs-meta-review.json "\"message\": \"Invalid follow-up target Someone should look into this\""
+require_contains $tmpdir/docs-meta-review.json "\"message\": \"Route DIAG does not match follow-up PLAN-0001\""
 if grep -Fq "Invalid follow-up fragment #plan-0001-shared-capture-implementation" $tmpdir/docs-meta-review.json; then
   echo "Expected Markdown follow-up links with optional titles to resolve" >&2
   exit 1
