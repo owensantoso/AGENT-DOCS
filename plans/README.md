@@ -12,6 +12,7 @@ Do not park target-repo product work here. Product, app, or service plans belong
 |---|---|
 | [PLAN-0001 - Docs Link Graph and Safe Move Tooling](docs-meta-link-graph-and-safe-move/PLAN-0001-docs-meta-link-graph-and-safe-move.md) | Extend `docs-meta` with backlinks, broken-link checks, orphan checks, link normalization, and safe doc move previews. |
 | [PLAN-0002 - Stable Todo System](stable-todo-system/PLAN-0002-stable-todo-system.md) | Add stable Markdown-native todo IDs, lifecycle states, owner/skill metadata, generated views, and checks for agent coordination. |
+| [PLAN-0003 - Docs Meta Review Parser](docs-meta-review-parser/PLAN-0003-docs-meta-review-parser.md) | Parse audit findings and open loops into a deterministic `docs-meta review` attention queue. |
 
 ## Related Concepts
 
