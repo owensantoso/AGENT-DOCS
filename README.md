@@ -14,7 +14,7 @@ From the repo you want to document, install or update the CLI and immediately ru
 curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
 ```
 
-The installer asks where to install, explains the project-size profiles, previews the tree, and defaults to dry-run. Re-run with `--write` when the preview looks right. Use `small` when unsure. Existing target files are listed first, and write mode refuses to overwrite them unless you pass `--force`.
+The curl installer installs `agent-docs-init` and runs it once in write mode by default. Use `bash -s -- --dry-run` to preview instead. The interactive CLI asks where to install, explains the project-size profiles, and previews the tree. Use `small` when unsure. Existing target files are listed first, and write mode refuses to overwrite them unless you pass `--force`.
 
 Install or update the CLI without running init:
 
@@ -60,11 +60,14 @@ The point is not the folder tree. The point is making repo memory resumable: sou
 | Install this workflow in another repo | [INSTALL.md](INSTALL.md) |
 | Understand the whole workflow in one pass | [guides/workflow-overview.md](guides/workflow-overview.md) |
 | Decide which document type owns what | [guides/doc-types-and-responsibilities.md](guides/doc-types-and-responsibilities.md) |
+| Run a scoped audit | [guides/audits/README.md](guides/audits/README.md) |
 | Learn how agents split and integrate work | [guides/subagent-execution-loop.md](guides/subagent-execution-loop.md) |
 | Follow an adoption checklist | [guides/adoption-checklist.md](guides/adoption-checklist.md) |
 | Use the workflow as a Codex skill | [skills/structured-docs-workflow/SKILL.md](skills/structured-docs-workflow/SKILL.md) |
 | Plan upstream AGENT-DOCS improvements | [plans/README.md](plans/README.md) |
 | Explore the SQLite docs-index concept | [concepts/CONC-0001-read-only-sqlite-docs-index.md](concepts/CONC-0001-read-only-sqlite-docs-index.md) |
+| Explore future doctor/upgrade safety | [concepts/CONC-0002-agent-docs-doctor-and-upgrade.md](concepts/CONC-0002-agent-docs-doctor-and-upgrade.md) |
+| Explore open-loop review cadence | [concepts/CONC-0003-open-loop-review-cadence.md](concepts/CONC-0003-open-loop-review-cadence.md) |
 
 ## Choose A Size
 
@@ -260,6 +263,7 @@ The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. Copy 
 |---|---|
 | [scaffold/AGENTS.md](scaffold/AGENTS.md) | root agent index and repo rules |
 | [scaffold/agent-instructions/](scaffold/agent-instructions/) | reusable global and surface `AGENTS.md` templates |
+| [guides/audits/](guides/audits/) | reusable repo-agnostic audit-kind guides, copied into full-profile repos under `docs/repo-health/audits/guides/` |
 | [scaffold/docs/README.md](scaffold/docs/README.md) | target repo docs map and doc-type workflow diagram |
 | [scaffold/docs/orientation/](scaffold/docs/orientation/) | current state, onboarding, roadmap, architecture |
 | [scaffold/docs/architecture/](scaffold/docs/architecture/) | architecture hub and `AREA-*` example |

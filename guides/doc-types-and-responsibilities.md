@@ -158,6 +158,25 @@ Should answer:
 
 Questions are not tasks by default. Promote a question to `TODO-*` only when it needs action, ownership, verification, or closeout.
 
+## Audit
+
+Purpose:
+
+- capture a scoped review of project health, alignment, risk, or drift
+- record evidence, checks, findings, and routed follow-ups
+- make neglected open loops visible without turning every observation into implementation scope
+
+Should answer:
+
+- what was reviewed?
+- which reusable audit guide was used?
+- what was intentionally out of scope?
+- what findings were discovered?
+- which findings are resolved, routed, deferred, accepted as risk, or archived?
+- what should happen next, and which artifact owns that work?
+
+Audits are evidence snapshots, not source-of-truth product requirements. Route findings to `TODO`, `DIAG`, `RSCH`, `EVAL`, `QST`, `CONC`, `ADR`, `SPEC`, `PLAN`, or `IMPL` as appropriate. Use [audits/README.md](audits/README.md) for reusable audit-kind procedures.
+
 Do not create `QST-*` records for ordinary clarification. Ask short-lived questions in chat, or keep local open questions in the owning spec, plan, implementation brief, research note, session log, explainer, or learning record. Promote a question to `QST-*` only when the unresolved uncertainty needs durable status, ownership, links, or resolution history across sessions.
 
 ## Session log

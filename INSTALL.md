@@ -23,7 +23,7 @@ From the target repo root, install or update the CLI and immediately run the ini
 curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
 ```
 
-The installer asks for a project size, explains the tradeoffs, previews the resulting tree, and defaults to dry-run unless you pass `--write`. If you omit the target path, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path.
+The curl installer installs `agent-docs-init` and runs it once in write mode by default. Use `bash -s -- --dry-run` to preview instead. If you omit the target path, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path. The standalone `agent-docs-init` command defaults to dry-run unless you pass `--write`.
 
 ```bash
 agent-docs-init --profile small --dry-run

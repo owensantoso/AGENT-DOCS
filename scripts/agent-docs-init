@@ -159,7 +159,7 @@ PROFILES = {
             (
                 "Repo health",
                 (
-                    ("AUDIT-*", "review finding set"),
+                    ("audit", "dated review finding set"),
                     ("DIAG-*", "diagnostic record"),
                     ("EVAL-*", "evaluation harness"),
                     ("session log", "work receipt"),
@@ -306,6 +306,9 @@ def full_files(_: Profile) -> list[Action]:
     for path in sorted((SCAFFOLD / "docs").rglob("*")):
         if path.is_file():
             actions.append(Action(path.relative_to(SCAFFOLD), source=path, executable=os.access(path, os.X_OK)))
+    for path in sorted((REPO_ROOT / "guides" / "audits").rglob("*.md")):
+        target = Path("docs/repo-health/audits/guides") / path.relative_to(REPO_ROOT / "guides" / "audits")
+        actions.append(Action(target, source=path))
     return actions
 
 

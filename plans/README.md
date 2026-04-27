@@ -18,3 +18,4 @@ Do not park target-repo product work here. Product, app, or service plans belong
 | Concept | Purpose |
 |---|---|
 | [CONC-0001 - Read-Only SQLite Docs Index](../concepts/CONC-0001-read-only-sqlite-docs-index.md) | Evaluate a generated, read-only SQLite cache for richer docs-meta queries while keeping Markdown canonical. |
+| [CONC-0002 - Agent Docs Doctor And Upgrade](../concepts/CONC-0002-agent-docs-doctor-and-upgrade.md) | Define a conservative command family for checking target-repo drift and safely updating AGENT-DOCS-owned assets. |

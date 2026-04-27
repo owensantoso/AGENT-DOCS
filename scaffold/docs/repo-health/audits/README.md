@@ -15,6 +15,16 @@ Repo health audits are broader than docs audits. They can include:
 
 Audits are receipts, not generated truth. Generated signals such as `HEALTH.md`, `ROADMAP-VIEW.md`, `TODOS.md`, and `DOCS-REGISTRY.md` can feed an audit, but the audit records what a human or agent actually checked and concluded.
 
+Use the installed audit guides as reusable procedures. Read only the guide for the audit kind you are running, then combine it with this repo's local paths and commands from [audit-profile.md](audit-profile.md).
+
+Installed guide path:
+
+```text
+docs/repo-health/audits/guides/<audit-kind>.md
+```
+
+The available audit kinds and guide files are listed at `docs/repo-health/audits/guides/README.md` in installed full-profile repos.
+
 Recommended cadence:
 
 - small active repo: every 1-2 weeks
@@ -25,15 +35,21 @@ Recommended cadence:
 
 Start from `YYYY-MM-DD-repo-health-audit.md`.
 
-Typical commands:
+Before reviewing, choose `audit_kind` and identify the matching reusable guide. Do not read every audit guide for every audit.
+
+Start read-only:
 
 ```bash
 scripts/docs-meta check
-scripts/docs-meta health --write
-scripts/docs-meta roadmap --write
 ```
 
 Then add project-specific checks such as tests, lint, build, architecture review, duplication search, dependency checks, or manual review.
+
+Write-mode cleanup commands such as `scripts/docs-meta health --write` or `scripts/docs-meta roadmap --write` belong in docs-health or paper-trail cleanup only when the audit scope explicitly includes cleanup.
+
+An audit is complete only when every finding is resolved, routed to a follow-up artifact, deferred with reason, accepted as risk, or archived.
+
+Audits do not block unrelated implementation by default. Pause related implementation only for confirmed high-severity safety, security, data-loss, privacy, or release-readiness findings.
 
 ## Last Audit
 
