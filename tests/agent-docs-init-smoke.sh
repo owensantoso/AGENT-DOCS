@@ -106,7 +106,8 @@ installer = sys.argv[1]
 target = sys.argv[2]
 master, slave = os.openpty()
 env = dict(os.environ)
-env["COLUMNS"] = "100"
+env["COLUMNS"] = "132"
+env["LINES"] = "24"
 process = subprocess.Popen(
     [installer, target],
     stdin=slave,
@@ -132,7 +133,7 @@ try:
                 break
             output.extend(chunk)
             if not sent and b"Use arrow keys" in output:
-                os.write(master, b"\x1b[B\r")
+                os.write(master, b"\x1b[C\r")
                 sent = True
         if process.poll() is not None:
             break
@@ -153,9 +154,13 @@ print(text)
 if process.returncode != 0:
     raise SystemExit(process.returncode)
 if "Profile: growing" not in text:
-    raise SystemExit("Expected down-arrow interactive picker to choose growing")
-if "\x1b[1;7m> growing" not in text:
-    raise SystemExit("Expected selected profile row to be styled")
+    raise SystemExit("Expected right-arrow interactive picker to choose growing")
+if "Use arrow keys or h/l/j/k" not in text:
+    raise SystemExit("Expected picker to advertise horizontal navigation")
+if "\x1b[1;7mgrowing\x1b[0m" not in text:
+    raise SystemExit("Expected selected profile card title to be styled")
+if "│ tiny" not in text or "│ small" not in text or "│ \x1b[1;7mgrowing" not in text:
+    raise SystemExit("Expected wide picker to show multiple profile previews")
 if "├── docs/" not in text:
     raise SystemExit("Expected interactive preview to render a tree")
 if "Preview: \x1b[36mstart here\x1b[0m, \x1b[2mtooling\x1b[0m" not in text:
@@ -241,8 +246,10 @@ if len(screen_lines) > 16:
     raise SystemExit(f"Expected small terminal screen to fit in 16 lines, got {len(screen_lines)}")
 if "… " not in screen:
     raise SystemExit("Expected oversized preview to be summarized in a small terminal")
-if "\x1b[1;7m> full" not in screen:
-    raise SystemExit("Expected full profile selection to remain visible in small terminal")
+if "│ growing" not in screen or "│ \x1b[1;7mfull\x1b[0m" not in screen:
+    raise SystemExit("Expected small terminal carousel to show the selected card and previous neighbor")
+if "│ tiny" in screen:
+    raise SystemExit("Expected small terminal carousel to scroll older cards out of view")
 PY
 
 if "$installer" >"$tmpdir/no-profile.out" 2>&1; then

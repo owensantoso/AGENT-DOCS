@@ -21,6 +21,9 @@ ANSI_RESET = "\033[0m"
 IMPORTANT_DOCS = {"AGENTS.md", "ARCHITECTURE.md", "CURRENT_STATE.md", "ROADMAP.md"}
 IMPORTANT_FOLDERS = {("docs", "orientation")}
 QUIET_FOLDERS = {("scripts",), ("tests",)}
+CARD_GAP = 2
+IDEAL_CARD_WIDTH = 38
+MIN_CARD_WIDTH = 30
 
 
 @dataclass(frozen=True)
@@ -328,11 +331,6 @@ def tree_lines(entries: list[str], stylize: bool = False) -> list[str]:
     return walk(tree)
 
 
-def fit_terminal_line(text: str) -> str:
-    width = shutil.get_terminal_size((100, 24)).columns
-    return fit_terminal_line_to_width(text, width)
-
-
 def fit_terminal_line_to_width(text: str, width: int) -> str:
     if width < 20:
         width = 20
@@ -342,16 +340,76 @@ def fit_terminal_line_to_width(text: str, width: int) -> str:
     return plain[: max(0, width - 3)] + "..."
 
 
-def capped_preview_lines(lines: list[str], available_rows: int, width: int) -> list[str]:
-    if available_rows <= 0:
+def terminal_width(text: str) -> int:
+    return len(ANSI_PATTERN.sub("", text))
+
+
+def pad_terminal_line(text: str, width: int) -> str:
+    fitted = fit_terminal_line_to_width(text, width)
+    return fitted + (" " * max(0, width - terminal_width(fitted)))
+
+
+def visible_card_count(terminal_width: int, profile_count: int) -> int:
+    if terminal_width < MIN_CARD_WIDTH:
+        return 1
+    return max(1, min(profile_count, (terminal_width + CARD_GAP) // (IDEAL_CARD_WIDTH + CARD_GAP)))
+
+
+def profile_window_start(index: int, visible_count: int, profile_count: int) -> int:
+    if visible_count >= profile_count:
+        return 0
+    return min(max(0, index - visible_count + 1), profile_count - visible_count)
+
+
+def render_profile_card(profile: Profile, selected: bool, width: int, height: int) -> list[str]:
+    if height < 4:
         return []
-    if len(lines) <= available_rows:
-        return [fit_terminal_line_to_width(f"  {line}", width) for line in lines]
-    shown_count = max(0, available_rows - 1)
-    hidden_count = len(lines) - shown_count
-    shown = [fit_terminal_line_to_width(f"  {line}", width) for line in lines[:shown_count]]
-    shown.append(fit_terminal_line_to_width(f"  … {hidden_count} more paths", width))
-    return shown
+    inner_width = max(1, width - 4)
+    border_code = "36" if selected else "2"
+    top = terminal_style("╭" + ("─" * (width - 2)) + "╮", border_code)
+    bottom = terminal_style("╰" + ("─" * (width - 2)) + "╯", border_code)
+    title = profile.key
+    if selected:
+        title = terminal_style(title, "1;7")
+    content = [
+        f"{title} - {profile.label}",
+        profile.summary,
+        f"docs-meta: {'yes' if profile.docs_meta_default else 'no'}",
+        "",
+    ]
+    tree = tree_lines(structure_entries(profile, profile.docs_meta_default), stylize=True)
+    tree_rows = max(0, height - 2 - len(content))
+    if len(tree) > tree_rows and tree_rows > 0:
+        shown_count = max(0, tree_rows - 1)
+        content.extend(tree[:shown_count])
+        content.append(f"… {len(tree) - shown_count} more paths")
+    else:
+        content.extend(tree[:tree_rows])
+
+    body_height = height - 2
+    content = content[:body_height]
+    content.extend([""] * max(0, body_height - len(content)))
+    body = [f"│ {pad_terminal_line(line, inner_width)} │" for line in content]
+    return [top, *body, bottom]
+
+
+def render_profile_cards(keys: list[str], index: int, terminal_size: os.terminal_size) -> list[str]:
+    visible_count = visible_card_count(terminal_size.columns, len(keys))
+    card_width = max(
+        MIN_CARD_WIDTH,
+        (terminal_size.columns - (CARD_GAP * (visible_count - 1))) // visible_count,
+    )
+    card_width = min(IDEAL_CARD_WIDTH + 8, card_width)
+    start = profile_window_start(index, visible_count, len(keys))
+    visible_keys = keys[start : start + visible_count]
+    card_height = max(4, terminal_size.lines - 4)
+    cards = [
+        render_profile_card(PROFILES[key], i + start == index, card_width, card_height)
+        for i, key in enumerate(visible_keys)
+    ]
+    if not cards:
+        return []
+    return [(" " * CARD_GAP).join(card[row] for card in cards) for row in range(len(cards[0]))]
 
 
 def choose_profile() -> str:
@@ -369,25 +427,10 @@ def choose_profile() -> str:
             print("\033[H\033[J", end="")
         lines = [
             "Choose AGENT-DOCS project size",
-            "Use arrow keys or j/k, then Enter. Recommended default: small.",
-            "",
+            "Use arrow keys or h/l/j/k, then Enter. Recommended default: small.",
+            f"Preview: {terminal_style('start here', '36')}, {terminal_style('tooling', '2')}",
         ]
-        for i, key in enumerate(keys):
-            profile = PROFILES[key]
-            marker = ">" if i == index else " "
-            row = fit_terminal_line_to_width(f"{marker} {profile.key:<7} {profile.label} - {profile.summary}", terminal_size.columns)
-            if i == index:
-                row = terminal_style(row, "1;7")
-            lines.append(row)
-        selected = PROFILES[keys[index]]
-        docs_meta = "yes" if selected.docs_meta_default else "no"
-        preview = tree_lines(structure_entries(selected, selected.docs_meta_default), stylize=True)
-        footer = ["", f"docs-meta default: {docs_meta}"]
-        available_preview_rows = terminal_size.lines - len(lines) - 2 - len(footer)
-        preview_header = f"Preview: {terminal_style('start here', '36')}, {terminal_style('tooling', '2')}"
-        lines.extend(["", preview_header])
-        lines.extend(capped_preview_lines(preview, available_preview_rows, terminal_size.columns))
-        lines.extend(footer)
+        lines.extend(render_profile_cards(keys, index, terminal_size))
         print("\n".join(lines))
 
     fd = sys.stdin.fileno()
@@ -402,15 +445,15 @@ def choose_profile() -> str:
                 return keys[index]
             if char == "\x03":
                 raise KeyboardInterrupt
-            if char in {"k", "K"}:
+            if char in {"k", "K", "h", "H"}:
                 index = (index - 1) % len(keys)
-            elif char in {"j", "J"}:
+            elif char in {"j", "J", "l", "L"}:
                 index = (index + 1) % len(keys)
             elif char == "\x1b" and sys.stdin.read(1) == "[":
                 arrow = sys.stdin.read(1)
-                if arrow == "A":
+                if arrow in {"A", "D"}:
                     index = (index - 1) % len(keys)
-                elif arrow == "B":
+                elif arrow in {"B", "C"}:
                     index = (index + 1) % len(keys)
     finally:
         print("\033[?25h", end="")
