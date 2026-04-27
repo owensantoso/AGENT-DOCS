@@ -54,4 +54,33 @@ require_contains "$tmpdir/run.out" "Profile: small"
 require_contains "$tmpdir/run.out" "Target: $resolved_run_target"
 require_contains "$tmpdir/run.out" "Would create: docs/CURRENT_STATE.md"
 
+fakebin="$tmpdir/fakebin"
+fake_home="$tmpdir/private-home"
+mkdir -p "$fakebin"
+cat >"$fakebin/gh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1 $2" != "repo clone" ]]; then
+  exit 2
+fi
+echo "$3 -> $4" >>"$GH_FAKE_LOG"
+mkdir -p "$4/scripts"
+cat >"$4/scripts/agent-docs-init" <<'PY'
+#!/usr/bin/env python3
+print("fake init")
+PY
+chmod +x "$4/scripts/agent-docs-init"
+SH
+chmod +x "$fakebin/gh"
+
+PATH="$fakebin:$PATH" \
+GH_FAKE_LOG="$tmpdir/gh.log" \
+AGENT_DOCS_REPO_URL="https://github.com/example/private-docs.git" \
+AGENT_DOCS_HOME="$fake_home" \
+AGENT_DOCS_BIN_DIR="$tmpdir/private-bin" \
+  "$repo_root/install.sh" --no-run >"$tmpdir/private-install.out"
+
+require_contains "$tmpdir/gh.log" "example/private-docs -> $fake_home"
+require_contains "$tmpdir/private-install.out" "Installed agent-docs-init"
+
 echo "install smoke test passed"

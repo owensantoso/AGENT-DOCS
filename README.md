@@ -8,10 +8,12 @@ This is a **scalable workflow**, not a requirement to install every folder and d
 
 ## Quick Start
 
-From the repo you want to document, install or update the CLI and immediately run the init flow:
+From the repo you want to document, install or update the CLI and immediately run the init flow. For the private `AGENT-DOCS` repo, authenticate with GitHub CLI first:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+gh auth login
+gh auth setup-git
+curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
 ```
 
 The installer asks where to install, explains the project-size profiles, previews the tree, and defaults to dry-run. Re-run with `--write` when the preview looks right. Use `small` when unsure. Existing target files are listed first, and write mode refuses to overwrite them unless you pass `--force`.
@@ -19,7 +21,13 @@ The installer asks where to install, explains the project-size profiles, preview
 Install or update the CLI without running init:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
+curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
+```
+
+If this repo is ever public, the unauthenticated form also works:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
 ```
 
 Non-interactive examples:

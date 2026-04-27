@@ -8,6 +8,36 @@ source_dir="${AGENT_DOCS_SOURCE:-}"
 run_after_install=true
 run_args=()
 
+github_repo_from_url() {
+  local url="$1"
+  local repo=""
+  case "$url" in
+    https://github.com/*)
+      repo="${url#https://github.com/}"
+      repo="${repo%.git}"
+      ;;
+    git@github.com:*)
+      repo="${url#git@github.com:}"
+      repo="${repo%.git}"
+      ;;
+  esac
+  if [[ "$repo" == */* ]]; then
+    printf '%s\n' "$repo"
+  fi
+}
+
+clone_repo() {
+  local github_repo
+  github_repo="$(github_repo_from_url "$repo_url")"
+  if [[ -n "$github_repo" ]] && command -v gh >/dev/null 2>&1; then
+    if gh repo clone "$github_repo" "$agent_docs_home" -- --quiet; then
+      return
+    fi
+    echo "gh repo clone failed; falling back to git clone" >&2
+  fi
+  git clone --quiet "$repo_url" "$agent_docs_home"
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --run)
@@ -35,7 +65,7 @@ if [[ -z "$source_dir" ]]; then
     git -C "$agent_docs_home" pull --ff-only --quiet
   else
     rm -rf "$agent_docs_home"
-    git clone --quiet "$repo_url" "$agent_docs_home"
+    clone_repo
   fi
   source_dir="$agent_docs_home"
 fi

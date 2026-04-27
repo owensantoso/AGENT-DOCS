@@ -17,10 +17,12 @@ Do not copy the whole `scaffold/` folder into a target repo root. It contains it
 
 ## Minimum Install
 
-From the target repo root, install or update the CLI and immediately run the init flow:
+From the target repo root, install or update the CLI and immediately run the init flow. For the private `AGENT-DOCS` repo, authenticate with GitHub CLI first:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+gh auth login
+gh auth setup-git
+curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
 ```
 
 The installer asks for a project size, explains the tradeoffs, previews the resulting tree, and defaults to dry-run unless you pass `--write`. If you omit the target path, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path.
@@ -33,7 +35,13 @@ agent-docs-init --profile full --write
 Install or update the CLI without running init:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
+curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
+```
+
+If this repo is public, the unauthenticated raw URL also works:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
 ```
 
 Repeated installs update `~/.agent-docs`, refresh the `agent-docs-init` symlink, and report when the command is already installed. Existing target files are listed during dry-run; write mode refuses to overwrite them unless you pass `--force`. An existing `docs/` folder is fine when the selected profile only needs to create missing files inside it.
