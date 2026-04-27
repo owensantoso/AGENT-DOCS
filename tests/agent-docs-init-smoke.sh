@@ -59,7 +59,14 @@ require_file "$meta_target/scripts/docs-meta"
 require_file "$meta_target/tests/docs-meta-smoke.sh"
 require_contains "$tmpdir/meta-write.out" "scripts/docs-meta"
 
-if "$installer" "$tmpdir/no-profile-app" >"$tmpdir/no-profile.out" 2>&1; then
+cwd_target="$tmpdir/cwd-app"
+mkdir -p "$cwd_target"
+resolved_cwd_target="$(cd "$cwd_target" && pwd -P)"
+(cd "$cwd_target" && "$installer" --profile small --dry-run >"$tmpdir/cwd-dry-run.out")
+require_contains "$tmpdir/cwd-dry-run.out" "Target: $resolved_cwd_target"
+require_contains "$tmpdir/cwd-dry-run.out" "Would create: docs/CURRENT_STATE.md"
+
+if "$installer" >"$tmpdir/no-profile.out" 2>&1; then
   echo "Expected non-interactive run without profile to fail" >&2
   exit 1
 fi

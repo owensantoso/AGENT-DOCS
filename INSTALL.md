@@ -20,14 +20,16 @@ Do not copy the whole `scaffold/` folder into a target repo root. It contains it
 Recommended:
 
 ```bash
-scripts/agent-docs-init /path/to/project
+scripts/agent-docs-init
 ```
+
+Run that from the target repo root. If you omit the target path, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path.
 
 The installer asks for a project size, explains the tradeoffs, previews the resulting tree, and defaults to dry-run unless you pass `--write`. Use flags when an agent or script needs deterministic behavior:
 
 ```bash
-scripts/agent-docs-init /path/to/project --profile small --dry-run
-scripts/agent-docs-init /path/to/project --profile full --write
+scripts/agent-docs-init --profile small --dry-run
+scripts/agent-docs-init --profile full --write
 ```
 
 Manual full-scaffold install:

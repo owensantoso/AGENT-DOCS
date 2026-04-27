@@ -1,10 +1,47 @@
 # Agent Docs Workflow
 
-Portable docs kit for running an agent-friendly planning and implementation workflow in a repository.
+Portable docs kit for repos where humans and AI agents need to understand, plan, resume, and verify work without rereading old chat history.
 
-The core idea is simple: docs should let a fresh human or AI agent understand current reality, planned intent, execution boundaries, and why a change happened without needing old chat history.
+Most project docs answer "what is this?" AGENT-DOCS is more opinionated: it gives a repo a durable operating memory. A fresh agent should be able to find what is true now, what is planned, what evidence exists, what decisions matter, and what exact work is safe to do next.
 
 This is a **scalable workflow**, not a requirement to install every folder and doc type on day one. Start with the smallest shape that prevents confusion, then add structure only when the absence of structure is costing you comprehension.
+
+## Why This Exists
+
+Agent-driven projects create a specific kind of mess: not lack of notes, but notes that do not tell the next session what is canonical.
+
+| Common Failure | AGENT-DOCS Answer |
+|---|---|
+| A fresh agent has to infer current reality from code and stale chat | `CURRENT_STATE.md` is the first truth page |
+| Ideas, specs, plans, and decisions blur together | Each doc type has one job and one owner of truth |
+| Agents guess the next ID or hand-edit registries | `docs-meta` derives IDs and generated views from source docs |
+| A bug investigation is trapped in pasted logs | `DIAG-*` records preserve sanitized run evidence |
+| Research, benchmarks, and decisions get mixed | `RSCH-*`, `EVAL-*`, and `ADR-*` stay separate |
+| Plans become too big to hand off safely | `PLAN-*` owns scope; `IMPL-*` owns bounded execution |
+
+The differentiator is not the folder tree. It is the separation between **source docs**, **generated views**, and **execution handoffs**. The repo remains the source of truth; `docs-meta` handles bookkeeping; agents use the docs to avoid inventing scope.
+
+## Quick Start
+
+For a small or MVP repo, run this from the target repo root:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/scripts/agent-docs-init -o /tmp/agent-docs-init
+python3 /tmp/agent-docs-init --profile small --write
+```
+
+That standalone `curl` path is best for `tiny` and `small` profiles. For `growing`, `full`, or `docs-meta`, clone AGENT-DOCS so the installer can copy scaffold files and scripts:
+
+```bash
+git clone https://github.com/owensantoso/AGENT-DOCS.git /tmp/AGENT-DOCS
+/tmp/AGENT-DOCS/scripts/agent-docs-init --profile full --write
+```
+
+You can also pass a target path explicitly:
+
+```bash
+/tmp/AGENT-DOCS/scripts/agent-docs-init /path/to/project --profile small --dry-run
+```
 
 ## Start Here
 
@@ -59,15 +96,17 @@ For a full AGENT-DOCS-style repo, use [scaffold/](scaffold/) as the source tree 
 
 ## Install
 
-Use the interactive installer when you want the CLI to explain profiles, show the structure preview, and copy the selected scaffold:
+Use the interactive installer when you want the CLI to explain profiles, show the structure preview, and copy the selected scaffold. If you omit the target path, it uses the current directory in non-interactive mode and asks about the current directory in interactive mode:
 
 ```bash
-scripts/agent-docs-init /path/to/project
+scripts/agent-docs-init
 ```
 
 Non-interactive examples:
 
 ```bash
+scripts/agent-docs-init --profile small --dry-run
+scripts/agent-docs-init --profile small --write
 scripts/agent-docs-init /path/to/project --profile small --dry-run
 scripts/agent-docs-init /path/to/project --profile small --docs-meta yes --write
 scripts/agent-docs-init /path/to/project --profile full --write

@@ -303,9 +303,19 @@ def choose_profile() -> str:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
 
+def choose_target() -> Path:
+    cwd = Path.cwd()
+    print(f"Target folder: {cwd}")
+    answer = input("Install into this folder? [Y/n] ").strip().lower()
+    if answer in {"", "y", "yes"}:
+        return cwd
+    typed = input("Target folder path: ").strip()
+    return Path(typed).expanduser() if typed else cwd
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Install an AGENT-DOCS scaffold profile into a target repository.")
-    parser.add_argument("target", type=Path, help="Target repository root.")
+    parser.add_argument("target", type=Path, nargs="?", help="Target repository root. Defaults to the current directory.")
     parser.add_argument("--profile", choices=sorted(PROFILES), help="Scaffold size. Recommended default when unsure: small.")
     parser.add_argument("--docs-meta", choices=["auto", "yes", "no"], default="auto", help="Install scripts/docs-meta and its smoke test. Default: profile-specific.")
     mode = parser.add_mutually_exclusive_group()
@@ -328,7 +338,12 @@ def main() -> int:
     profile = PROFILES[profile_key]
     include_docs_meta = profile.docs_meta_default if args.docs_meta == "auto" else args.docs_meta == "yes"
     write = bool(args.write)
-    target = args.target.resolve()
+    if args.target:
+        target = args.target.expanduser().resolve()
+    elif sys.stdin.isatty() and sys.stdout.isatty():
+        target = choose_target().resolve()
+    else:
+        target = Path.cwd().resolve()
     actions = profile_actions(profile, include_docs_meta)
 
     print(render_profile(profile, include_docs_meta, target, write))

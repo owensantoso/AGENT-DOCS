@@ -12,10 +12,13 @@ This folder contains two scripts:
 Use `agent-docs-init` to install the smallest useful AGENT-DOCS shape into another repo:
 
 ```bash
-scripts/agent-docs-init /path/to/project
+scripts/agent-docs-init
+scripts/agent-docs-init --profile small --dry-run
+scripts/agent-docs-init --profile small --docs-meta yes --write
 scripts/agent-docs-init /path/to/project --profile small --dry-run
-scripts/agent-docs-init /path/to/project --profile small --docs-meta yes --write
 ```
+
+If no target path is provided, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path.
 
 Profiles:
 
