@@ -1,47 +1,53 @@
 # Agent Docs Workflow
 
-Portable docs kit for repos where humans and AI agents need to understand, plan, resume, and verify work without rereading old chat history.
+AGENT-DOCS gives AI-assisted repos a durable operating memory, so each new human or agent can see what is true now, what has been decided, what evidence exists, and what work is safe to do next without rereading old chat history.
 
-Most project docs answer "what is this?" AGENT-DOCS is more opinionated: it gives a repo a durable operating memory. A fresh agent should be able to find what is true now, what is planned, what evidence exists, what decisions matter, and what exact work is safe to do next.
+It solves the failure mode where project knowledge exists, but is scattered across stale chats, ad hoc notes, oversized plans, and hand-maintained indexes. The differentiator is the split between source-of-truth docs, generated views, and bounded execution handoffs.
 
 This is a **scalable workflow**, not a requirement to install every folder and doc type on day one. Start with the smallest shape that prevents confusion, then add structure only when the absence of structure is costing you comprehension.
 
-## Why This Exists
-
-Agent-driven projects create a specific kind of mess: not lack of notes, but notes that do not tell the next session what is canonical.
-
-| Common Failure | AGENT-DOCS Answer |
-|---|---|
-| A fresh agent has to infer current reality from code and stale chat | `CURRENT_STATE.md` is the first truth page |
-| Ideas, specs, plans, and decisions blur together | Each doc type has one job and one owner of truth |
-| Agents guess the next ID or hand-edit registries | `docs-meta` derives IDs and generated views from source docs |
-| A bug investigation is trapped in pasted logs | `DIAG-*` records preserve sanitized run evidence |
-| Research, benchmarks, and decisions get mixed | `RSCH-*`, `EVAL-*`, and `ADR-*` stay separate |
-| Plans become too big to hand off safely | `PLAN-*` owns scope; `IMPL-*` owns bounded execution |
-
-The differentiator is not the folder tree. It is the separation between **source docs**, **generated views**, and **execution handoffs**. The repo remains the source of truth; `docs-meta` handles bookkeeping; agents use the docs to avoid inventing scope.
-
 ## Quick Start
 
-For a small or MVP repo, run this from the target repo root:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/scripts/agent-docs-init -o /tmp/agent-docs-init
-python3 /tmp/agent-docs-init --profile small --write
-```
-
-That standalone `curl` path is best for `tiny` and `small` profiles. For `growing`, `full`, or `docs-meta`, clone AGENT-DOCS so the installer can copy scaffold files and scripts:
+From the repo you want to document, clone AGENT-DOCS and run the installer:
 
 ```bash
 git clone https://github.com/owensantoso/AGENT-DOCS.git /tmp/AGENT-DOCS
-/tmp/AGENT-DOCS/scripts/agent-docs-init --profile full --write
+/tmp/AGENT-DOCS/scripts/agent-docs-init
 ```
 
-You can also pass a target path explicitly:
+The installer asks where to install, explains the project-size profiles, previews the tree, and defaults to dry-run. Re-run with `--write` when the preview looks right. Use `small` when unsure.
+
+Non-interactive examples:
 
 ```bash
-/tmp/AGENT-DOCS/scripts/agent-docs-init /path/to/project --profile small --dry-run
+/tmp/AGENT-DOCS/scripts/agent-docs-init --profile small --dry-run
+/tmp/AGENT-DOCS/scripts/agent-docs-init --profile small --write
+/tmp/AGENT-DOCS/scripts/agent-docs-init /path/to/project --profile full --write
 ```
+
+Standalone curl works for synthesized `tiny` and `small` profiles:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/scripts/agent-docs-init -o /tmp/agent-docs-init
+python3 /tmp/agent-docs-init --profile small --dry-run
+```
+
+Use the cloned repo path for `growing`, `full`, or `docs-meta` installs so the installer can copy scaffold files and scripts.
+
+## Why This Exists
+
+Agent-driven projects usually do not fail because nobody wrote notes. They fail because the next session cannot tell which note is canonical, which plan is current, which decision still applies, or which evidence is safe to trust.
+
+| Common Failure | AGENT-DOCS Answer |
+|---|---|
+| Current reality is inferred from code and stale chat | `CURRENT_STATE.md` is the first truth page |
+| Ideas, specs, plans, and decisions blur together | Each doc type has one job and one owner of truth |
+| Agents guess the next ID or hand-edit registries | `docs-meta` derives IDs and generated views from source docs |
+| Bug evidence disappears into pasted logs | `DIAG-*` records preserve sanitized run evidence |
+| Research, benchmarks, and decisions get mixed | `RSCH-*`, `EVAL-*`, and `ADR-*` stay separate |
+| Plans become too large to hand off safely | `PLAN-*` owns scope; `IMPL-*` owns bounded execution |
+
+The point is not the folder tree. The point is making repo memory resumable: source docs hold truth, generated views handle bookkeeping, and implementation briefs tell agents exactly what work is safe to do next.
 
 ## Start Here
 
