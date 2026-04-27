@@ -24,6 +24,8 @@ QUIET_FOLDERS = {("scripts",), ("tests",)}
 CARD_GAP = 2
 IDEAL_CARD_WIDTH = 38
 MIN_CARD_WIDTH = 30
+DETAIL_LEFT_WIDTH = 52
+DETAIL_GAP = 4
 
 
 @dataclass(frozen=True)
@@ -46,11 +48,9 @@ PROFILES = {
         template_summary="core state + architecture",
         template_groups=(
             (
-                "Core docs",
+                "No repeatable templates",
                 (
-                    ("AGENTS.md", "agent entry notes"),
-                    ("CURRENT_STATE.md", "what is true now"),
-                    ("ARCHITECTURE.md", "system shape"),
+                    ("core docs", "single files only"),
                 ),
             ),
         ),
@@ -69,20 +69,11 @@ PROFILES = {
         template_summary="core docs + light planning",
         template_groups=(
             (
-                "Core docs",
+                "Planning",
                 (
-                    ("AGENTS.md", "agent entry notes"),
-                    ("CURRENT_STATE.md", "what is true now"),
-                    ("ARCHITECTURE.md", "system shape"),
-                    ("ROADMAP.md", "sequence and rationale"),
-                ),
-            ),
-            (
-                "Light planning",
-                (
-                    ("plans/", "work plans when useful"),
-                    ("decisions/", "durable choices"),
-                    ("session-logs/", "work receipts"),
+                    ("PLAN-*", "parent plan"),
+                    ("ADR-*", "durable decision"),
+                    ("session log", "work receipt"),
                 ),
             ),
         ),
@@ -110,22 +101,18 @@ PROFILES = {
         template_summary="orientation/plans/evidence",
         template_groups=(
             (
-                "Core orientation",
-                (
-                    ("AGENTS.md", "agent entry notes"),
-                    ("CURRENT_STATE.md", "what is true now"),
-                    ("ARCHITECTURE.md", "system shape"),
-                    ("ROADMAP.md", "sequence and rationale"),
-                ),
-            ),
-            (
-                "Planning and evidence",
+                "Planning",
                 (
                     ("PLAN-*", "parent plan"),
                     ("ADR-*", "durable decision"),
-                    ("session logs", "work receipts"),
-                    ("debugging/", "diagnostic notes"),
-                    ("research/", "research notes"),
+                    ("session log", "work receipt"),
+                ),
+            ),
+            (
+                "Evidence",
+                (
+                    ("DIAG-*", "diagnostic record"),
+                    ("research note", "source survey or finding"),
                 ),
             ),
         ),
@@ -155,16 +142,6 @@ PROFILES = {
         template_summary="all doc families + examples",
         template_groups=(
             (
-                "Core orientation",
-                (
-                    ("AGENTS.md", "agent entry notes"),
-                    ("CURRENT_STATE.md", "what is true now"),
-                    ("ARCHITECTURE.md", "system shape"),
-                    ("ONBOARDING.md", "human walkthrough"),
-                    ("ROADMAP.md", "sequence and rationale"),
-                ),
-            ),
-            (
                 "Product work",
                 (
                     ("SPEC-*", "feature contract"),
@@ -188,7 +165,14 @@ PROFILES = {
                     ("AUDIT-*", "review finding set"),
                     ("DIAG-*", "diagnostic record"),
                     ("EVAL-*", "evaluation harness"),
-                    ("session logs", "work receipts"),
+                    ("session log", "work receipt"),
+                ),
+            ),
+            (
+                "Explanatory docs",
+                (
+                    ("EXPL-*", "human explanation"),
+                    ("research note", "source survey or finding"),
                 ),
             ),
         ),
@@ -511,8 +495,8 @@ def split_detail_columns(left: list[str], right: list[str], width: int, height: 
         shown_count = max(0, height - 1)
         return lines[:shown_count] + [f"… {len(lines) - shown_count} more {label}"]
 
-    gap = "  "
-    left_width = max(30, int((width - len(gap)) * 0.52))
+    gap = " " * DETAIL_GAP
+    left_width = min(DETAIL_LEFT_WIDTH, max(30, width - len(gap) - 24))
     right_width = max(24, width - left_width - len(gap))
     left_lines = cap_column(["Structure", *left], "structure lines")
     right_lines = cap_column(["Template/doc types", *right], "template lines")

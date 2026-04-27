@@ -164,8 +164,16 @@ if "\x1b[1;7m> growing" not in text:
     raise SystemExit("Expected selected profile row to be styled")
 if "Structure" not in text or "Template/doc types" not in text:
     raise SystemExit("Expected selected profile details to use two columns")
-if "Core orientation" not in text or "PLAN-* - parent plan" not in text:
+if "Planning" not in text or "PLAN-* - parent plan" not in text:
     raise SystemExit("Expected template list to be grouped with explanations")
+if "AGENTS.md - agent entry notes" in text or "CURRENT_STATE.md - what is true now" in text:
+    raise SystemExit("Expected template list to avoid explaining one-off core files")
+detail_lines = [line for line in text.splitlines() if "Template/doc types" in line]
+if not detail_lines:
+    raise SystemExit("Expected template column header")
+template_col = detail_lines[-1].index("Template/doc types")
+if template_col > 64:
+    raise SystemExit(f"Expected fixed template column near the tree, got column {template_col}")
 if "├── docs/" not in text:
     raise SystemExit("Expected interactive preview to render a tree")
 if "Legend: \x1b[36mstart here\x1b[0m, \x1b[2mtooling\x1b[0m" not in text:
