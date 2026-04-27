@@ -71,6 +71,21 @@ PY
   fi
 }
 
+run_args_include_mode() {
+  local arg
+  if [[ "${#run_args[@]}" -eq 0 ]]; then
+    return 1
+  fi
+  for arg in "${run_args[@]}"; do
+    case "$arg" in
+      --dry-run|--write|-h|--help)
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --run)
@@ -94,6 +109,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 require_python
+
+if [[ "$run_after_install" == true ]] && ! run_args_include_mode; then
+  run_args+=("--write")
+fi
 
 if [[ -z "$source_dir" ]]; then
   if [[ -d "$agent_docs_home/.git" ]]; then
