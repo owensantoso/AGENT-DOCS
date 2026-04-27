@@ -40,6 +40,7 @@ Do not read every audit guide for every audit.
 
 Every audit should produce:
 
+- stable `AUDT-*` document ID
 - scope
 - sources reviewed
 - checks run

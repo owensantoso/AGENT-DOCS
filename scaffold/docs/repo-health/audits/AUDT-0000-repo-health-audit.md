@@ -1,5 +1,6 @@
 ---
 type: repo-health-audit
+id: AUDT-0000
 title: Repo Health Audit
 status: planned
 audit_kind:

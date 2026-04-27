@@ -11,6 +11,6 @@ updated_at: "2026-04-27 08:22:19 JST +0900"
 
 Generated index of repo-health audits. Audits are periodic receipts for docs, architecture, maintenance, duplication/refactor, tests, tooling, and other project hygiene checks.
 
-| Date | Status | Title | Scope | Path |
-|---|---|---|---|---|
-| YYYY-MM-DD | completed | Repo Health Audit | docs, metadata, roadmap, architecture, duplication, refactor-opportunities, tests, tooling | `repo-health/audits/YYYY-MM-DD-repo-health-audit.md` |
+| ID | Date | Kind | Status | Title | Scope | Path |
+|---|---|---|---|---|---|---|
+| AUDT-0000 | YYYY-MM-DD | docs-health | completed | Repo Health Audit | docs, metadata, roadmap, architecture, duplication, refactor-opportunities, tests, tooling | `repo-health/audits/AUDT-0000-repo-health-audit.md` |

@@ -28,7 +28,7 @@ superseded_by: []
 linked_paths:
   - concepts/CONC-0003-open-loop-review-cadence.md
   - guides/audits/README.md
-  - scaffold/docs/repo-health/audits/YYYY-MM-DD-repo-health-audit.md
+  - scaffold/docs/repo-health/audits/AUDT-0000-repo-health-audit.md
 repo_state:
   based_on_commit: 37565c53b9bb8f960fdf7fc113264ec1e81a3dfb
   last_reviewed_commit: 07b98ee04d1a9e8f3a422b1ee6c837c3289709d9

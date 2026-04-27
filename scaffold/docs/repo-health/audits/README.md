@@ -33,7 +33,7 @@ Recommended cadence:
 
 ## Workflow
 
-Start from `YYYY-MM-DD-repo-health-audit.md`.
+Use `scripts/docs-meta new audit "<Title>" --kind <audit-kind>` when possible. It creates `repo-health/audits/AUDT-####-<slug>.md` with the required stable audit ID. When drafting by hand, start from `AUDT-0000-repo-health-audit.md` and replace `AUDT-0000` before committing.
 
 Before reviewing, choose `audit_kind` and identify the matching reusable guide. Do not read every audit guide for every audit.
 

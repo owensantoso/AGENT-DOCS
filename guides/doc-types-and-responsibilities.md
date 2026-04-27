@@ -166,6 +166,10 @@ Purpose:
 - record evidence, checks, findings, and routed follow-ups
 - make neglected open loops visible without turning every observation into implementation scope
 
+Stable ID:
+
+- `AUDT-*`
+
 Should answer:
 
 - what was reviewed?

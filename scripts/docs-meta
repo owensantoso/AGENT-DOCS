@@ -34,6 +34,7 @@ ID_PATTERNS = {
     "expl": re.compile(r"\bEXPL-(\d{4})\b"),
     "qst": re.compile(r"\bQST-(\d{4})\b"),
     "conc": re.compile(r"\bCONC-(\d{4})\b"),
+    "audt": re.compile(r"\bAUDT-(\d{4})\b"),
 }
 
 TODO_ID_RE = re.compile(r"\bTODO-(\d{4})\b")
@@ -45,6 +46,19 @@ AUDIT_FINDING_HEADER = ["ID", "Severity", "Status", "Finding", "Route", "Follow-
 AUDIT_FINDING_SEVERITIES = {"critical", "high", "medium", "low", "info"}
 AUDIT_FINDING_STATUSES = {"open", "routed", "resolved", "deferred", "accepted-risk", "archived"}
 AUDIT_FINDING_ROUTES = {"TODO", "DIAG", "RSCH", "EVAL", "QST", "CONC", "LRN", "ADR", "SPEC", "PLAN", "IMPL", "none"}
+AUDIT_KINDS = {
+    "roadmap-alignment",
+    "ontology",
+    "architecture",
+    "schema",
+    "security",
+    "privacy",
+    "performance",
+    "accessibility",
+    "docs-health",
+    "test-coverage",
+    "paper-trail",
+}
 REVIEW_SEVERITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
 REVIEW_STATUS_RANK = {
     "invalid": 0,
@@ -92,6 +106,7 @@ TYPE_BY_PREFIX = {
     "EXPL": "explainer",
     "QST": "question",
     "CONC": "concept",
+    "AUDT": "repo-health-audit",
 }
 
 COMMON_STATUSES = {
@@ -238,7 +253,7 @@ REQUIRED_FIELDS_BY_TYPE = {
     "research-note": {"type", "title", "domain", "status", "created_at", "updated_at", "owner", "question", "links", "repo_state"},
     "release-checklist": {"type", "title", "domain", "status", "created_at", "updated_at", "release_target", "owner", "repo_state"},
     "marketing-plan": {"type", "title", "domain", "status", "created_at", "updated_at", "campaign", "owner", "repo_state"},
-    "repo-health-audit": {"type", "title", "status", "created_at", "updated_at", "audit_started_at", "audit_ended_at", "scope", "checks", "repo_state"},
+    "repo-health-audit": {"type", "id", "title", "status", "audit_kind", "created_at", "updated_at", "audit_started_at", "audit_ended_at", "scope", "checks", "repo_state"},
     "generated-view": {"type", "title", "status", "updated_at"},
     "architecture-area": {"type", "id", "title", "status", "created_at", "updated_at", "owners", "repo_state"},
     "current-state": {"type", "title", "status", "created_at", "updated_at", "repo_state"},
@@ -453,12 +468,12 @@ def parse_args() -> argparse.Namespace:
     sub = parser.add_subparsers(dest="command", required=True)
 
     next_cmd = sub.add_parser("next", help="Print next ID for a doc family.")
-    next_cmd.add_argument("family", choices=["idea", "rsch", "eval", "diag", "spec", "plan", "impl", "adr", "lrn", "expl", "qst", "conc", "todo"])
+    next_cmd.add_argument("family", choices=["idea", "rsch", "eval", "diag", "spec", "plan", "impl", "adr", "lrn", "expl", "qst", "conc", "audt", "todo"])
     next_cmd.add_argument("--plan", help="Required for impl IDs, e.g. PLAN-0034")
 
     new_cmd = sub.add_parser(
         "new",
-        help="Create a new idea, research survey, evaluation, diagnostic, spec, plan, impl doc, ADR, learning, explainer, question, or concept.",
+        help="Create a new idea, research survey, evaluation, diagnostic, spec, plan, impl doc, ADR, learning, explainer, question, concept, or audit.",
     )
     new_cmd.add_argument(
         "family",
@@ -482,6 +497,7 @@ def parse_args() -> argparse.Namespace:
             "qst",
             "concept",
             "conc",
+            "audit",
         ],
     )
     new_cmd.add_argument("title")
@@ -493,6 +509,7 @@ def parse_args() -> argparse.Namespace:
     new_cmd.add_argument("--source-link", default="")
     new_cmd.add_argument("--plan", help="Parent plan for impl docs, e.g. PLAN-0034")
     new_cmd.add_argument("--spec", action="append", default=[], help="Related SPEC-* ID. Repeatable.")
+    new_cmd.add_argument("--kind", "--audit-kind", dest="audit_kind", choices=sorted(AUDIT_KINDS), help="Audit kind for repo-health audit docs.")
 
     status_cmd = sub.add_parser("status", help="Show doc statuses.")
     status_cmd.add_argument("id", nargs="?")
@@ -1313,6 +1330,12 @@ def new_doc(args: argparse.Namespace, root: Path, docs: list[Doc]) -> Path:
         doc_id = next_id("conc", docs)
         path = root / args.domain / "concepts" / f"{doc_id}-{slug}.md"
         body = concept_doc(doc_id, title, args, timestamp, commit)
+    elif args.family == "audit":
+        if not args.audit_kind:
+            raise SystemExit("--kind is required for audit docs")
+        doc_id = next_id("audt", docs)
+        path = root / "repo-health" / "audits" / f"{doc_id}-{slug}.md"
+        body = audit_doc(doc_id, title, args, timestamp, commit)
     elif args.family == "spec":
         doc_id = next_id("spec", docs)
         path = root / args.domain / "specs" / f"{doc_id}-{slug}.md"
@@ -1365,6 +1388,8 @@ def status_for_new(args: argparse.Namespace, doc_type: str) -> str:
         status = "open"
     if doc_type == "diagnostic-record" and status == "draft":
         status = "investigating"
+    if doc_type == "repo-health-audit" and status == "draft":
+        status = "planned"
     allowed = STATUS_BY_TYPE.get(doc_type, COMMON_STATUSES)
     if status not in allowed:
         raise SystemExit(f"Status {status!r} is not valid for {doc_type}; choose one of: {', '.join(sorted(allowed))}")
@@ -1592,6 +1617,60 @@ linked_paths: []
 ## Cleanup Plan
 
 Raw traces are local/private by default. Commit only sanitized excerpts or metadata needed to understand the diagnosis.
+"""
+
+
+def audit_doc(doc_id: str, title: str, args: argparse.Namespace, timestamp: str, commit: str) -> str:
+    status = status_for_new(args, "repo-health-audit")
+    audit_started_at = f'"{timestamp}"' if status in {"in_progress", "completed"} else ""
+    audit_ended_at = f'"{timestamp}"' if status == "completed" else ""
+    return f"""---
+type: repo-health-audit
+id: {doc_id}
+title: {title}
+status: {status}
+audit_kind: {args.audit_kind}
+created_at: "{timestamp}"
+updated_at: "{timestamp}"
+audit_started_at: {audit_started_at}
+audit_ended_at: {audit_ended_at}
+owner: {args.owner}
+scope: []
+checks: []
+related_specs: {yaml_list(args.spec)}
+related_plans: []
+related_adrs: []
+related_sessions: []
+{repo_state_yaml(commit)}
+---
+
+# {doc_id} - {title}
+
+## Scope
+
+What surfaces, docs, code paths, or decisions are being reviewed?
+
+## Questions
+
+- What are we checking?
+- What would make this healthy, risky, stale, or misaligned?
+
+## Sources Reviewed
+
+- Current repo state: `{commit}`
+
+## Method
+
+Describe the review process, commands, subagents, fixtures, or checklists used.
+
+## Findings
+
+| ID | Severity | Status | Finding | Route | Follow-up | Resolution |
+|---|---|---|---|---|---|---|
+
+## Recommendations
+
+## Follow-Ups
 """
 
 
@@ -2474,13 +2553,13 @@ def audits_markdown(docs: list[Doc]) -> str:
         "",
         "Generated index of repo-health audits. Audits are periodic receipts for docs, architecture, maintenance, duplication/refactor, tests, tooling, and other project hygiene checks.",
         "",
-        "| Date | Status | Title | Scope | Path |",
-        "|---|---|---|---|---|",
+        "| ID | Date | Kind | Status | Title | Scope | Path |",
+        "|---|---|---|---|---|---|---|",
     ]
     for doc in audits:
         ended_at = doc.frontmatter.get("audit_ended_at") or doc.frontmatter.get("created_at", "")
         date = str(ended_at).split(" ", 1)[0] if ended_at else ""
-        lines.append(f"| {date} | {doc.status} | {doc.title} | {field_summary(doc.frontmatter.get('scope', ''))} | `{doc.relpath}` |")
+        lines.append(f"| {doc.primary_id} | {date} | {doc.frontmatter.get('audit_kind', '')} | {doc.status} | {doc.title} | {field_summary(doc.frontmatter.get('scope', ''))} | `{doc.relpath}` |")
     lines.append("")
     return generated_view("generated-view", "Repo Health Audits", lines)
 
@@ -2831,7 +2910,7 @@ def check(root: Path, docs: list[Doc]) -> int:
     for doc in docs:
         doc_id = doc.primary_id
         if not doc_id:
-            if doc.doc_type in {"research-survey", "evaluation", "diagnostic-record"}:
+            if doc.doc_type in {"research-survey", "evaluation", "diagnostic-record", "repo-health-audit"}:
                 errors.extend(validate_frontmatter(doc))
             continue
         if doc_id in seen:
@@ -3527,6 +3606,16 @@ def validate_frontmatter(doc: Doc) -> list[str]:
             )
             if not has_replacement and not reason:
                 errors.append(f"Superseded question {doc.primary_id or doc.relpath} must include superseded_by or reason in {doc.relpath}")
+
+    if doc_type == "repo-health-audit":
+        doc_id = doc.frontmatter.get("id")
+        if not isinstance(doc_id, str) or not re.fullmatch(r"AUDT-\d{4}", doc_id):
+            errors.append(f"Audit {doc.relpath} must use id AUDT-####")
+        audit_kind = doc.frontmatter.get("audit_kind")
+        if audit_kind not in AUDIT_KINDS:
+            errors.append(f"Unknown audit_kind {audit_kind!r} in {doc.relpath}; choose one of: {', '.join(sorted(AUDIT_KINDS))}")
+        if doc.status == "completed" and not doc.frontmatter.get("audit_ended_at"):
+            errors.append(f"Completed audit {doc.relpath} must include audit_ended_at")
 
     return errors
 

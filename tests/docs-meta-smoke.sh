@@ -49,6 +49,14 @@ lrn_path="$(run_meta new learning "Specs And Plans Stay Separate" --domain repo-
 expl_path="$(run_meta new explainer "Specs Plans And Briefs" --domain orientation)"
 qst_path="$(run_meta new question "Should Specs And Plans Be One To One" --domain repo-health)"
 conc_path="$(run_meta new concept "Selections Snapshots And Dynamic Sections" --domain product)"
+audit_path="$(run_meta new audit "Docs System Migration Baseline Audit" --kind docs-health --domain repo-health)"
+completed_audit_path="$(run_meta new audit "Completed Roadmap Alignment Audit" --kind roadmap-alignment --status completed --domain repo-health)"
+
+if run_meta new audit "Audit Without CLI Kind" --domain repo-health >$tmpdir/docs-meta-new-audit-without-kind.out 2>&1; then
+  echo "Expected docs-meta new audit without --kind to fail" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-new-audit-without-kind.out "required for audit docs"
 
 require_file "$idea_path"
 require_file "$rsch_path"
@@ -62,6 +70,13 @@ require_file "$lrn_path"
 require_file "$expl_path"
 require_file "$qst_path"
 require_file "$conc_path"
+require_file "$audit_path"
+require_file "$completed_audit_path"
+
+if [[ "$audit_path" != *"/AUDT-0001-"* ]]; then
+  echo "Expected new audit path to include AUDT-0001, got $audit_path" >&2
+  exit 1
+fi
 
 require_contains "$idea_path" "id: IDEA-0001"
 require_contains "$idea_path" "status: captured"
@@ -96,6 +111,14 @@ require_contains "$qst_path" "question_type: product"
 require_contains "$conc_path" "id: CONC-0001"
 require_contains "$conc_path" "type: concept"
 require_contains "$conc_path" "concept_type: domain-model"
+require_contains "$audit_path" "id: AUDT-0001"
+require_contains "$audit_path" "type: repo-health-audit"
+require_contains "$audit_path" "audit_kind: docs-health"
+require_contains "$audit_path" "status: planned"
+require_contains "$completed_audit_path" "id: AUDT-0002"
+require_contains "$completed_audit_path" "status: completed"
+require_contains "$completed_audit_path" "audit_started_at: \""
+require_contains "$completed_audit_path" "audit_ended_at: \""
 
 mkdir -p "$tmpdir/app/src"
 touch "$tmpdir/app/src/todo.ts"
@@ -138,11 +161,13 @@ cat >> "$plan_path" <<'TODOS'
 TODOS
 
 mkdir -p "$docs_root/repo-health/audits"
-cat > "$docs_root/repo-health/audits/2026-04-25-repo-health-audit.md" <<'AUDIT'
+cat > "$docs_root/repo-health/audits/AUDT-0003-repo-health-audit.md" <<'AUDIT'
 ---
 type: repo-health-audit
+id: AUDT-0003
 title: Repo Health Audit
 status: completed
+audit_kind: docs-health
 created_at: "2026-04-25 10:00:00 JST +0900"
 updated_at: "2026-04-25 10:30:00 JST +0900"
 audit_started_at: "2026-04-25 10:00:00 JST +0900"
@@ -190,11 +215,13 @@ next_audit_due:
 ```
 AUDIT
 
-cat > "$docs_root/repo-health/audits/2026-04-26-invalid-audit.md" <<'BADAUDIT'
+cat > "$docs_root/repo-health/audits/AUDT-0004-invalid-audit.md" <<'BADAUDIT'
 ---
 type: repo-health-audit
+id: AUDT-0004
 title: Invalid Audit
 status: completed
+audit_kind: docs-health
 created_at: "2026-04-26 10:00:00 JST +0900"
 updated_at: "2026-04-26 10:30:00 JST +0900"
 audit_started_at: "2026-04-26 10:00:00 JST +0900"
@@ -278,6 +305,12 @@ if [[ "$next_conc" != "CONC-0002" ]]; then
   exit 1
 fi
 
+next_audt="$(run_meta next audt)"
+if [[ "$next_audt" != "AUDT-0005" ]]; then
+  echo "Expected next AUDT-0005, got $next_audt" >&2
+  exit 1
+fi
+
 next_todo="$(run_meta next todo)"
 if [[ "$next_todo" != "TODO-0005" ]]; then
   echo "Expected next TODO-0005, got $next_todo" >&2
@@ -296,7 +329,7 @@ run_meta set-status PLAN-0001 ready >/dev/null
 perl -0pi -e 's/updated_at: "[^"]+"/updated_at: "2026-01-01 00:00:00 JST +0900"/' "$plan_path" "$qst_path"
 
 run_meta review >$tmpdir/docs-meta-review.out
-expected_finding_line="$(grep -n '^| FINDING-001 | high | open' "$docs_root/repo-health/audits/2026-04-25-repo-health-audit.md" | cut -d: -f1)"
+expected_finding_line="$(grep -n '^| FINDING-001 | high | open' "$docs_root/repo-health/audits/AUDT-0003-repo-health-audit.md" | cut -d: -f1)"
 require_contains $tmpdir/docs-meta-review.out "FINDING-001"
 require_contains $tmpdir/docs-meta-review.out "FINDING-007"
 require_contains $tmpdir/docs-meta-review.out "Review queue is not generated yet"
@@ -336,8 +369,8 @@ if grep -Fq "FINDING-002" $tmpdir/docs-meta-review-high.out; then
   exit 1
 fi
 run_meta review --json >$tmpdir/docs-meta-review.json
-require_contains $tmpdir/docs-meta-review.json "\"reference\": \"repo-health/audits/2026-04-25-repo-health-audit.md#FINDING-001\""
-require_contains $tmpdir/docs-meta-review.json "\"source\": \"repo-health/audits/2026-04-25-repo-health-audit.md:$expected_finding_line\""
+require_contains $tmpdir/docs-meta-review.json "\"reference\": \"repo-health/audits/AUDT-0003-repo-health-audit.md#FINDING-001\""
+require_contains $tmpdir/docs-meta-review.json "\"source\": \"repo-health/audits/AUDT-0003-repo-health-audit.md:$expected_finding_line\""
 require_contains $tmpdir/docs-meta-review.json "\"code\": \"invalid-audit-finding\""
 require_contains $tmpdir/docs-meta-review.json "\"message\": \"Invalid severity 'urgent'\""
 require_contains $tmpdir/docs-meta-review.json "\"message\": \"Malformed audit finding row\""
@@ -386,6 +419,8 @@ require_file "$docs_root/AUDITS.md"
 require_file "$docs_root/ROADMAP-VIEW.md"
 require_contains "$docs_root/IDEAS.md" "IDEA-0001"
 require_contains "$docs_root/AREAS.md" "AREA-capture"
+require_contains "$docs_root/AUDITS.md" "AUDT-0001"
+require_contains "$docs_root/AUDITS.md" "AUDT-0003"
 require_contains "$docs_root/AUDITS.md" "Repo Health Audit"
 require_contains "$docs_root/LEARNINGS.md" "LRN-0001"
 require_contains "$docs_root/LEARNINGS.md" "Specs And Plans Stay Separate"
@@ -435,6 +470,35 @@ if run_meta check >$tmpdir/docs-meta-bad-research.out 2>&1; then
 fi
 require_contains $tmpdir/docs-meta-bad-research.out "Missing frontmatter field 'id'"
 rm "$docs_root/research/bad-research-without-id.md"
+
+cat > "$docs_root/repo-health/audits/bad-audit-without-id.md" <<'BADAUDITID'
+---
+type: repo-health-audit
+title: Bad Audit Without ID
+status: completed
+audit_kind: docs-health
+created_at: "2026-04-25 10:00:00 JST +0900"
+updated_at: "2026-04-25 10:30:00 JST +0900"
+audit_started_at: "2026-04-25 10:00:00 JST +0900"
+audit_ended_at: "2026-04-25 10:30:00 JST +0900"
+scope:
+  - docs
+checks:
+  - scripts/docs-meta check
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
+# Bad Audit Without ID
+BADAUDITID
+
+if run_meta check >$tmpdir/docs-meta-bad-audit-id.out 2>&1; then
+  echo "Expected typed repo-health-audit without id to fail validation" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-bad-audit-id.out "Missing frontmatter field 'id'"
+rm "$docs_root/repo-health/audits/bad-audit-without-id.md"
 
 run_meta check
 run_meta check-todos >$tmpdir/docs-meta-check-todos.out 2>&1
