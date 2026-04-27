@@ -77,6 +77,16 @@ require_file "$meta_target/scripts/docs-meta"
 require_file "$meta_target/tests/docs-meta-smoke.sh"
 require_contains "$tmpdir/meta-write.out" "scripts/docs-meta"
 
+"$installer" "$tmpdir/meta-preview-app" --profile small --docs-meta yes --dry-run >"$tmpdir/meta-preview.out"
+python3 - "$tmpdir/meta-preview.out" <<'PY'
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+preview = text.split("Structure preview:", 1)[1].split("\n\nTarget:", 1)[0]
+if "scripts/" not in preview or "docs-meta" not in preview:
+    raise SystemExit("Expected explicit docs-meta choice to appear in structure preview")
+PY
+
 cwd_target="$tmpdir/cwd-app"
 mkdir -p "$cwd_target"
 resolved_cwd_target="$(cd "$cwd_target" && pwd -P)"
@@ -87,14 +97,23 @@ require_contains "$tmpdir/cwd-dry-run.out" "Would create: docs/CURRENT_STATE.md"
 full_target="$tmpdir/full-app"
 "$installer" "$full_target" --profile full --dry-run >"$tmpdir/full-dry-run.out"
 require_contains "$tmpdir/full-dry-run.out" "├── docs/"
-require_contains "$tmpdir/full-dry-run.out" "│   ├── orientation/"
-require_contains "$tmpdir/full-dry-run.out" "│   ├── product/"
-require_contains "$tmpdir/full-dry-run.out" "│   ├── repo-health/"
-require_contains "$tmpdir/full-dry-run.out" "├── scripts/"
-require_contains "$tmpdir/full-dry-run.out" "│   └── docs-meta"
+require_contains "$tmpdir/full-dry-run.out" "areas: architecture/, decisions/, marketing/"
+require_contains "$tmpdir/full-dry-run.out" "operations/, orientation/, product/"
+require_contains "$tmpdir/full-dry-run.out" "repo-health/, research/"
+require_contains "$tmpdir/full-dry-run.out" "tooling: scripts/docs-meta, tests/docs-meta-smoke.sh"
+require_contains "$tmpdir/full-dry-run.out" "Would create: docs/orientation/CURRENT_STATE.md"
+require_contains "$tmpdir/full-dry-run.out" "Would create: docs/marketing/plans/marketing-plan.md"
+require_contains "$tmpdir/full-dry-run.out" "Would create: docs/operations/checklists/release-checklist.md"
 docs_meta_action_count="$(grep -Fc -- "Would create: scripts/docs-meta" "$tmpdir/full-dry-run.out")"
 if [[ "$docs_meta_action_count" != "1" ]]; then
   echo "Expected full profile dry run to create scripts/docs-meta once, got $docs_meta_action_count" >&2
+  exit 1
+fi
+
+"$installer" "$tmpdir/full-no-meta-app" --profile full --docs-meta no --dry-run >"$tmpdir/full-no-meta-dry-run.out"
+require_contains "$tmpdir/full-no-meta-dry-run.out" "└── docs/"
+if grep -Fq -- "tooling: scripts/docs-meta" "$tmpdir/full-no-meta-dry-run.out"; then
+  echo "Expected full profile without docs-meta to hide tooling row" >&2
   exit 1
 fi
 
@@ -263,6 +282,15 @@ if "… " not in screen:
     raise SystemExit("Expected oversized selected profile details to be summarized in a small terminal")
 if "Template/doc types" not in screen:
     raise SystemExit("Expected template column to stay visible in a small terminal")
+if "Structure summary" not in screen or "exact file list after Enter" not in screen:
+    raise SystemExit("Expected full picker to describe the structure as a summary")
+if "ADR-0000" in screen or "AREA-EXAMPLE.md" in screen:
+    raise SystemExit("Expected full picker summary to hide example leaf files")
+for major_area in ("architecture/", "decisions/", "marketing/", "operations/", "orientation/", "product/", "repo-health/", "research/"):
+    if major_area not in screen:
+        raise SystemExit(f"Expected full picker summary to show {major_area}")
+if "\x1b[36mProduct work" in screen or "\x1b[36mPlanning" in screen:
+    raise SystemExit("Expected template group headers not to reuse start-here color")
 PY
 
 python3 - "$installer" "$tmpdir/target-picker-app" >"$tmpdir/target-picker.out" <<'PY'

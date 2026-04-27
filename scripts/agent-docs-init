@@ -361,7 +361,7 @@ def render_profile(profile: Profile, include_docs_meta: bool, target: Path, writ
     ]
     lines.extend(f"- {item}" for item in profile.implications)
     lines.extend(["", "Structure preview:"])
-    lines.extend(tree_lines(preview_entries(profile, include_docs_meta)))
+    lines.extend(preview_tree_lines(profile, include_docs_meta))
     lines.extend(["", f"Target: {target}", "Mode: write" if write else "Mode: dry-run"])
     return "\n".join(lines)
 
@@ -370,6 +370,54 @@ def preview_entries(profile: Profile, include_docs_meta: bool) -> list[str]:
     if profile.key == "full":
         return [str(action.relpath) for action in profile_actions(profile, include_docs_meta)]
     return structure_entries(profile, include_docs_meta)
+
+
+def picker_preview_entries(profile: Profile, include_docs_meta: bool | None = None) -> list[str]:
+    if include_docs_meta is None:
+        include_docs_meta = profile.docs_meta_default
+    if profile.key != "full":
+        return preview_entries(profile, include_docs_meta)
+    doc_areas = [
+        f"docs/{path.name}/"
+        for path in sorted(SCAFFOLD.joinpath("docs").iterdir(), key=lambda item: item.name.lower())
+        if path.is_dir()
+    ]
+    entries = ["AGENTS.md", *doc_areas]
+    if include_docs_meta:
+        entries.extend(["scripts/docs-meta", "tests/docs-meta-smoke.sh"])
+    return entries
+
+
+def preview_tree_lines(profile: Profile, include_docs_meta: bool | None = None, stylize: bool = False) -> list[str]:
+    if include_docs_meta is None:
+        include_docs_meta = profile.docs_meta_default
+    if profile.key != "full":
+        return tree_lines(picker_preview_entries(profile, include_docs_meta), stylize=stylize)
+
+    docs_areas = sorted(
+        (path.name for path in SCAFFOLD.joinpath("docs").iterdir() if path.is_dir()),
+        key=str.lower,
+    )
+    area_items = [f"{area}/" for area in docs_areas]
+    area_lines = [
+        "│   └── areas: " + ", ".join(area_items[:3]),
+        "│       " + ", ".join(area_items[3:6]),
+        "│       " + ", ".join(area_items[6:]),
+    ]
+    agents_label = terminal_style("AGENTS.md", "36") if stylize else "AGENTS.md"
+    tooling_label = terminal_style("tooling:", "2") if stylize else "tooling:"
+    if include_docs_meta:
+        return [
+            f"├── {agents_label}",
+            "├── docs/",
+            *area_lines,
+            f"└── {tooling_label} scripts/docs-meta, tests/docs-meta-smoke.sh",
+        ]
+    return [
+        f"├── {agents_label}",
+        "└── docs/",
+        *area_lines,
+    ]
 
 
 def structure_entries(profile: Profile, include_docs_meta: bool) -> list[str]:
@@ -404,7 +452,7 @@ def tree_lines(entries: list[str], stylize: bool = False) -> list[str]:
 
     def walk(node: dict[str, dict], prefix: str = "", path: tuple[str, ...] = ()) -> list[str]:
         lines: list[str] = []
-        items = sorted(node.items(), key=lambda item: item[0].lower())
+        items = list(node.items())
         for index, (name, children) in enumerate(items):
             last = index == len(items) - 1
             branch = "└── " if last else "├── "
@@ -476,15 +524,15 @@ def template_lines(profile: Profile, stylize: bool = False) -> list[str]:
     for group_index, (group, items) in enumerate(profile.template_groups):
         if group_index:
             lines.append("")
-        lines.append(terminal_style(group, "36") if stylize and group_index == 0 else group)
+        lines.append(group)
         for name, description in items:
             lines.append(f"  {name} - {description}")
     return lines
 
 
-def split_detail_columns(left: list[str], right: list[str], width: int, height: int) -> list[str]:
+def split_detail_columns(left_heading: str, left: list[str], right: list[str], width: int, height: int) -> list[str]:
     if width < 72:
-        lines = ["Structure", *left, "", "Template/doc types", *right]
+        lines = [left_heading, *left, "", "Template/doc types", *right]
         if len(lines) > height:
             return lines[: max(0, height - 1)] + [f"… {len(lines) - max(0, height - 1)} more lines"]
         return lines
@@ -498,7 +546,7 @@ def split_detail_columns(left: list[str], right: list[str], width: int, height: 
     gap = " " * DETAIL_GAP
     left_width = min(DETAIL_LEFT_WIDTH, max(30, width - len(gap) - 24))
     right_width = max(24, width - left_width - len(gap))
-    left_lines = cap_column(["Structure", *left], "structure lines")
+    left_lines = cap_column([left_heading, *left], "structure lines")
     right_lines = cap_column(["Template/doc types", *right], "template lines")
     row_count = max(len(left_lines), len(right_lines))
     rows: list[str] = []
@@ -514,7 +562,6 @@ def render_profile_details(keys: list[str], index: int, terminal_size: os.termin
     lines = [
         "Choose AGENT-DOCS project size",
         "Use arrow keys or j/k, then Enter. Recommended default: small.",
-        "",
     ]
     for i, key in enumerate(keys):
         profile_row = PROFILES[key]
@@ -528,16 +575,14 @@ def render_profile_details(keys: list[str], index: int, terminal_size: os.termin
     lines.extend(
         [
             "",
-            f"Selected: {profile.label}",
-            f"Templates: {profile.template_summary}",
-            f"Legend: {terminal_style('start here', '36')}, {terminal_style('tooling', '2')}",
-            "",
+            f"Selected: {profile.label} | Templates: {profile.template_summary} | Legend: {terminal_style('start here', '36')}, {terminal_style('tooling', '2')}",
         ]
     )
     remaining_rows = max(0, terminal_size.lines - len(lines))
-    structure = tree_lines(preview_entries(profile, profile.docs_meta_default), stylize=True)
+    structure_heading = "Structure summary (exact file list after Enter)" if profile.key == "full" else "Structure"
+    structure = preview_tree_lines(profile, stylize=True)
     templates = template_lines(profile, stylize=True)
-    lines.extend(split_detail_columns(structure, templates, terminal_size.columns, remaining_rows))
+    lines.extend(split_detail_columns(structure_heading, structure, templates, terminal_size.columns, remaining_rows))
     return lines
 
 
