@@ -21,9 +21,6 @@ ANSI_RESET = "\033[0m"
 IMPORTANT_DOCS = {"AGENTS.md", "ARCHITECTURE.md", "CURRENT_STATE.md", "ROADMAP.md"}
 IMPORTANT_FOLDERS = {("docs", "orientation")}
 QUIET_FOLDERS = {("scripts",), ("tests",)}
-CARD_GAP = 2
-IDEAL_CARD_WIDTH = 38
-MIN_CARD_WIDTH = 30
 DETAIL_LEFT_WIDTH = 52
 DETAIL_GAP = 4
 
@@ -193,13 +190,6 @@ class Action:
     content: str | None = None
     source: Path | None = None
     executable: bool = False
-
-
-@dataclass(frozen=True)
-class PickerCard:
-    key: str
-    label: str
-    lines: tuple[str, ...]
 
 
 def tiny_files(profile: Profile) -> list[Action]:
@@ -490,35 +480,6 @@ def pad_terminal_line(text: str, width: int) -> str:
     return fitted + (" " * max(0, width - terminal_width(fitted)))
 
 
-def visible_card_count(terminal_width: int, profile_count: int) -> int:
-    if terminal_width < MIN_CARD_WIDTH:
-        return 1
-    return max(1, min(profile_count, (terminal_width + CARD_GAP) // (IDEAL_CARD_WIDTH + CARD_GAP)))
-
-
-def profile_window_start(index: int, visible_count: int, profile_count: int) -> int:
-    if visible_count >= profile_count:
-        return 0
-    return min(max(0, index - visible_count + 1), profile_count - visible_count)
-
-
-def render_card(title: str, lines: list[str], selected: bool, width: int, height: int) -> list[str]:
-    if height < 4:
-        return []
-    inner_width = max(1, width - 4)
-    border_code = "36" if selected else "2"
-    top = terminal_style("╭" + ("─" * (width - 2)) + "╮", border_code)
-    bottom = terminal_style("╰" + ("─" * (width - 2)) + "╯", border_code)
-    if selected:
-        title = terminal_style(title, "1;7")
-    content = [title, *lines]
-    body_height = height - 2
-    content = content[:body_height]
-    content.extend([""] * max(0, body_height - len(content)))
-    body = [f"│ {pad_terminal_line(line, inner_width)} │" for line in content]
-    return [top, *body, bottom]
-
-
 def template_lines(profile: Profile, stylize: bool = False) -> list[str]:
     lines: list[str] = []
     for group_index, (group, items) in enumerate(profile.template_groups):
@@ -586,70 +547,6 @@ def render_profile_details(keys: list[str], index: int, terminal_size: os.termin
     return lines
 
 
-def render_picker_cards(cards: list[PickerCard], index: int, terminal_size: os.terminal_size) -> list[str]:
-    keys = [card.key for card in cards]
-    visible_count = visible_card_count(terminal_size.columns, len(keys))
-    card_width = max(
-        MIN_CARD_WIDTH,
-        (terminal_size.columns - (CARD_GAP * (visible_count - 1))) // visible_count,
-    )
-    card_width = min(IDEAL_CARD_WIDTH + 8, card_width)
-    start = profile_window_start(index, visible_count, len(keys))
-    visible_cards = cards[start : start + visible_count]
-    card_height = max(4, terminal_size.lines - 3)
-    rendered = [
-        render_card(card.key, [card.label, *card.lines], i + start == index, card_width, card_height)
-        for i, card in enumerate(visible_cards)
-    ]
-    if not rendered:
-        return []
-    return [(" " * CARD_GAP).join(card[row] for card in rendered) for row in range(len(rendered[0]))]
-
-
-def choose_card(title: str, help_text: str, cards: list[PickerCard], default_key: str) -> str:
-    keys = [card.key for card in cards]
-    index = keys.index(default_key)
-    first_draw = True
-
-    def draw() -> None:
-        nonlocal first_draw
-        terminal_size = shutil.get_terminal_size((100, 24))
-        if first_draw:
-            print("\033[?25l\033[2J\033[H", end="")
-            first_draw = False
-        else:
-            print("\033[H\033[J", end="")
-        lines = [title, help_text]
-        lines.extend(render_picker_cards(cards, index, terminal_size))
-        print("\n".join(lines))
-
-    fd = sys.stdin.fileno()
-    old = termios.tcgetattr(fd)
-    try:
-        tty.setcbreak(fd)
-        while True:
-            draw()
-            char = sys.stdin.read(1)
-            if char in {"\r", "\n"}:
-                print("")
-                return keys[index]
-            if char == "\x03":
-                raise KeyboardInterrupt
-            if char in {"k", "K", "h", "H"}:
-                index = (index - 1) % len(keys)
-            elif char in {"j", "J", "l", "L"}:
-                index = (index + 1) % len(keys)
-            elif char == "\x1b" and sys.stdin.read(1) == "[":
-                arrow = sys.stdin.read(1)
-                if arrow in {"A", "D"}:
-                    index = (index - 1) % len(keys)
-                elif arrow in {"B", "C"}:
-                    index = (index + 1) % len(keys)
-    finally:
-        print("\033[?25h", end="")
-        termios.tcsetattr(fd, termios.TCSADRAIN, old)
-
-
 def choose_profile() -> str:
     keys = list(PROFILES)
     index = keys.index("small")
@@ -692,17 +589,70 @@ def choose_profile() -> str:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
 
+def render_target_details(keys: list[str], index: int, cwd: Path, terminal_size: os.terminal_size) -> list[str]:
+    labels = {
+        "current": ("Current folder", str(cwd)),
+        "other": ("Other folder", "type a path after selecting"),
+    }
+    lines = [
+        "Choose target folder",
+        "Use arrow keys or j/k, then Enter. Recommended default: current.",
+    ]
+    for i, key in enumerate(keys):
+        label, summary = labels[key]
+        marker = ">" if i == index else " "
+        row = f"{marker} {key:<7} {label} - {summary}"
+        if i == index:
+            row = terminal_style(fit_terminal_line_to_width(row, terminal_size.columns), "1;7")
+        else:
+            row = fit_terminal_line_to_width(row, terminal_size.columns)
+        lines.append(row)
+    return lines
+
+
 def choose_target() -> Path:
     cwd = Path.cwd()
-    choice = choose_card(
-        "Choose target folder",
-        "Use arrow keys or h/l/j/k, then Enter. Recommended default: current.",
-        [
-            PickerCard("current", "Install into this folder", (str(cwd),)),
-            PickerCard("other", "Choose another folder", ("Type a path after selecting this.",)),
-        ],
-        "current",
-    )
+    keys = ["current", "other"]
+    index = 0
+    first_draw = True
+
+    def draw() -> None:
+        nonlocal first_draw
+        terminal_size = shutil.get_terminal_size((100, 24))
+        if first_draw:
+            print("\033[?25l\033[2J\033[H", end="")
+            first_draw = False
+        else:
+            print("\033[H\033[J", end="")
+        print("\n".join(render_target_details(keys, index, cwd, terminal_size)))
+
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setcbreak(fd)
+        while True:
+            draw()
+            char = sys.stdin.read(1)
+            if char in {"\r", "\n"}:
+                print("")
+                choice = keys[index]
+                break
+            if char == "\x03":
+                raise KeyboardInterrupt
+            if char in {"k", "K"}:
+                index = (index - 1) % len(keys)
+            elif char in {"j", "J"}:
+                index = (index + 1) % len(keys)
+            elif char == "\x1b" and sys.stdin.read(1) == "[":
+                arrow = sys.stdin.read(1)
+                if arrow == "A":
+                    index = (index - 1) % len(keys)
+                elif arrow == "B":
+                    index = (index + 1) % len(keys)
+    finally:
+        print("\033[?25h", end="")
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
     if choice == "current":
         return cwd
     typed = input("Target folder path: ").strip()

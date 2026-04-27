@@ -354,9 +354,11 @@ print(text)
 if process.returncode != 0:
     raise SystemExit(process.returncode)
 if "Choose target folder" not in text:
-    raise SystemExit("Expected target selection to use the card picker")
-if "\x1b[1;7mcurrent\x1b[0m" not in text:
-    raise SystemExit("Expected current folder target card to be selected by default")
+    raise SystemExit("Expected target selection to use the target picker")
+if "\x1b[1;7m> current" not in text:
+    raise SystemExit("Expected current folder target row to be selected by default")
+if "╭" in text or "Install into this folder" in text:
+    raise SystemExit("Expected target picker to use list rows instead of cards")
 if f"Target: {os.path.realpath(target)}" not in text:
     raise SystemExit("Expected target picker to select the current folder")
 PY
@@ -403,7 +405,7 @@ try:
                 break
             output.extend(chunk)
             if not selected_other and b"Choose target folder" in output:
-                os.write(master, b"\x1b[C\r")
+                os.write(master, b"\x1b[B\r")
                 selected_other = True
             if selected_other and not typed_path and b"Target folder path:" in output:
                 os.write(master, other.encode("utf-8") + b"\r")
@@ -426,8 +428,8 @@ text = output.decode("utf-8", errors="replace")
 print(text)
 if process.returncode != 0:
     raise SystemExit(process.returncode)
-if "\x1b[1;7mother\x1b[0m" not in text:
-    raise SystemExit("Expected other target card to be selectable")
+if "\x1b[1;7m> other" not in text:
+    raise SystemExit("Expected other target row to be selectable")
 if f"Target: {os.path.realpath(other)}" not in text:
     raise SystemExit("Expected target picker to use the typed folder")
 PY
