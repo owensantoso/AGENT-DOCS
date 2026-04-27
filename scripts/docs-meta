@@ -23,6 +23,9 @@ from urllib.parse import quote, unquote
 
 ID_PATTERNS = {
     "idea": re.compile(r"\bIDEA-(\d{4})\b"),
+    "rsch": re.compile(r"\bRSCH-(\d{4})\b"),
+    "eval": re.compile(r"\bEVAL-(\d{4})\b"),
+    "diag": re.compile(r"\bDIAG-(\d{4})\b"),
     "spec": re.compile(r"\bSPEC-(\d{4})\b"),
     "plan": re.compile(r"\bPLAN-(\d{4})\b"),
     "impl": re.compile(r"\bIMPL-(\d{4})-(\d{2})\b"),
@@ -40,6 +43,9 @@ TODO_ACTIVE_STATUSES = {"backlog", "ready", "in_progress", "blocked", "review"}
 
 TYPE_BY_PREFIX = {
     "IDEA": "idea",
+    "RSCH": "research-survey",
+    "EVAL": "evaluation",
+    "DIAG": "diagnostic-record",
     "SPEC": "spec",
     "PLAN": "plan",
     "IMPL": "implementation-brief",
@@ -63,6 +69,7 @@ COMMON_STATUSES = {
     "open",
     "investigating",
     "answered",
+    "resolved",
     "deferred",
     "completed",
     "implemented",
@@ -88,6 +95,9 @@ STATUS_BY_TYPE = {
     "explainer": {"draft", "active", "stale", "superseded", "archived"},
     "question": {"open", "investigating", "answered", "deferred", "superseded", "archived"},
     "concept": {"draft", "active", "promoted", "superseded", "archived"},
+    "research-survey": {"draft", "active", "completed", "superseded", "archived"},
+    "evaluation": {"draft", "active", "completed", "superseded", "archived"},
+    "diagnostic-record": {"investigating", "resolved", "completed", "superseded", "archived"},
     "session-log": {"in_progress", "in-progress", "completed", "archived"},
     "architecture-area": {"draft", "active", "stale", "superseded", "archived"},
     "research-note": {"draft", "completed", "superseded", "archived"},
@@ -137,6 +147,55 @@ REQUIRED_FIELDS_BY_TYPE = {
         "repo_state",
     },
     "concept": {"type", "id", "title", "domain", "status", "concept_type", "created_at", "updated_at", "source", "repo_state"},
+    "research-survey": {
+        "type",
+        "id",
+        "title",
+        "domain",
+        "status",
+        "created_at",
+        "updated_at",
+        "owner",
+        "question",
+        "source",
+        "repo_state",
+    },
+    "evaluation": {
+        "type",
+        "id",
+        "title",
+        "domain",
+        "status",
+        "created_at",
+        "updated_at",
+        "owner",
+        "hypothesis",
+        "artifact_root",
+        "run_command",
+        "repo_state",
+    },
+    "diagnostic-record": {
+        "type",
+        "id",
+        "title",
+        "domain",
+        "status",
+        "created_at",
+        "updated_at",
+        "owner",
+        "symptom",
+        "artifact_root",
+        "privacy_classification",
+        "artifact_sensitivity",
+        "safe_to_commit",
+        "retention_policy",
+        "delete_after",
+        "capture_method",
+        "raw_artifacts_local_only",
+        "sanitized_artifacts",
+        "environment",
+        "repo_state",
+    },
     "session-log": {"type", "title", "status", "created_at", "updated_at", "started_at", "ended_at", "timezone", "participants", "related_todos"},
     "research-note": {"type", "title", "domain", "status", "created_at", "updated_at", "owner", "question", "links", "repo_state"},
     "release-checklist": {"type", "title", "domain", "status", "created_at", "updated_at", "release_target", "owner", "repo_state"},
@@ -195,7 +254,7 @@ class Doc:
         match = re.search(r"^#\s+(.+)$", self.content, re.MULTILINE)
         if match:
             title = match.group(1).strip()
-            return re.sub(r"^(IDEA|SPEC|PLAN|IMPL|ADR|LRN|EXPL|QST|CONC)-\d{4}(?:-\d{2})?\s*-\s*", "", title)
+            return re.sub(r"^(IDEA|RSCH|EVAL|DIAG|SPEC|PLAN|IMPL|ADR|LRN|EXPL|QST|CONC)-\d{4}(?:-\d{2})?\s*-\s*", "", title)
         return self.path.stem
 
 
@@ -284,11 +343,37 @@ def parse_args() -> argparse.Namespace:
     sub = parser.add_subparsers(dest="command", required=True)
 
     next_cmd = sub.add_parser("next", help="Print next ID for a doc family.")
-    next_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr", "lrn", "expl", "qst", "conc", "todo"])
+    next_cmd.add_argument("family", choices=["idea", "rsch", "eval", "diag", "spec", "plan", "impl", "adr", "lrn", "expl", "qst", "conc", "todo"])
     next_cmd.add_argument("--plan", help="Required for impl IDs, e.g. PLAN-0034")
 
-    new_cmd = sub.add_parser("new", help="Create a new idea, spec, plan, impl doc, ADR, learning, explainer, question, or concept.")
-    new_cmd.add_argument("family", choices=["idea", "spec", "plan", "impl", "adr", "learning", "lrn", "explainer", "expl", "question", "qst", "concept", "conc"])
+    new_cmd = sub.add_parser(
+        "new",
+        help="Create a new idea, research survey, evaluation, diagnostic, spec, plan, impl doc, ADR, learning, explainer, question, or concept.",
+    )
+    new_cmd.add_argument(
+        "family",
+        choices=[
+            "idea",
+            "research",
+            "rsch",
+            "eval",
+            "evaluation",
+            "diag",
+            "diagnostic",
+            "spec",
+            "plan",
+            "impl",
+            "adr",
+            "learning",
+            "lrn",
+            "explainer",
+            "expl",
+            "question",
+            "qst",
+            "concept",
+            "conc",
+        ],
+    )
     new_cmd.add_argument("title")
     new_cmd.add_argument("--domain", default="product")
     new_cmd.add_argument("--spec-type", default="feature")
@@ -301,6 +386,10 @@ def parse_args() -> argparse.Namespace:
 
     status_cmd = sub.add_parser("status", help="Show doc statuses.")
     status_cmd.add_argument("id", nargs="?")
+
+    show_cmd = sub.add_parser("show", help="Show one doc with related docs, linked paths, and local TODOs.")
+    show_cmd.add_argument("id", help="Doc ID or repo/docs path.")
+    show_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
 
     set_status_cmd = sub.add_parser("set-status", help="Update a doc status in frontmatter.")
     set_status_cmd.add_argument("id")
@@ -942,6 +1031,109 @@ def find_doc(docs: list[Doc], doc_id: str) -> Doc | None:
     return None
 
 
+def as_string_list(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
+
+
+def linked_path_info(raw: str, root: Path) -> dict[str, str]:
+    repo_root = repo_root_for(root)
+    candidate = Path(raw)
+    resolved = candidate.resolve() if candidate.is_absolute() else (repo_root / candidate).resolve()
+    try:
+        rel_repo = resolved.relative_to(repo_root.resolve()).as_posix()
+    except ValueError:
+        return {"input": raw, "path": resolved.as_posix(), "status": "outside-repo"}
+    return {"input": raw, "path": rel_repo, "status": "ok" if resolved.exists() else "missing"}
+
+
+def relation_summary(doc: Doc, docs: list[Doc]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    keys = ["parent_plan"] + sorted(
+        key
+        for key in doc.frontmatter
+        if key.startswith("related_") or key in {"supersedes", "superseded_by", "promoted_to", "resolved_by"}
+    )
+    seen: set[tuple[str, str]] = set()
+    for key in keys:
+        for value in as_string_list(doc.frontmatter.get(key)):
+            pair = (key, value)
+            if pair in seen:
+                continue
+            seen.add(pair)
+            target = find_doc(docs, value)
+            rows.append(
+                {
+                    "field": key,
+                    "id": value,
+                    "path": target.relpath if target else "",
+                    "status": target.status if target else "",
+                    "title": target.title if target else "",
+                }
+            )
+    return rows
+
+
+def show_doc(doc: Doc, docs: list[Doc], root: Path) -> dict[str, object]:
+    return {
+        "id": doc.primary_id,
+        "type": doc.doc_type,
+        "title": doc.title,
+        "status": doc.status,
+        "path": doc.relpath,
+        "relations": relation_summary(doc, docs),
+        "linked_paths": [linked_path_info(path, root) for path in as_string_list(doc.frontmatter.get("linked_paths"))],
+        "todos": [item.as_dict() for item in todo_items_for_doc(doc, include_done=True)],
+    }
+
+
+def show_doc_text(payload: dict[str, object]) -> str:
+    lines = [
+        f"ID:\t{payload.get('id', '')}",
+        f"Type:\t{payload.get('type', '')}",
+        f"Title:\t{payload.get('title', '')}",
+        f"Status:\t{payload.get('status', '')}",
+        f"Path:\t{payload.get('path', '')}",
+        "",
+        "Relations:",
+    ]
+    relations = payload.get("relations", [])
+    if isinstance(relations, list) and relations:
+        for item in relations:
+            if not isinstance(item, dict):
+                continue
+            suffix = f" -> {item.get('path', '')}" if item.get("path") else ""
+            title = f" ({item.get('title', '')})" if item.get("title") else ""
+            lines.append(f"- {item.get('field', '')}: {item.get('id', '')}{suffix}{title}")
+    else:
+        lines.append("- none")
+    lines.extend(["", "Linked Paths:"])
+    linked_paths = payload.get("linked_paths", [])
+    if isinstance(linked_paths, list) and linked_paths:
+        for item in linked_paths:
+            if not isinstance(item, dict):
+                continue
+            lines.append(f"- {item.get('input', '')}: {item.get('status', '')} -> {item.get('path', '')}")
+    else:
+        lines.append("- none")
+    lines.extend(["", "Todos:"])
+    todos = payload.get("todos", [])
+    if isinstance(todos, list) and todos:
+        for item in todos:
+            if not isinstance(item, dict):
+                continue
+            todo_id = item.get("id", "")
+            prefix = f"{todo_id} " if todo_id else ""
+            status = item.get("status", item.get("state", ""))
+            lines.append(f"- {prefix}[{status}] {item.get('task', '')}")
+    else:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
 def new_doc(args: argparse.Namespace, root: Path, docs: list[Doc]) -> Path:
     title = args.title
     slug = slugify(title)
@@ -952,6 +1144,18 @@ def new_doc(args: argparse.Namespace, root: Path, docs: list[Doc]) -> Path:
         doc_id = next_id("idea", docs)
         path = root / args.domain / "ideas" / f"{doc_id}-{slug}.md"
         body = idea_doc(doc_id, title, args, timestamp, commit)
+    elif args.family in {"research", "rsch"}:
+        doc_id = next_id("rsch", docs)
+        path = root / "research" / f"{doc_id}-{slug}.md"
+        body = research_survey_doc(doc_id, title, args, timestamp, commit)
+    elif args.family in {"eval", "evaluation"}:
+        doc_id = next_id("eval", docs)
+        path = root / "repo-health" / "evaluations" / f"{doc_id}-{slug}.md"
+        body = evaluation_doc(doc_id, title, args, timestamp, commit)
+    elif args.family in {"diag", "diagnostic"}:
+        doc_id = next_id("diag", docs)
+        path = root / "repo-health" / "debugging" / "diagnostics" / f"{doc_id}-{slug}.md"
+        body = diagnostic_doc(doc_id, title, args, timestamp, commit)
     elif args.family in {"concept", "conc"}:
         doc_id = next_id("conc", docs)
         path = root / args.domain / "concepts" / f"{doc_id}-{slug}.md"
@@ -1006,6 +1210,8 @@ def status_for_new(args: argparse.Namespace, doc_type: str) -> str:
         status = "active"
     if doc_type == "question" and status == "draft":
         status = "open"
+    if doc_type == "diagnostic-record" and status == "draft":
+        status = "investigating"
     allowed = STATUS_BY_TYPE.get(doc_type, COMMON_STATUSES)
     if status not in allowed:
         raise SystemExit(f"Status {status!r} is not valid for {doc_type}; choose one of: {', '.join(sorted(allowed))}")
@@ -1045,6 +1251,7 @@ related_research: []
 related_issues: []
 related_prs: []
 related_sessions: []
+linked_paths: []
 promoted_to: []
 repo_state:
   based_on_commit:
@@ -1064,6 +1271,174 @@ repo_state:
 ## Promotion Criteria
 
 What would need to be true before this becomes a spec, research note, ADR, or plan?
+"""
+
+
+def research_survey_doc(doc_id: str, title: str, args: argparse.Namespace, timestamp: str, commit: str) -> str:
+    status = status_for_new(args, "research-survey")
+    return f"""---
+type: research-survey
+id: {doc_id}
+title: {title}
+domain: {args.domain}
+status: {status}
+created_at: "{timestamp}"
+updated_at: "{timestamp}"
+owner: {args.owner}
+question:
+source:
+  type: {args.source_type}
+  link: {args.source_link}
+  notes:
+external_sources: []
+repo_findings: []
+agent_notes: []
+related_ideas: []
+related_evaluations: []
+related_adrs: []
+related_specs: []
+related_plans: []
+related_sessions: []
+linked_paths: []
+{repo_state_yaml(commit)}
+---
+
+# {doc_id} - {title}
+
+## Question
+
+What options, sources, or technical landscape are we trying to understand?
+
+## Context
+
+## External Sources
+
+## Repo / Internal Findings
+
+## Agent Notes
+
+## Options Compared
+
+## Findings
+
+## Risks / Unknowns
+
+## Recommendation
+
+## Follow-Ups
+"""
+
+
+def evaluation_doc(doc_id: str, title: str, args: argparse.Namespace, timestamp: str, commit: str) -> str:
+    status = status_for_new(args, "evaluation")
+    return f"""---
+type: evaluation
+id: {doc_id}
+title: {title}
+domain: {args.domain}
+status: {status}
+created_at: "{timestamp}"
+updated_at: "{timestamp}"
+owner: {args.owner}
+hypothesis:
+artifact_root: artifacts/evaluations/{doc_id}/
+dataset_version:
+fixture_digest:
+run_command:
+metrics_version:
+baseline_eval:
+related_research: []
+related_diagnostics: []
+related_adrs: []
+related_specs: []
+related_plans: []
+related_sessions: []
+linked_paths: []
+{repo_state_yaml(commit)}
+---
+
+# {doc_id} - {title}
+
+## Hypothesis
+
+## Candidates
+
+## Dataset / Fixtures
+
+## Metrics
+
+## Run Command
+
+## Output Format
+
+## Good-Enough Criteria
+
+## Results
+
+## Recommendation / ADR Input
+
+## Reproduction Notes
+
+## Artifact Policy
+
+Commit summaries and sanitized excerpts. Keep raw private JSONL, transcripts, media, and payload dumps local unless explicitly sanitized.
+"""
+
+
+def diagnostic_doc(doc_id: str, title: str, args: argparse.Namespace, timestamp: str, commit: str) -> str:
+    status = status_for_new(args, "diagnostic-record")
+    return f"""---
+type: diagnostic-record
+id: {doc_id}
+title: {title}
+domain: {args.domain}
+status: {status}
+created_at: "{timestamp}"
+updated_at: "{timestamp}"
+owner: {args.owner}
+symptom:
+artifact_root: artifacts/diagnostics/{doc_id}/
+privacy_classification:
+artifact_sensitivity:
+safe_to_commit: false
+retention_policy:
+delete_after:
+capture_method:
+raw_artifacts_local_only: []
+sanitized_artifacts: []
+environment:
+git_sha:
+app_build:
+related_evaluations: []
+related_adrs: []
+related_specs: []
+related_plans: []
+related_sessions: []
+linked_paths: []
+{repo_state_yaml(commit)}
+---
+
+# {doc_id} - {title}
+
+## Symptom
+
+## Run Context
+
+## Instrumentation Added
+
+## Evidence
+
+## Key Events
+
+## Current Theory / Root Cause
+
+## Fix Or Next Instrumentation
+
+## Privacy Notes
+
+## Cleanup Plan
+
+Raw traces are local/private by default. Commit only sanitized excerpts or metadata needed to understand the diagnosis.
 """
 
 
@@ -1091,6 +1466,7 @@ related_adrs: []
 related_sessions: []
 supersedes: []
 superseded_by: []
+linked_paths: []
 {repo_state_yaml(commit)}
 ---
 
@@ -1141,6 +1517,7 @@ related_adrs: []
 related_sessions: []
 related_issues: []
 related_prs: []
+linked_paths: []
 {repo_state_yaml(commit)}
 ---
 
@@ -1181,6 +1558,7 @@ related_adrs: []
 related_sessions: []
 related_issues: []
 related_prs: []
+linked_paths: []
 {repo_state_yaml(commit)}
 ---
 
@@ -1225,6 +1603,7 @@ related_issues: []
 related_prs: []
 supersedes: []
 superseded_by: []
+linked_paths: []
 {repo_state_yaml(commit)}
 ---
 
@@ -1321,6 +1700,7 @@ related_todos: []
 related_questions: []
 supersedes: []
 superseded_by: []
+linked_paths: []
 repo_state:
   based_on_commit: {commit}
   last_reviewed_commit: {commit}
@@ -1363,6 +1743,7 @@ related_questions: []
 related_sessions: []
 related_todos: []
 visuals: []
+linked_paths: []
 repo_state:
   based_on_commit: {commit}
   last_reviewed_commit: {commit}
@@ -1428,6 +1809,7 @@ related_sessions: []
 related_todos: []
 supersedes: []
 superseded_by: []
+linked_paths: []
 repo_state:
   based_on_commit: {commit}
   last_reviewed_commit: {commit}
@@ -2296,6 +2678,8 @@ def check(root: Path, docs: list[Doc]) -> int:
     for doc in docs:
         doc_id = doc.primary_id
         if not doc_id:
+            if doc.doc_type in {"research-survey", "evaluation", "diagnostic-record"}:
+                errors.extend(validate_frontmatter(doc))
             continue
         if doc_id in seen:
             errors.append(f"Duplicate ID {doc_id}: {seen[doc_id]} and {doc.relpath}")
@@ -2303,6 +2687,7 @@ def check(root: Path, docs: list[Doc]) -> int:
         if doc_id not in doc.path.name:
             errors.append(f"ID {doc_id} is not present in filename: {doc.relpath}")
         errors.extend(validate_frontmatter(doc))
+        errors.extend(validate_linked_paths(doc, root))
 
     generated = {
         root / "SPECS.md": specs_markdown(docs),
@@ -2470,6 +2855,15 @@ def validate_frontmatter(doc: Doc) -> list[str]:
     return errors
 
 
+def validate_linked_paths(doc: Doc, root: Path) -> list[str]:
+    errors: list[str] = []
+    for linked in as_string_list(doc.frontmatter.get("linked_paths")):
+        info = linked_path_info(linked, root)
+        if info["status"] != "ok":
+            errors.append(f"linked_paths entry {linked!r} is {info['status']} in {doc.relpath}")
+    return errors
+
+
 def main() -> int:
     args = parse_args()
     root = docs_root(args.root)
@@ -2490,6 +2884,20 @@ def main() -> int:
         for doc in selected:
             if doc:
                 print(f"{doc.primary_id or doc.relpath}\t{doc.status or '(none)'}\t{doc.relpath}")
+        return 0
+    if args.command == "show":
+        doc = find_doc(docs, args.id)
+        if not doc:
+            candidate = resolve_path_input(args.id, root, docs)
+            try:
+                rel = candidate.resolve().relative_to(root.resolve()).as_posix()
+            except ValueError:
+                raise SystemExit(f"No document found for {args.id}")
+            doc = next((item for item in docs if item.relpath == rel), None)
+        if not doc:
+            raise SystemExit(f"No document found for {args.id}")
+        payload = show_doc(doc, docs, root)
+        print_json_or_text(payload, show_doc_text(payload), args.json)
         return 0
     if args.command == "set-status":
         doc = find_doc(docs, args.id)

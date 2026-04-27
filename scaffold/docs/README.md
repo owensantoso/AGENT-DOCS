@@ -32,6 +32,64 @@ Map of the documentation system.
 | `operations/` | Release, production, app-store, manual checks |
 | `marketing/` | Strategy, launch plans, campaign outputs |
 
+## Doc Type Workflow
+
+Use the smallest durable doc that answers the actual question. Stable IDs are handles, not required gates; a small idea can go straight to a spec, while uncertain or evidence-heavy work should pass through research, evaluation, or diagnostics first.
+
+Evidence docs inform decisions; they do not replace them. `RSCH`, `EVAL`, and `DIAG` can feed a spec, ADR, or plan, but product behavior still belongs in `SPEC`, durable decisions still belong in `ADR`, and implementation scope still belongs in `PLAN`/`IMPL`.
+
+```mermaid
+flowchart TD
+  Chat["Conversation / observation"] --> IDEA["IDEA: raw product or technical spark"]
+  Chat --> DIAG["DIAG: diagnose one real run"]
+  Chat --> RSCH["RSCH: research what options exist"]
+  Chat --> QST["QST: durable open question"]
+
+  IDEA --> RSCH
+  IDEA --> SPEC["SPEC: user-visible behavior"]
+
+  RSCH -. informs .-> EVAL["EVAL: compare approaches with fixtures and metrics"]
+  RSCH --> QST
+  RSCH -. informs .-> SPEC
+  RSCH -. informs .-> ADR["ADR: durable decision"]
+
+  DIAG -. evidence .-> EVAL
+  DIAG --> QST
+  DIAG -. bugfix evidence .-> PLAN["PLAN: implementation scope"]
+  DIAG -. informs .-> SPEC
+
+  EVAL -. evidence .-> ADR
+  EVAL -. evidence .-> SPEC
+  EVAL -. evidence .-> PLAN
+
+  SPEC --> PLAN
+  ADR --> PLAN
+  ADR --> AREA["AREA: architecture boundary"]
+  PLAN --> IMPL["IMPL: bounded execution brief"]
+  IMPL --> SESSION["Session log: work receipt"]
+  PLAN --> SESSION
+  SESSION --> LRN["LRN: durable lesson"]
+  SESSION --> EXPL["EXPL: human-facing explanation"]
+  AUDIT["Audit: repo-health check"] --> PLAN
+  AUDIT --> DIAG
+```
+
+Decision shortcut:
+
+| Need | Use |
+|---|---|
+| Future-facing spark | `IDEA` |
+| Sources or option landscape | `RSCH` |
+| Fixtures, metrics, benchmark, bakeoff, or thresholds | `EVAL` |
+| One real run timeline, crash, freeze, slow flow, or pasted logs | `DIAG` |
+| User-visible behavior | `SPEC` |
+| Durable architecture/product decision | `ADR` |
+| Implementation boundaries and sequencing | `PLAN` |
+| Bounded task execution | `IMPL` |
+| Reusable human explanation | `EXPL` |
+| Durable lesson | `LRN` |
+| Durable unresolved question | `QST` |
+
 ## Rules
 
 - Keep `CURRENT_STATE.md` short and link outward.
@@ -45,6 +103,9 @@ Map of the documentation system.
 - Put plans under the domain that owns the outcome.
 - Use `sequence` frontmatter for roadmap order; keep `PLAN-*` IDs stable.
 - Use repo-health audits for periodic docs, architecture, duplication/refactor, test, tooling, and paper-trail checkups.
+- Use `RSCH-*` research surveys for sourced option landscapes, not repeatable bakeoffs or one failed run.
+- Use `EVAL-*` evaluations for repeatable fixtures, metrics, thresholds, and bakeoffs.
+- Use `DIAG-*` diagnostics for real-run failures, freezes, slow flows, crash logs, timing traces, and privacy-sensitive debugging evidence.
 - Give each meaningful plan its own folder.
 - Use session logs for per-session receipts.
 - Use ADRs for durable cross-plan decisions.

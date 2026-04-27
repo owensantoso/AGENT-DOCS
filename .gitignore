@@ -1,2 +1,6 @@
 .DS_Store
 .obsidian/
+artifacts/diagnostics/
+artifacts/evaluations/
+*.raw.jsonl
+*.private.jsonl

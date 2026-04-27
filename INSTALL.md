@@ -50,6 +50,8 @@ Remove example files that do not apply, or keep them only if they are clearly ma
 
 Install `docs-meta` when the target repo should mechanically manage IDs, generated registries, todos, docs links, safe doc moves, roadmap views, and docs health checks.
 
+Current stable-ID families include `IDEA`, `RSCH`, `EVAL`, `DIAG`, `SPEC`, `PLAN`, `IMPL`, `ADR`, `LRN`, `EXPL`, and `QST`.
+
 ```bash
 mkdir -p scripts tests
 cp "$AGENT_DOCS/scripts/docs-meta" ./scripts/docs-meta
@@ -90,6 +92,17 @@ cp "$AGENT_DOCS/scaffold/agent-instructions/"*.md ./docs/repo-health/agent-instr
 
 Then adapt the placeholders before relying on them.
 These copied files are reference templates until you rename or place them as real surface-level `AGENTS.md` files where they govern active work.
+
+## Optional Structured Docs Skill
+
+If the target environment supports repo-local skills, copy the structured docs workflow skill too:
+
+```bash
+mkdir -p skills/structured-docs-workflow
+cp "$AGENT_DOCS/scaffold/skills/structured-docs-workflow/SKILL.md" ./skills/structured-docs-workflow/SKILL.md
+```
+
+This gives fresh implementation agents a fast path for state docs, plans, briefs, structured `TODO-*`, and `docs-meta` usage.
 
 ## What To Keep Or Delete
 

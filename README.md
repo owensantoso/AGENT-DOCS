@@ -17,12 +17,13 @@ This kit is useful when:
 
 1. [AGENTS.md](AGENTS.md) - local instructions for working in this repo
 2. [INSTALL.md](INSTALL.md) - exact copy, edit, handoff, and verification steps for another repo
-3. [guides/workflow-overview.md](guides/workflow-overview.md) - the workflow in one pass
-4. [guides/doc-types-and-responsibilities.md](guides/doc-types-and-responsibilities.md) - what each doc type owns
-5. [guides/subagent-execution-loop.md](guides/subagent-execution-loop.md) - how to split, delegate, and integrate work
-6. [guides/adoption-checklist.md](guides/adoption-checklist.md) - setup checklist for adapting the workflow
-7. [plans/README.md](plans/README.md) - upstream AGENT-DOCS and docs-meta improvement plans
-8. [concepts/CONC-0001-read-only-sqlite-docs-index.md](concepts/CONC-0001-read-only-sqlite-docs-index.md) - candidate generated SQLite read model for richer docs-meta queries
+3. [skills/structured-docs-workflow/SKILL.md](skills/structured-docs-workflow/SKILL.md) - fast path for implementers plus router for structured docs, `TODO-*`, and `docs-meta`
+4. [guides/workflow-overview.md](guides/workflow-overview.md) - the workflow in one pass
+5. [guides/doc-types-and-responsibilities.md](guides/doc-types-and-responsibilities.md) - what each doc type owns
+6. [guides/subagent-execution-loop.md](guides/subagent-execution-loop.md) - how to split, delegate, and integrate work
+7. [guides/adoption-checklist.md](guides/adoption-checklist.md) - setup checklist for adapting the workflow
+8. [plans/README.md](plans/README.md) - upstream AGENT-DOCS and docs-meta improvement plans
+9. [concepts/CONC-0001-read-only-sqlite-docs-index.md](concepts/CONC-0001-read-only-sqlite-docs-index.md) - candidate generated SQLite read model for richer docs-meta queries
 
 ## Install In Another Repo
 
@@ -42,6 +43,8 @@ chmod +x ./scripts/docs-meta ./tests/docs-meta-smoke.sh
 ```
 
 Then adapt placeholders, delete irrelevant examples, and make `AGENTS.md` plus `docs/orientation/CURRENT_STATE.md` truthful for that repo.
+
+Fresh implementers should open [skills/structured-docs-workflow/SKILL.md](skills/structured-docs-workflow/SKILL.md) to find the right state, plan, brief, and todo workflow quickly.
 
 Reusable global and surface-level agent instructions live under `scaffold/agent-instructions/`. These are reusable `AGENTS.md` templates, not Codex `SKILL.md` skills. Keep them separate from repo-specific docs so personal defaults, project rules, and future persona files can evolve without crowding every target repo root.
 
@@ -273,12 +276,17 @@ Use the docs as the source of truth and GitHub as tracking:
 
 ```text
 IDEA -> SPEC -> PLAN -> IMPL -> Issue / PR
+RSCH -> EVAL / SPEC / ADR / PLAN
+DIAG -> EVAL / SPEC / PLAN
 LRN -> lesson learned
 EXPL -> reusable human-facing explanation
 QST -> durable open question
 ```
 
 - Ideas own early sparks, rambles, possible future work, and not-yet-formed thoughts.
+- Research surveys own sourced option landscapes before the repo is ready to choose, specify, or build.
+- Evaluations own repeatable fixtures, metrics, bakeoffs, and good-enough criteria.
+- Diagnostics own real-run evidence for crashes, freezes, slow flows, timing traces, and opaque failures.
 - Specs own durable requirements and language before implementation planning. They may describe features, bugs, improvements, architecture, repo-health work, or research-backed decisions.
 - Plans own intent, architecture, scope, sequencing, and the build-time interface choices that matter.
 - Implementation briefs own bounded execution detail.
@@ -295,8 +303,8 @@ This exists because agents are good at synthesis but unreliable at bookkeeping. 
 
 Use it for:
 
-- next `IDEA-*`, `CONC-*`, `SPEC-*`, `PLAN-*`, `IMPL-*`, and `ADR-*` IDs
-- creating new ideas, concepts, specs, plans, implementation briefs, and ADRs
+- next `IDEA-*`, `RSCH-*`, `EVAL-*`, `DIAG-*`, `CONC-*`, `SPEC-*`, `PLAN-*`, `IMPL-*`, and `ADR-*` IDs
+- creating new ideas, research surveys, evaluations, diagnostics, concepts, specs, plans, implementation briefs, and ADRs
 - updating frontmatter status
 - extracting Markdown todos, including structured `TODO-*` items for durable coordination
 - validating structured todo IDs, lifecycle states, owner/skill metadata, and plan/brief references
@@ -409,6 +417,13 @@ Use scaffold files as starting points, not as mandatory paperwork. Keep one cano
 
 ### Domain-Specific Work
 
+- [scaffold/docs/research/README.md](scaffold/docs/research/README.md) - `RSCH-*` research survey convention
+- [scaffold/docs/research/templates/research-survey-template.md](scaffold/docs/research/templates/research-survey-template.md) - sourced option-landscape template
+- [scaffold/docs/repo-health/evaluations/README.md](scaffold/docs/repo-health/evaluations/README.md) - `EVAL-*` repeatable evaluation convention
+- [scaffold/docs/repo-health/evaluations/templates/evaluation-template.md](scaffold/docs/repo-health/evaluations/templates/evaluation-template.md) - fixture, metric, and bakeoff template
+- [scaffold/docs/repo-health/debugging/README.md](scaffold/docs/repo-health/debugging/README.md) - debugging note and diagnostic-record guidance
+- [scaffold/docs/repo-health/debugging/diagnostics/README.md](scaffold/docs/repo-health/debugging/diagnostics/README.md) - `DIAG-*` structured trace convention
+- [scaffold/docs/repo-health/debugging/diagnostics/templates/diagnostic-record-template.md](scaffold/docs/repo-health/debugging/diagnostics/templates/diagnostic-record-template.md) - real-run evidence template
 - [scaffold/docs/research/notes/research-note.md](scaffold/docs/research/notes/research-note.md) - research question, findings, recommendation
 - [scaffold/docs/operations/checklists/release-checklist.md](scaffold/docs/operations/checklists/release-checklist.md) - release or operational checklist
 - [scaffold/docs/marketing/plans/marketing-plan.md](scaffold/docs/marketing/plans/marketing-plan.md) - launch or growth campaign plan
@@ -423,6 +438,9 @@ The most reusable idea in this workflow is not the exact folder tree. It is the 
 - implementation briefs define bounded execution slices
 - session logs leave timestamped receipts for important work
 - ADRs preserve durable decisions and rejected alternatives
+- research surveys preserve source-backed option landscapes
+- evaluations preserve repeatable evidence and thresholds
+- diagnostics preserve real-run evidence without forcing raw logs into git
 - learning records preserve lessons learned that should change future behavior
 - explainers preserve reusable teaching material and diagrams
 - questions preserve durable uncertainty and resolution history

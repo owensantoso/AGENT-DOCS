@@ -30,9 +30,12 @@ Short index. Read the file for your task.
 | Verification / test command question | testing guide + surface `AGENTS.md` + any execution-readiness doc |
 | Future feature request | `docs/IDEAS.md` + relevant `docs/<domain>/ideas/IDEA-####-<slug>.md` |
 | Concept / ontology / naming model | `docs/CONCEPTS.md` + relevant `docs/<domain>/concepts/CONC-####-<slug>.md` |
+| Research / evaluation / diagnostic question | `docs/README.md` "Doc Type Workflow" + `docs/research/README.md`, `docs/repo-health/evaluations/README.md`, or `docs/repo-health/debugging/README.md` |
 | Repeated confusion or corrected understanding | `docs/LEARNINGS.md` + relevant `docs/decisions/learnings/LRN-####-<slug>.md` |
 | Human-facing concept explanation | `docs/EXPLAINERS.md` + relevant `docs/orientation/explainers/EXPL-####-<slug>.md` |
 | Durable open question | `docs/QUESTIONS.md` + relevant `docs/decisions/questions/QST-####-<slug>.md` |
+
+If the repo includes `skills/structured-docs-workflow/SKILL.md`, read it before implementation when the repo uses plans, briefs, structured `TODO-*`, or `docs-meta`.
 
 ## Rules
 

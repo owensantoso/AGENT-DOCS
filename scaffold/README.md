@@ -4,7 +4,7 @@ This folder is shaped like the repo docs tree it creates.
 
 Copy the parts you need into a target repo, then delete examples that do not apply. For exact safe copy commands, use the upstream [../INSTALL.md](../INSTALL.md) guide.
 
-Do not copy this whole folder directly into a target repo root. This folder contains its own `README.md`; copy `AGENTS.md`, `docs/`, optional `agent-instructions/`, and optional tools deliberately.
+Do not copy this whole folder directly into a target repo root. This folder contains its own `README.md`; copy `AGENTS.md`, `docs/`, optional `agent-instructions/`, optional `skills/`, and optional tools deliberately.
 
 The scaffold is intentionally topic-first:
 
@@ -27,6 +27,9 @@ If the target repo uses `scripts/docs-meta`, prefer the CLI for new IDs and gene
 ```bash
 scripts/docs-meta new idea "<title>" --domain product
 scripts/docs-meta new concept "<title>" --domain product
+scripts/docs-meta new research "<title>" --domain research
+scripts/docs-meta new eval "<title>" --domain repo-health
+scripts/docs-meta new diag "<title>" --domain repo-health
 scripts/docs-meta new spec "<title>" --domain product
 scripts/docs-meta new learning "<title>" --domain repo-health
 scripts/docs-meta new explainer "<title>" --domain orientation

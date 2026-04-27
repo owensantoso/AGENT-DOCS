@@ -61,6 +61,9 @@ Show the next ID:
 ```bash
 scripts/docs-meta next spec
 scripts/docs-meta next idea
+scripts/docs-meta next rsch
+scripts/docs-meta next eval
+scripts/docs-meta next diag
 scripts/docs-meta next plan
 scripts/docs-meta next impl --plan PLAN-0001
 scripts/docs-meta next adr
@@ -76,6 +79,9 @@ Create new docs:
 scripts/docs-meta new spec "Shared Capture Workflow" --domain product --spec-type feature
 scripts/docs-meta new idea "Repo Memory Timeline" --domain product
 scripts/docs-meta new concept "Selections, Snapshots, And Dynamic Sections" --domain product
+scripts/docs-meta new research "Embedding Options Survey" --domain research
+scripts/docs-meta new eval "Embedding Model Bakeoff" --domain repo-health
+scripts/docs-meta new diag "Simulator Freeze Investigation" --domain repo-health
 scripts/docs-meta new plan "Shared Capture Implementation" --domain product --spec SPEC-0001
 scripts/docs-meta new impl "Persist Capture Drafts" --plan PLAN-0001
 scripts/docs-meta new adr "Use Append-Only Worktree Journal"
@@ -89,8 +95,11 @@ Inspect or update status:
 ```bash
 scripts/docs-meta status
 scripts/docs-meta status PLAN-0001
+scripts/docs-meta show PLAN-0001
 scripts/docs-meta set-status PLAN-0001 in_progress
 ```
+
+`show` is the per-doc inspection command. It prints one doc's metadata, related docs from frontmatter, `linked_paths`, and local todos.
 
 List todos:
 
@@ -219,6 +228,14 @@ Use `EXPL-*` explainers for reusable human-facing teaching material. Include a v
 
 Use `CONC-*` concept notes for semi-mature domain models, taxonomy, ontology, naming, or source-of-truth sketches. Concepts are more reasoned than raw ideas, but they are not yet binding specs, ADRs, plans, or user-facing explainers.
 
+### Evidence docs
+
+Use `RSCH-*` research surveys when the question is "what options exist?" and the answer needs sourced landscape work before a spec, ADR, plan, or evaluation.
+
+Use `EVAL-*` evaluations when the question can be answered by repeatable fixtures, metrics, timings, thresholds, or a bakeoff. The Markdown doc records the protocol and recommendation; raw outputs belong under `artifacts/evaluations/EVAL-####/` and are git-ignored by default unless explicitly sanitized.
+
+Use `DIAG-*` diagnostic records when a real run, crash, freeze, slow flow, or flaky behavior needs structured evidence to outlive chat. Raw traces belong under `artifacts/diagnostics/DIAG-####/` and are git-ignored by default; commit summaries and sanitized excerpts.
+
 Regenerate and check generated views:
 
 ```bash
@@ -329,9 +346,14 @@ sequence:
   after: [PLAN-0035]
 related_issues:
   - "#123"
+linked_paths:
+  - apps/web/src/routes/todos.tsx
+  - packages/core/todo/parser.ts
 ```
 
 This avoids encoding a many-to-many relationship graph into filenames. An idea can be promoted to a concept, spec, ADR, research note, or plan; a concept can be promoted to a spec, ADR, plan, architecture doc, or explainer; a plan can relate to multiple specs; a spec can lead to multiple plans; and an implementation brief can remain visibly scoped to its parent plan.
+
+Use `linked_paths` for repo files or folders that matter to a doc but are not themselves structured docs. Keep paths repo-relative.
 
 ## File Metadata
 
@@ -365,8 +387,8 @@ Use this to understand which repository state a spec, plan, or implementation br
 
 Copy `scripts/docs-meta` into a repo that uses this docs workflow. Then:
 
-1. Ensure idea, spec, plan, implementation brief, and ADR templates have `id`, `type`, `status`, `created_at`, `updated_at`, and relationship frontmatter.
-2. Prefer `scripts/docs-meta new ...` for new ideas, specs, plans, implementation briefs, and ADRs.
+1. Ensure idea, research, evaluation, diagnostic, spec, plan, implementation brief, and ADR templates have `id`, `type`, `status`, `created_at`, `updated_at`, and relationship frontmatter.
+2. Prefer `scripts/docs-meta new ...` for new ideas, research surveys, evaluations, diagnostics, specs, plans, implementation briefs, and ADRs.
 3. Run `scripts/docs-meta update` after meaningful doc changes.
 4. Run `scripts/docs-meta check` before committing docs workflow changes.
 5. Run `scripts/docs-meta check-todos` when the repo uses structured `TODO-*` items for durable coordination.
