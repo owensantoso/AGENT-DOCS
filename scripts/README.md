@@ -1,21 +1,28 @@
 # Docs Meta
 
-This folder contains two scripts:
+This folder contains two main scripts:
 
 | Script | Purpose |
 |---|---|
+| `../install.sh` | bootstrap installer that puts `agent-docs-init` on PATH |
 | `agent-docs-init` | interactive selected scaffold installer for target repos |
 | `docs-meta` | deterministic metadata helper once docs are installed |
 
 ## Agent Docs Init
 
-Use `agent-docs-init` to install the smallest useful AGENT-DOCS shape into another repo:
+Install the command once:
 
 ```bash
-scripts/agent-docs-init
-scripts/agent-docs-init --profile small --dry-run
-scripts/agent-docs-init --profile small --docs-meta yes --write
-scripts/agent-docs-init /path/to/project --profile small --dry-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+```
+
+Then use `agent-docs-init` to install the smallest useful AGENT-DOCS shape into another repo:
+
+```bash
+agent-docs-init
+agent-docs-init --profile small --dry-run
+agent-docs-init --profile small --docs-meta yes --write
+agent-docs-init /path/to/project --profile small --dry-run
 ```
 
 If no target path is provided, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path.

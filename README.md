@@ -8,31 +8,33 @@ This is a **scalable workflow**, not a requirement to install every folder and d
 
 ## Quick Start
 
-From the repo you want to document, clone AGENT-DOCS and run the installer:
+Install the CLI once:
 
 ```bash
-git clone https://github.com/owensantoso/AGENT-DOCS.git /tmp/AGENT-DOCS
-/tmp/AGENT-DOCS/scripts/agent-docs-init
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+```
+
+Then run it from the repo you want to document:
+
+```bash
+agent-docs-init
 ```
 
 The installer asks where to install, explains the project-size profiles, previews the tree, and defaults to dry-run. Re-run with `--write` when the preview looks right. Use `small` when unsure.
 
+One-shot from inside a project folder:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --run
+```
+
 Non-interactive examples:
 
 ```bash
-/tmp/AGENT-DOCS/scripts/agent-docs-init --profile small --dry-run
-/tmp/AGENT-DOCS/scripts/agent-docs-init --profile small --write
-/tmp/AGENT-DOCS/scripts/agent-docs-init /path/to/project --profile full --write
+agent-docs-init --profile small --dry-run
+agent-docs-init --profile small --write
+agent-docs-init /path/to/project --profile full --write
 ```
-
-Standalone curl works for synthesized `tiny` and `small` profiles:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/scripts/agent-docs-init -o /tmp/agent-docs-init
-python3 /tmp/agent-docs-init --profile small --dry-run
-```
-
-Use the cloned repo path for `growing`, `full`, or `docs-meta` installs so the installer can copy scaffold files and scripts.
 
 ## Why This Exists
 
