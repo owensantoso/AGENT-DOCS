@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import sys
 import termios
@@ -15,6 +16,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCAFFOLD = REPO_ROOT / "scaffold"
+ANSI_PATTERN = re.compile(r"\033\[[0-9;]*m")
+ANSI_RESET = "\033[0m"
+IMPORTANT_DOCS = {"AGENTS.md", "ARCHITECTURE.md", "CURRENT_STATE.md", "ROADMAP.md"}
 
 
 @dataclass(frozen=True)
@@ -277,12 +281,21 @@ def structure_entries(profile: Profile, include_docs_meta: bool) -> list[str]:
     return entries
 
 
-def tree_lines(entries: list[str]) -> list[str]:
+def terminal_style(text: str, code: str) -> str:
+    return f"\033[{code}m{text}{ANSI_RESET}"
+
+
+def tree_lines(entries: list[str], stylize: bool = False) -> list[str]:
     tree: dict[str, dict] = {}
     explicit_dirs: set[tuple[str, ...]] = set()
     for entry in entries:
         is_dir = entry.endswith("/")
         parts = [part for part in entry.strip("/").split("/") if part]
+        if parts and parts[-1] == ".gitkeep":
+            parts = parts[:-1]
+            is_dir = True
+        if not parts:
+            continue
         if is_dir and parts:
             explicit_dirs.add(tuple(parts))
         node = tree
@@ -297,7 +310,12 @@ def tree_lines(entries: list[str]) -> list[str]:
             branch = "└── " if last else "├── "
             child_path = path + (name,)
             suffix = "/" if children or child_path in explicit_dirs else ""
-            lines.append(f"{prefix}{branch}{name}{suffix}")
+            label = f"{name}{suffix}"
+            if stylize and suffix:
+                label = terminal_style(label, "34")
+            elif stylize and name in IMPORTANT_DOCS:
+                label = terminal_style(label, "1;33")
+            lines.append(f"{prefix}{branch}{label}")
             if children:
                 extension = "    " if last else "│   "
                 lines.extend(walk(children, prefix + extension, child_path))
@@ -310,9 +328,10 @@ def fit_terminal_line(text: str) -> str:
     width = shutil.get_terminal_size((100, 24)).columns
     if width < 20:
         width = 20
-    if len(text) <= width:
+    plain = ANSI_PATTERN.sub("", text)
+    if len(plain) <= width:
         return text
-    return text[: max(0, width - 3)] + "..."
+    return plain[: max(0, width - 3)] + "..."
 
 
 def choose_profile() -> str:
@@ -332,11 +351,14 @@ def choose_profile() -> str:
         for i, key in enumerate(keys):
             profile = PROFILES[key]
             marker = ">" if i == index else " "
-            print(fit_terminal_line(f"{marker} {profile.key:<7} {profile.label} - {profile.summary}"))
+            row = fit_terminal_line(f"{marker} {profile.key:<7} {profile.label} - {profile.summary}")
+            if i == index:
+                row = terminal_style(row, "1;4;36")
+            print(row)
         selected = PROFILES[keys[index]]
         docs_meta = "yes" if selected.docs_meta_default else "no"
         print("\nPreview:")
-        for item in tree_lines(structure_entries(selected, selected.docs_meta_default)):
+        for item in tree_lines(structure_entries(selected, selected.docs_meta_default), stylize=True):
             print(fit_terminal_line(f"  {item}"))
         print(f"\ndocs-meta default: {docs_meta}")
 

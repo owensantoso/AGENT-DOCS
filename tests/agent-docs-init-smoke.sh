@@ -154,18 +154,22 @@ if process.returncode != 0:
     raise SystemExit(process.returncode)
 if "Profile: growing" not in text:
     raise SystemExit("Expected down-arrow interactive picker to choose growing")
+if "\x1b[1;4;36m> growing" not in text:
+    raise SystemExit("Expected selected profile row to be styled")
 if "├── docs/" not in text:
     raise SystemExit("Expected interactive preview to render a tree")
 if "│   ├── orientation/" not in text:
     raise SystemExit("Expected interactive tree to include nested folders")
-if "│   │   └── ROADMAP.md" not in text:
+if "│   │   └── \x1b[1;33mROADMAP.md\x1b[0m" not in text:
     raise SystemExit("Expected interactive tree to include the growing roadmap")
+if ".gitkeep" in text:
+    raise SystemExit("Expected interactive preview to hide .gitkeep placeholders")
 if text.count("\x1b[2J") > 1:
     raise SystemExit("Expected interactive picker to avoid full-screen clear on every redraw")
 PY
 require_contains "$tmpdir/interactive-picker.out" "Profile: growing"
 require_contains "$tmpdir/interactive-picker.out" "├── docs/"
-require_contains "$tmpdir/interactive-picker.out" "│   │   └── ROADMAP.md"
+require_contains "$tmpdir/interactive-picker.out" $'│   │   └── \033[1;33mROADMAP.md\033[0m'
 
 if "$installer" >"$tmpdir/no-profile.out" 2>&1; then
   echo "Expected non-interactive run without profile to fail" >&2
