@@ -75,6 +75,7 @@ PROFILES = {
             "docs/README.md",
             "docs/orientation/CURRENT_STATE.md",
             "docs/orientation/ARCHITECTURE.md",
+            "docs/orientation/ROADMAP.md",
             "docs/product/plans/README.md",
             "docs/decisions/adr/README.md",
             "docs/repo-health/session-logs/README.md",
@@ -264,11 +265,45 @@ def render_profile(profile: Profile, include_docs_meta: bool, target: Path, writ
     ]
     lines.extend(f"- {item}" for item in profile.implications)
     lines.extend(["", "Structure preview:"])
-    lines.extend(f"- {item}" for item in profile.structure)
-    if include_docs_meta and "scripts/docs-meta" not in profile.structure:
-        lines.extend(["- scripts/docs-meta", "- tests/docs-meta-smoke.sh"])
+    lines.extend(tree_lines(structure_entries(profile, include_docs_meta)))
     lines.extend(["", f"Target: {target}", "Mode: write" if write else "Mode: dry-run"])
     return "\n".join(lines)
+
+
+def structure_entries(profile: Profile, include_docs_meta: bool) -> list[str]:
+    entries = list(profile.structure)
+    if include_docs_meta and "scripts/docs-meta" not in entries:
+        entries.extend(["scripts/docs-meta", "tests/docs-meta-smoke.sh"])
+    return entries
+
+
+def tree_lines(entries: list[str]) -> list[str]:
+    tree: dict[str, dict] = {}
+    explicit_dirs: set[tuple[str, ...]] = set()
+    for entry in entries:
+        is_dir = entry.endswith("/")
+        parts = [part for part in entry.strip("/").split("/") if part]
+        if is_dir and parts:
+            explicit_dirs.add(tuple(parts))
+        node = tree
+        for part in parts:
+            node = node.setdefault(part, {})
+
+    def walk(node: dict[str, dict], prefix: str = "", path: tuple[str, ...] = ()) -> list[str]:
+        lines: list[str] = []
+        items = sorted(node.items(), key=lambda item: item[0].lower())
+        for index, (name, children) in enumerate(items):
+            last = index == len(items) - 1
+            branch = "`-- " if last else "|-- "
+            child_path = path + (name,)
+            suffix = "/" if children or child_path in explicit_dirs else ""
+            lines.append(f"{prefix}{branch}{name}{suffix}")
+            if children:
+                extension = "    " if last else "|   "
+                lines.extend(walk(children, prefix + extension, child_path))
+        return lines
+
+    return walk(tree)
 
 
 def fit_terminal_line(text: str) -> str:
@@ -283,9 +318,15 @@ def fit_terminal_line(text: str) -> str:
 def choose_profile() -> str:
     keys = list(PROFILES)
     index = keys.index("small")
+    first_draw = True
 
     def draw() -> None:
-        print("\033[2J\033[H", end="")
+        nonlocal first_draw
+        if first_draw:
+            print("\033[?25l\033[2J\033[H", end="")
+            first_draw = False
+        else:
+            print("\033[H\033[J", end="")
         print("Choose AGENT-DOCS project size")
         print("Use arrow keys or j/k, then Enter. Recommended default: small.\n")
         for i, key in enumerate(keys):
@@ -295,8 +336,8 @@ def choose_profile() -> str:
         selected = PROFILES[keys[index]]
         docs_meta = "yes" if selected.docs_meta_default else "no"
         print("\nPreview:")
-        for item in selected.structure:
-            print(fit_terminal_line(f"  - {item}"))
+        for item in tree_lines(structure_entries(selected, selected.docs_meta_default)):
+            print(fit_terminal_line(f"  {item}"))
         print(f"\ndocs-meta default: {docs_meta}")
 
     fd = sys.stdin.fileno()
@@ -322,6 +363,7 @@ def choose_profile() -> str:
                 elif arrow == "B":
                     index = (index + 1) % len(keys)
     finally:
+        print("\033[?25h", end="")
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
 
