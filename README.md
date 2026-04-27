@@ -8,24 +8,18 @@ This is a **scalable workflow**, not a requirement to install every folder and d
 
 ## Quick Start
 
-Install the CLI once:
+From the repo you want to document, install or update the CLI and immediately run the init flow:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
 ```
 
-Then run it from the repo you want to document:
+The installer asks where to install, explains the project-size profiles, previews the tree, and defaults to dry-run. Re-run with `--write` when the preview looks right. Use `small` when unsure. Existing target files are listed first, and write mode refuses to overwrite them unless you pass `--force`.
+
+Install or update the CLI without running init:
 
 ```bash
-agent-docs-init
-```
-
-The installer asks where to install, explains the project-size profiles, previews the tree, and defaults to dry-run. Re-run with `--write` when the preview looks right. Use `small` when unsure.
-
-One-shot from inside a project folder:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
 ```
 
 Non-interactive examples:
@@ -109,6 +103,8 @@ Use the interactive installer when you want the CLI to explain profiles, show th
 ```bash
 scripts/agent-docs-init
 ```
+
+The installer is idempotent around existing project files: it may create missing docs inside an existing `docs/` folder, but it lists exact file conflicts and refuses to overwrite those files in write mode unless `--force` is explicitly provided.
 
 Non-interactive examples:
 

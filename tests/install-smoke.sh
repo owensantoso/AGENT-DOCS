@@ -27,10 +27,16 @@ home_dir="$tmpdir/home"
 AGENT_DOCS_SOURCE="$repo_root" \
 AGENT_DOCS_HOME="$home_dir" \
 AGENT_DOCS_BIN_DIR="$bin_dir" \
-  "$repo_root/install.sh" >"$tmpdir/install.out"
+  "$repo_root/install.sh" --no-run >"$tmpdir/install.out"
 
 require_file "$bin_dir/agent-docs-init"
 require_contains "$tmpdir/install.out" "agent-docs-init"
+
+AGENT_DOCS_SOURCE="$repo_root" \
+AGENT_DOCS_HOME="$home_dir" \
+AGENT_DOCS_BIN_DIR="$bin_dir" \
+  "$repo_root/install.sh" --no-run >"$tmpdir/install-again.out"
+require_contains "$tmpdir/install-again.out" "already installed"
 
 target="$tmpdir/project"
 "$bin_dir/agent-docs-init" "$target" --profile tiny --write >"$tmpdir/init.out"
@@ -42,7 +48,7 @@ resolved_run_target="$(mkdir -p "$run_target" && cd "$run_target" && pwd -P)"
 AGENT_DOCS_SOURCE="$repo_root" \
 AGENT_DOCS_HOME="$home_dir" \
 AGENT_DOCS_BIN_DIR="$bin_dir" \
-  "$repo_root/install.sh" --run -- "$run_target" --profile small --dry-run >"$tmpdir/run.out"
+  "$repo_root/install.sh" -- "$run_target" --profile small --dry-run >"$tmpdir/run.out"
 
 require_contains "$tmpdir/run.out" "Profile: small"
 require_contains "$tmpdir/run.out" "Target: $resolved_run_target"

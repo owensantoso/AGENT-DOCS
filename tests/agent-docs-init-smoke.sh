@@ -37,6 +37,13 @@ require_contains "$tmpdir/small-dry-run.out" "docs/ROADMAP.md"
 require_contains "$tmpdir/small-dry-run.out" "Would create"
 require_absent "$small_target/AGENTS.md"
 
+mkdir -p "$small_target/docs"
+echo "# existing docs" >"$small_target/docs/README.md"
+"$installer" "$small_target" --profile small --dry-run >"$tmpdir/small-existing-dry-run.out"
+require_contains "$tmpdir/small-existing-dry-run.out" "Existing target files found"
+require_contains "$tmpdir/small-existing-dry-run.out" "docs/README.md"
+require_contains "$tmpdir/small-existing-dry-run.out" "Write mode will refuse"
+
 tiny_target="$tmpdir/tiny-app"
 "$installer" "$tiny_target" --profile tiny --write >"$tmpdir/tiny-write.out"
 require_contains "$tmpdir/tiny-write.out" "Profile: tiny"

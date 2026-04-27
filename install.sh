@@ -5,13 +5,17 @@ repo_url="${AGENT_DOCS_REPO_URL:-https://github.com/owensantoso/AGENT-DOCS.git}"
 agent_docs_home="${AGENT_DOCS_HOME:-$HOME/.agent-docs}"
 bin_dir="${AGENT_DOCS_BIN_DIR:-$HOME/.local/bin}"
 source_dir="${AGENT_DOCS_SOURCE:-}"
-run_after_install=false
+run_after_install=true
 run_args=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --run)
       run_after_install=true
+      shift
+      ;;
+    --no-run)
+      run_after_install=false
       shift
       ;;
     --)
@@ -43,10 +47,21 @@ if [[ ! -f "$init_script" ]]; then
 fi
 
 mkdir -p "$bin_dir"
-ln -sfn "$init_script" "$bin_dir/agent-docs-init"
+installed_bin="$bin_dir/agent-docs-init"
+if [[ -L "$installed_bin" && "$(readlink "$installed_bin")" == "$init_script" ]]; then
+  already_installed=true
+else
+  already_installed=false
+fi
+
+ln -sfn "$init_script" "$installed_bin"
 chmod +x "$init_script"
 
-echo "Installed agent-docs-init -> $bin_dir/agent-docs-init"
+if [[ "$already_installed" == true ]]; then
+  echo "agent-docs-init already installed -> $installed_bin"
+else
+  echo "Installed agent-docs-init -> $installed_bin"
+fi
 
 case ":$PATH:" in
   *":$bin_dir:"*) ;;

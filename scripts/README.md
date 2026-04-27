@@ -10,10 +10,16 @@ This folder contains two main scripts:
 
 ## Agent Docs Init
 
-Install the command once:
+From the repo you want to document, install or update the command and immediately run the init flow:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+```
+
+Use `--no-run` when you only want to install or update the command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
 ```
 
 Then use `agent-docs-init` to install the smallest useful AGENT-DOCS shape into another repo:
@@ -26,6 +32,8 @@ agent-docs-init /path/to/project --profile small --dry-run
 ```
 
 If no target path is provided, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path.
+
+Repeated installs are safe: the bootstrapper updates the local source checkout, refreshes the symlink, and reports when `agent-docs-init` is already installed. Existing project files are listed in dry-run, and write mode refuses to overwrite them unless `--force` is explicitly provided.
 
 Profiles:
 

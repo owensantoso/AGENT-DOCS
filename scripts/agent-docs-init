@@ -349,7 +349,18 @@ def main() -> int:
     print(render_profile(profile, include_docs_meta, target, write))
     print("")
 
-    conflicts = [action.relpath for action in actions if (target / action.relpath).exists() and not args.force]
+    existing_targets = [action.relpath for action in actions if (target / action.relpath).exists()]
+    if existing_targets:
+        print("Existing target files found:")
+        for relpath in existing_targets:
+            print(f"- {relpath}")
+        if args.force:
+            print("Write mode will overwrite these files because --force is set.")
+        else:
+            print("Write mode will refuse to overwrite these files unless --force is provided.")
+        print("")
+
+    conflicts = [] if args.force else existing_targets
     if conflicts and write:
         print("Refusing to overwrite existing files without --force:", file=sys.stderr)
         for relpath in conflicts:

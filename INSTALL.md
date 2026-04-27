@@ -17,16 +17,10 @@ Do not copy the whole `scaffold/` folder into a target repo root. It contains it
 
 ## Minimum Install
 
-Install the CLI once:
+From the target repo root, install or update the CLI and immediately run the init flow:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
-```
-
-Then run this from the target repo root:
-
-```bash
-agent-docs-init
 ```
 
 The installer asks for a project size, explains the tradeoffs, previews the resulting tree, and defaults to dry-run unless you pass `--write`. If you omit the target path, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path.
@@ -36,11 +30,13 @@ agent-docs-init --profile small --dry-run
 agent-docs-init --profile full --write
 ```
 
-One-shot from inside a project folder:
+Install or update the CLI without running init:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
 ```
+
+Repeated installs update `~/.agent-docs`, refresh the `agent-docs-init` symlink, and report when the command is already installed. Existing target files are listed during dry-run; write mode refuses to overwrite them unless you pass `--force`. An existing `docs/` folder is fine when the selected profile only needs to create missing files inside it.
 
 Manual full-scaffold install:
 
