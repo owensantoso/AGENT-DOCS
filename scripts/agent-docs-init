@@ -31,6 +31,7 @@ class Profile:
     key: str
     label: str
     summary: str
+    template_summary: str
     implications: tuple[str, ...]
     structure: tuple[str, ...]
     docs_meta_default: bool
@@ -41,6 +42,7 @@ PROFILES = {
         key="tiny",
         label="Tiny",
         summary="prototype, script, or single-person experiment",
+        template_summary="core state + architecture",
         implications=(
             "Lowest ceremony.",
             "No generated views by default.",
@@ -53,6 +55,7 @@ PROFILES = {
         key="small",
         label="Small / MVP",
         summary="real app with a few features and occasional agents",
+        template_summary="core docs + light planning",
         implications=(
             "Still flat enough to scan quickly.",
             "Plans, decisions, and session logs exist only when useful.",
@@ -74,6 +77,7 @@ PROFILES = {
         key="growing",
         label="Growing",
         summary="multiple surfaces, recurring handoffs, bugs, or decisions",
+        template_summary="orientation/plans/evidence",
         implications=(
             "Introduces topic folders and evidence docs.",
             "Useful once flat docs start competing for space.",
@@ -97,6 +101,7 @@ PROFILES = {
         key="full",
         label="Full",
         summary="long-lived repo with many agents, plans, domains, and generated views",
+        template_summary="all doc families + examples",
         implications=(
             "Copies the full scaffold tree.",
             "Best for multi-surface or long-running repos.",
@@ -114,6 +119,13 @@ class Action:
     content: str | None = None
     source: Path | None = None
     executable: bool = False
+
+
+@dataclass(frozen=True)
+class PickerCard:
+    key: str
+    label: str
+    lines: tuple[str, ...]
 
 
 def tiny_files(profile: Profile) -> list[Action]:
@@ -269,14 +281,21 @@ def render_profile(profile: Profile, include_docs_meta: bool, target: Path, writ
     lines = [
         f"Profile: {profile.key} - {profile.label}",
         f"Use when: {profile.summary}",
+        f"Templates: {profile.template_summary}",
         "",
         "Implications:",
     ]
     lines.extend(f"- {item}" for item in profile.implications)
     lines.extend(["", "Structure preview:"])
-    lines.extend(tree_lines(structure_entries(profile, include_docs_meta)))
+    lines.extend(tree_lines(preview_entries(profile, include_docs_meta)))
     lines.extend(["", f"Target: {target}", "Mode: write" if write else "Mode: dry-run"])
     return "\n".join(lines)
+
+
+def preview_entries(profile: Profile, include_docs_meta: bool) -> list[str]:
+    if profile.key == "full":
+        return [str(action.relpath) for action in profile_actions(profile, include_docs_meta)]
+    return structure_entries(profile, include_docs_meta)
 
 
 def structure_entries(profile: Profile, include_docs_meta: bool) -> list[str]:
@@ -361,24 +380,35 @@ def profile_window_start(index: int, visible_count: int, profile_count: int) -> 
     return min(max(0, index - visible_count + 1), profile_count - visible_count)
 
 
-def render_profile_card(profile: Profile, selected: bool, width: int, height: int) -> list[str]:
+def render_card(title: str, lines: list[str], selected: bool, width: int, height: int) -> list[str]:
     if height < 4:
         return []
     inner_width = max(1, width - 4)
     border_code = "36" if selected else "2"
     top = terminal_style("╭" + ("─" * (width - 2)) + "╮", border_code)
     bottom = terminal_style("╰" + ("─" * (width - 2)) + "╯", border_code)
-    title = profile.key
     if selected:
         title = terminal_style(title, "1;7")
+    content = [title, *lines]
+    body_height = height - 2
+    content = content[:body_height]
+    content.extend([""] * max(0, body_height - len(content)))
+    body = [f"│ {pad_terminal_line(line, inner_width)} │" for line in content]
+    return [top, *body, bottom]
+
+
+def render_profile_card(profile: Profile, selected: bool, width: int, height: int) -> list[str]:
+    if height < 4:
+        return []
     content = [
-        f"{title} - {profile.label}",
+        f"{profile.label}",
         profile.summary,
+        f"templates: {profile.template_summary}",
         f"docs-meta: {'yes' if profile.docs_meta_default else 'no'}",
         "",
     ]
-    tree = tree_lines(structure_entries(profile, profile.docs_meta_default), stylize=True)
-    tree_rows = max(0, height - 2 - len(content))
+    tree = tree_lines(preview_entries(profile, profile.docs_meta_default), stylize=True)
+    tree_rows = max(0, height - 3 - len(content))
     if len(tree) > tree_rows and tree_rows > 0:
         shown_count = max(0, tree_rows - 1)
         content.extend(tree[:shown_count])
@@ -386,11 +416,7 @@ def render_profile_card(profile: Profile, selected: bool, width: int, height: in
     else:
         content.extend(tree[:tree_rows])
 
-    body_height = height - 2
-    content = content[:body_height]
-    content.extend([""] * max(0, body_height - len(content)))
-    body = [f"│ {pad_terminal_line(line, inner_width)} │" for line in content]
-    return [top, *body, bottom]
+    return render_card(profile.key, content, selected, width, height)
 
 
 def render_profile_cards(keys: list[str], index: int, terminal_size: os.terminal_size) -> list[str]:
@@ -410,6 +436,70 @@ def render_profile_cards(keys: list[str], index: int, terminal_size: os.terminal
     if not cards:
         return []
     return [(" " * CARD_GAP).join(card[row] for card in cards) for row in range(len(cards[0]))]
+
+
+def render_picker_cards(cards: list[PickerCard], index: int, terminal_size: os.terminal_size) -> list[str]:
+    keys = [card.key for card in cards]
+    visible_count = visible_card_count(terminal_size.columns, len(keys))
+    card_width = max(
+        MIN_CARD_WIDTH,
+        (terminal_size.columns - (CARD_GAP * (visible_count - 1))) // visible_count,
+    )
+    card_width = min(IDEAL_CARD_WIDTH + 8, card_width)
+    start = profile_window_start(index, visible_count, len(keys))
+    visible_cards = cards[start : start + visible_count]
+    card_height = max(4, terminal_size.lines - 3)
+    rendered = [
+        render_card(card.key, [card.label, *card.lines], i + start == index, card_width, card_height)
+        for i, card in enumerate(visible_cards)
+    ]
+    if not rendered:
+        return []
+    return [(" " * CARD_GAP).join(card[row] for card in rendered) for row in range(len(rendered[0]))]
+
+
+def choose_card(title: str, help_text: str, cards: list[PickerCard], default_key: str) -> str:
+    keys = [card.key for card in cards]
+    index = keys.index(default_key)
+    first_draw = True
+
+    def draw() -> None:
+        nonlocal first_draw
+        terminal_size = shutil.get_terminal_size((100, 24))
+        if first_draw:
+            print("\033[?25l\033[2J\033[H", end="")
+            first_draw = False
+        else:
+            print("\033[H\033[J", end="")
+        lines = [title, help_text]
+        lines.extend(render_picker_cards(cards, index, terminal_size))
+        print("\n".join(lines))
+
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setcbreak(fd)
+        while True:
+            draw()
+            char = sys.stdin.read(1)
+            if char in {"\r", "\n"}:
+                print("")
+                return keys[index]
+            if char == "\x03":
+                raise KeyboardInterrupt
+            if char in {"k", "K", "h", "H"}:
+                index = (index - 1) % len(keys)
+            elif char in {"j", "J", "l", "L"}:
+                index = (index + 1) % len(keys)
+            elif char == "\x1b" and sys.stdin.read(1) == "[":
+                arrow = sys.stdin.read(1)
+                if arrow in {"A", "D"}:
+                    index = (index - 1) % len(keys)
+                elif arrow in {"B", "C"}:
+                    index = (index + 1) % len(keys)
+    finally:
+        print("\033[?25h", end="")
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
 
 def choose_profile() -> str:
@@ -462,9 +552,16 @@ def choose_profile() -> str:
 
 def choose_target() -> Path:
     cwd = Path.cwd()
-    print(f"Target folder: {cwd}")
-    answer = input("Install into this folder? [Y/n] ").strip().lower()
-    if answer in {"", "y", "yes"}:
+    choice = choose_card(
+        "Choose target folder",
+        "Use arrow keys or h/l/j/k, then Enter. Recommended default: current.",
+        [
+            PickerCard("current", "Install into this folder", (str(cwd),)),
+            PickerCard("other", "Choose another folder", ("Type a path after selecting this.",)),
+        ],
+        "current",
+    )
+    if choice == "current":
         return cwd
     typed = input("Target folder path: ").strip()
     return Path(typed).expanduser() if typed else cwd

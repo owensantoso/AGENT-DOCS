@@ -87,6 +87,9 @@ require_contains "$tmpdir/cwd-dry-run.out" "Would create: docs/CURRENT_STATE.md"
 full_target="$tmpdir/full-app"
 "$installer" "$full_target" --profile full --dry-run >"$tmpdir/full-dry-run.out"
 require_contains "$tmpdir/full-dry-run.out" "├── docs/"
+require_contains "$tmpdir/full-dry-run.out" "│   ├── orientation/"
+require_contains "$tmpdir/full-dry-run.out" "│   ├── product/"
+require_contains "$tmpdir/full-dry-run.out" "│   ├── repo-health/"
 require_contains "$tmpdir/full-dry-run.out" "├── scripts/"
 require_contains "$tmpdir/full-dry-run.out" "│   └── docs-meta"
 docs_meta_action_count="$(grep -Fc -- "Would create: scripts/docs-meta" "$tmpdir/full-dry-run.out")"
@@ -159,6 +162,8 @@ if "Use arrow keys or h/l/j/k" not in text:
     raise SystemExit("Expected picker to advertise horizontal navigation")
 if "\x1b[1;7mgrowing\x1b[0m" not in text:
     raise SystemExit("Expected selected profile card title to be styled")
+if "templates: orientation/plans/evidence" not in text:
+    raise SystemExit("Expected profile card to summarize included template bundle")
 if "│ tiny" not in text or "│ small" not in text or "│ \x1b[1;7mgrowing" not in text:
     raise SystemExit("Expected wide picker to show multiple profile previews")
 if "├── docs/" not in text:
@@ -250,6 +255,145 @@ if "│ growing" not in screen or "│ \x1b[1;7mfull\x1b[0m" not in screen:
     raise SystemExit("Expected small terminal carousel to show the selected card and previous neighbor")
 if "│ tiny" in screen:
     raise SystemExit("Expected small terminal carousel to scroll older cards out of view")
+PY
+
+python3 - "$installer" "$tmpdir/target-picker-app" >"$tmpdir/target-picker.out" <<'PY'
+import os
+import select
+import subprocess
+import sys
+import time
+
+installer = sys.argv[1]
+target = sys.argv[2]
+os.makedirs(target, exist_ok=True)
+master, slave = os.openpty()
+env = dict(os.environ)
+env["COLUMNS"] = "100"
+env["LINES"] = "18"
+process = subprocess.Popen(
+    [installer, "--profile", "small"],
+    cwd=target,
+    stdin=slave,
+    stdout=slave,
+    stderr=slave,
+    close_fds=True,
+    env=env,
+)
+os.close(slave)
+
+output = bytearray()
+sent = False
+deadline = time.time() + 5
+try:
+    while time.time() < deadline:
+        ready, _, _ = select.select([master], [], [], 0.1)
+        if ready:
+            try:
+                chunk = os.read(master, 4096)
+            except OSError:
+                break
+            if not chunk:
+                break
+            output.extend(chunk)
+            if not sent and b"Choose target folder" in output:
+                os.write(master, b"\r")
+                sent = True
+        if process.poll() is not None:
+            break
+finally:
+    try:
+        os.close(master)
+    except OSError:
+        pass
+
+try:
+    process.wait(timeout=1)
+except subprocess.TimeoutExpired:
+    process.kill()
+    process.wait()
+
+text = output.decode("utf-8", errors="replace")
+print(text)
+if process.returncode != 0:
+    raise SystemExit(process.returncode)
+if "Choose target folder" not in text:
+    raise SystemExit("Expected target selection to use the card picker")
+if "\x1b[1;7mcurrent\x1b[0m" not in text:
+    raise SystemExit("Expected current folder target card to be selected by default")
+if f"Target: {os.path.realpath(target)}" not in text:
+    raise SystemExit("Expected target picker to select the current folder")
+PY
+
+python3 - "$installer" "$tmpdir/target-picker-source" "$tmpdir/target-picker-other" >"$tmpdir/target-picker-other.out" <<'PY'
+import os
+import select
+import subprocess
+import sys
+import time
+
+installer = sys.argv[1]
+source = sys.argv[2]
+other = sys.argv[3]
+os.makedirs(source, exist_ok=True)
+master, slave = os.openpty()
+env = dict(os.environ)
+env["COLUMNS"] = "100"
+env["LINES"] = "18"
+process = subprocess.Popen(
+    [installer, "--profile", "small"],
+    cwd=source,
+    stdin=slave,
+    stdout=slave,
+    stderr=slave,
+    close_fds=True,
+    env=env,
+)
+os.close(slave)
+
+output = bytearray()
+selected_other = False
+typed_path = False
+deadline = time.time() + 5
+try:
+    while time.time() < deadline:
+        ready, _, _ = select.select([master], [], [], 0.1)
+        if ready:
+            try:
+                chunk = os.read(master, 4096)
+            except OSError:
+                break
+            if not chunk:
+                break
+            output.extend(chunk)
+            if not selected_other and b"Choose target folder" in output:
+                os.write(master, b"\x1b[C\r")
+                selected_other = True
+            if selected_other and not typed_path and b"Target folder path:" in output:
+                os.write(master, other.encode("utf-8") + b"\r")
+                typed_path = True
+        if process.poll() is not None:
+            break
+finally:
+    try:
+        os.close(master)
+    except OSError:
+        pass
+
+try:
+    process.wait(timeout=1)
+except subprocess.TimeoutExpired:
+    process.kill()
+    process.wait()
+
+text = output.decode("utf-8", errors="replace")
+print(text)
+if process.returncode != 0:
+    raise SystemExit(process.returncode)
+if "\x1b[1;7mother\x1b[0m" not in text:
+    raise SystemExit("Expected other target card to be selectable")
+if f"Target: {os.path.realpath(other)}" not in text:
+    raise SystemExit("Expected target picker to use the typed folder")
 PY
 
 if "$installer" >"$tmpdir/no-profile.out" 2>&1; then
