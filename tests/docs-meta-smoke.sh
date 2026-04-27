@@ -164,7 +164,64 @@ next_audit_due:
 ---
 
 # 2026-04-25 - Repo Health Audit
+
+## Findings
+
+| ID | Severity | Status | Finding | Route | Follow-up | Resolution |
+|---|---|---|---|---|---|---|
+| FINDING-001 | high | open | Review queue is not generated yet | PLAN | PLAN-0001 |  |
+| FINDING-002 | medium | routed | Diagnostic follow-up is missing | DIAG | DIAG-9999 |  |
+| FINDING-003 | low | accepted-risk | Legacy naming remains inconsistent | none |  | Accepted by owner:docs because migration churn is not worth it |
+| FINDING-004 | info | resolved | Generated docs were refreshed | none |  | Verified with scripts/docs-meta update |
+| FINDING-005 | low | routed | Blocked todo should stay visible | TODO | TODO-0002 |  |
+| FINDING-006 | medium | routed | Stale plan should stay visible | PLAN | PLAN-0001 |  |
+| FINDING-007 | low | deferred | Deferred finding should be reviewed later | none |  | Deferred because this is low risk; revisit after next planning pass |
+| FINDING-008 | medium | routed | Markdown follow-up fragment is missing | PLAN | [Plan](../../product/plans/PLAN-0001-shared-capture-implementation/PLAN-0001-shared-capture-implementation.md#missing-anchor) |  |
+| FINDING-009 | medium | open | Medium finding should not be grouped as high priority | PLAN | PLAN-0001 |  |
+| FINDING-010 | medium | routed | Freeform routed follow-up should stay visible | PLAN | Someone should look into this |  |
+| FINDING-011 | medium | routed | Markdown follow-up title should still resolve | PLAN | [Plan](../../product/plans/PLAN-0001-shared-capture-implementation/PLAN-0001-shared-capture-implementation.md#plan-0001-shared-capture-implementation "Open plan") |  |
+| FINDING-012 | low | routed | External Markdown issue link should be accepted | PLAN | [Issue](https://github.com/owensantoso/AGENT-DOCS/issues/1 "Issue") |  |
+
+```md
+| ID | Severity | Status | Finding | Route | Follow-up | Resolution |
+|---|---|---|---|---|---|---|
+| FINDING-999 | high | open | Fenced examples must not parse | PLAN | PLAN-9999 |  |
+```
 AUDIT
+
+cat > "$docs_root/repo-health/audits/2026-04-26-invalid-audit.md" <<'BADAUDIT'
+---
+type: repo-health-audit
+title: Invalid Audit
+status: completed
+created_at: "2026-04-26 10:00:00 JST +0900"
+updated_at: "2026-04-26 10:30:00 JST +0900"
+audit_started_at: "2026-04-26 10:00:00 JST +0900"
+audit_ended_at: "2026-04-26 10:30:00 JST +0900"
+timezone: "JST +0900"
+auditor: smoke-test
+scope:
+  - docs
+checks:
+  - scripts/docs-meta review
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
+# 2026-04-26 - Invalid Audit
+
+| ID | Severity | Status | Finding | Route | Follow-up | Resolution |
+|---|---|---|---|---|---|---|
+| FINDING-001 | urgent | open | Invalid severity should be reported | PLAN | PLAN-0001 |  |
+| FINDING-001 | low | archived | Duplicate and archived without reason | none |  |  |
+| FINDING-002 | medium | nonsense | Invalid status should be grouped before open findings | none |  |  |
+| FINDING-003 | low | accepted-risk | Accepted risk with route is invalid | PLAN | PLAN-0001 | Accepted by owner:docs for now |
+| FINDING-004 | low | deferred | Deferred risk lacks a revisit trigger | none |  | Deferred for later |
+| FINDING-005 | low | accepted-risk | Accepted risk lacks rationale | none |  | owner:docs |
+| FINDING-006 | low | open | Malformed row has an unescaped | pipe | PLAN | PLAN-0001 |  |
+| FINDING-007 | high | open | Row after malformed row should still parse | PLAN | PLAN-0001 |  |
+BADAUDIT
 
 next_idea="$(run_meta next idea)"
 if [[ "$next_idea" != "IDEA-0002" ]]; then
@@ -234,6 +291,71 @@ run_meta set-status LRN-0001 draft >/dev/null
 require_contains "$lrn_path" "status: draft"
 run_meta set-status DIAG-0001 resolved >/dev/null
 require_contains "$diag_path" "status: resolved"
+run_meta set-status PLAN-0001 ready >/dev/null
+perl -0pi -e 's/updated_at: "[^"]+"/updated_at: "2026-01-01 00:00:00 JST +0900"/' "$plan_path" "$qst_path"
+
+run_meta review >$tmpdir/docs-meta-review.out
+expected_finding_line="$(grep -n '^| FINDING-001 | high | open' "$docs_root/repo-health/audits/2026-04-25-repo-health-audit.md" | cut -d: -f1)"
+require_contains $tmpdir/docs-meta-review.out "FINDING-001"
+require_contains $tmpdir/docs-meta-review.out "FINDING-007"
+require_contains $tmpdir/docs-meta-review.out "Review queue is not generated yet"
+require_contains $tmpdir/docs-meta-review.out "missing-follow-up"
+require_contains $tmpdir/docs-meta-review.out "DIAG-9999"
+require_contains $tmpdir/docs-meta-review.out "TODO-0002"
+require_contains $tmpdir/docs-meta-review.out "PLAN-0001"
+require_contains $tmpdir/docs-meta-review.out "QST-0001"
+require_contains $tmpdir/docs-meta-review.out "blocked-follow-up"
+require_contains $tmpdir/docs-meta-review.out "stale-follow-up"
+require_contains $tmpdir/docs-meta-review.out "invalid-follow-up"
+require_contains $tmpdir/docs-meta-review.out "missing-anchor"
+require_contains $tmpdir/docs-meta-review.out "Someone should look into this"
+require_contains $tmpdir/docs-meta-review.out "Other open audit findings"
+if grep -Fq "Other review items" $tmpdir/docs-meta-review.out; then
+  echo "Expected every smoke review item to be grouped into a known urgency bucket" >&2
+  exit 1
+fi
+if grep -Fq "FINDING-999" $tmpdir/docs-meta-review.out; then
+  echo "Expected review parser to ignore fenced audit table examples" >&2
+  exit 1
+fi
+run_meta review --stale-days 1 >$tmpdir/docs-meta-review-due.out
+require_contains $tmpdir/docs-meta-review-due.out "due-review"
+require_contains $tmpdir/docs-meta-review-due.out "FINDING-003"
+require_contains $tmpdir/docs-meta-review-due.out "FINDING-007"
+first_review_line="$(grep -v '^$' $tmpdir/docs-meta-review.out | head -n 1)"
+if [[ "$first_review_line" != "Invalid audit finding rows" ]]; then
+  echo "Expected review output to group invalid findings first, got: $first_review_line" >&2
+  exit 1
+fi
+run_meta review --type audit-findings --severity high >$tmpdir/docs-meta-review-high.out
+require_contains $tmpdir/docs-meta-review-high.out "FINDING-001"
+if grep -Fq "FINDING-002" $tmpdir/docs-meta-review-high.out; then
+  echo "Expected high severity review filter to exclude medium findings" >&2
+  exit 1
+fi
+run_meta review --json >$tmpdir/docs-meta-review.json
+require_contains $tmpdir/docs-meta-review.json "\"reference\": \"repo-health/audits/2026-04-25-repo-health-audit.md#FINDING-001\""
+require_contains $tmpdir/docs-meta-review.json "\"source\": \"repo-health/audits/2026-04-25-repo-health-audit.md:$expected_finding_line\""
+require_contains $tmpdir/docs-meta-review.json "\"code\": \"invalid-audit-finding\""
+require_contains $tmpdir/docs-meta-review.json "\"message\": \"Invalid severity 'urgent'\""
+require_contains $tmpdir/docs-meta-review.json "\"message\": \"Malformed audit finding row\""
+require_contains $tmpdir/docs-meta-review.json "\"code\": \"duplicate-audit-finding\""
+require_contains $tmpdir/docs-meta-review.json "\"code\": \"stale-doc\""
+require_contains $tmpdir/docs-meta-review.json "\"code\": \"blocked-follow-up\""
+require_contains $tmpdir/docs-meta-review.json "\"message\": \"Accepted risk must use Route = none\""
+require_contains $tmpdir/docs-meta-review.json "\"message\": \"Deferred finding needs reason and revisit trigger\""
+require_contains $tmpdir/docs-meta-review.json "\"message\": \"Accepted risk needs rationale and owner\""
+require_contains $tmpdir/docs-meta-review.json "\"message\": \"Invalid follow-up fragment #missing-anchor\""
+require_contains $tmpdir/docs-meta-review.json "\"message\": \"Invalid follow-up target Someone should look into this\""
+if grep -Fq "Invalid follow-up fragment #plan-0001-shared-capture-implementation" $tmpdir/docs-meta-review.json; then
+  echo "Expected Markdown follow-up links with optional titles to resolve" >&2
+  exit 1
+fi
+if grep -Fq "Missing follow-up [Issue](https://github.com/owensantoso/AGENT-DOCS/issues/1" $tmpdir/docs-meta-review.json; then
+  echo "Expected external Markdown issue links to be accepted" >&2
+  exit 1
+fi
+run_meta set-status PLAN-0001 draft >/dev/null
 
 run_meta update
 require_file "$docs_root/IDEAS.md"

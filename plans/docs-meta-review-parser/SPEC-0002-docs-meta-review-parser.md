@@ -4,9 +4,9 @@ id: SPEC-0002
 title: Docs Meta Review Parser
 spec_type: repo-health
 domain: docs-meta
-status: draft
+status: implemented
 created_at: "2026-04-28 02:05:18 JST +0900"
-updated_at: "2026-04-28 02:05:18 JST +0900"
+updated_at: "2026-04-28 03:07:47 JST +0900"
 owner:
 source:
   type: conversation
@@ -21,7 +21,8 @@ related_plans:
 related_issues: []
 related_prs: []
 related_adrs: []
-related_sessions: []
+related_sessions:
+  - session-logs/2026-04-28-docs-meta-review-parser.md
 supersedes: []
 superseded_by: []
 linked_paths:
@@ -30,7 +31,7 @@ linked_paths:
   - scaffold/docs/repo-health/audits/YYYY-MM-DD-repo-health-audit.md
 repo_state:
   based_on_commit: 37565c53b9bb8f960fdf7fc113264ec1e81a3dfb
-  last_reviewed_commit: 37565c53b9bb8f960fdf7fc113264ec1e81a3dfb
+  last_reviewed_commit: 07b98ee04d1a9e8f3a422b1ee6c837c3289709d9
 ---
 
 # SPEC-0002 - Docs Meta Review Parser

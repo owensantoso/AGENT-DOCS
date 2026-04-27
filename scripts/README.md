@@ -169,6 +169,18 @@ scripts/docs-meta check-todos --strict
 scripts/docs-meta next todo
 ```
 
+Show the open-loop review queue:
+
+```bash
+scripts/docs-meta review
+scripts/docs-meta review --type audit-findings
+scripts/docs-meta review --status open
+scripts/docs-meta review --severity high
+scripts/docs-meta review --json
+```
+
+`review` is read-only. It parses audit finding registers, validates finding lifecycle rules, resolves routed follow-up targets, and surfaces blocked or stale open-loop docs and structured todos. Use it when you want the repo to answer "what needs attention next?" without hand-scanning audits, plans, questions, diagnostics, research, evaluations, and TODOs.
+
 ### Structured todos
 
 Use ordinary Markdown checkboxes for local, low-ceremony checklists. Use structured `TODO-*` items only when work needs durable coordination across sessions, agents, subagents, skills, commits, or reviews.

@@ -3,13 +3,13 @@ type: plan
 id: PLAN-0003
 title: Docs Meta Review Parser
 domain: docs-meta
-status: draft
+status: completed
 created_at: "2026-04-28 02:05:18 JST +0900"
-updated_at: "2026-04-28 02:05:18 JST +0900"
+updated_at: "2026-04-28 03:07:47 JST +0900"
 planned_execution_start:
 planned_execution_end:
-actual_execution_start:
-actual_execution_end:
+actual_execution_start: "2026-04-28 02:18:00 JST +0900"
+actual_execution_end: "2026-04-28 03:07:47 JST +0900"
 owner:
 sequence:
   roadmap:
@@ -25,12 +25,13 @@ areas:
 related_specs:
   - SPEC-0002
 related_adrs: []
-related_sessions: []
+related_sessions:
+  - session-logs/2026-04-28-docs-meta-review-parser.md
 related_issues: []
 related_prs: []
 repo_state:
   based_on_commit: 37565c53b9bb8f960fdf7fc113264ec1e81a3dfb
-  last_reviewed_commit: 37565c53b9bb8f960fdf7fc113264ec1e81a3dfb
+  last_reviewed_commit: 07b98ee04d1a9e8f3a422b1ee6c837c3289709d9
 ---
 
 # PLAN-0003 - Docs Meta Review Parser
@@ -115,7 +116,7 @@ scaffold/docs/repo-health/audits/YYYY-MM-DD-repo-health-audit.md
 
 ## Implementation Tasks
 
-### Task 1: Add audit finding parser
+### Task 1: Add audit finding parser - Completed
 
 **Goal:** Parse the exact audit finding-register table into structured records.
 
@@ -130,7 +131,7 @@ Dependencies / parallelization:
 - Depends on: prerequisites only.
 - Can run in parallel with: none.
 
-### Task 2: Add validation rules
+### Task 2: Add validation rules - Completed
 
 **Goal:** Make malformed or incomplete findings visible.
 
@@ -144,7 +145,7 @@ Dependencies / parallelization:
 - Depends on: Task 1.
 - Can run in parallel with: Task 3.
 
-### Task 3: Resolve follow-up targets
+### Task 3: Resolve follow-up targets - Completed
 
 **Goal:** Connect routed findings to the docs that own follow-up.
 
@@ -158,7 +159,7 @@ Dependencies / parallelization:
 - Depends on: Task 1.
 - Can run in parallel with: Task 2.
 
-### Task 4: Build review queue aggregation
+### Task 4: Build review queue aggregation - Completed
 
 **Goal:** Combine findings, TODOs, and stale lifecycle docs into one attention queue.
 
@@ -173,7 +174,7 @@ Dependencies / parallelization:
 - Depends on: Tasks 1-3.
 - Can run in parallel with: none.
 
-### Task 5: Add CLI output and filters
+### Task 5: Add CLI output and filters - Completed
 
 **Goal:** Make review output useful to humans and agents.
 
@@ -187,7 +188,7 @@ Dependencies / parallelization:
 - Depends on: Task 4.
 - Can run in parallel with: docs drafting after output shape stabilizes.
 
-### Task 6: Document and verify the workflow
+### Task 6: Document and verify the workflow - Completed
 
 **Goal:** Make the review queue part of normal AGENT-DOCS maintenance.
 
@@ -211,12 +212,12 @@ Dependencies / parallelization:
 
 ## Completion Criteria
 
-- [ ] `scripts/docs-meta review` parses valid audit finding tables.
-- [ ] Invalid audit finding rows are reported deterministically.
-- [ ] Routed findings resolve stable-ID, Markdown-link, and path follow-ups.
-- [ ] Open/stale/dangling audit findings appear in default human output.
-- [ ] Blocked or stale structured TODOs appear in the review queue.
-- [ ] Stale ready/in-progress plans and implementation briefs appear in the review queue.
-- [ ] Stale open QST, active DIAG, active RSCH, and active EVAL docs appear in the review queue.
-- [ ] `--json` returns stable machine-readable records.
-- [ ] Existing docs-meta commands and smoke tests remain green.
+- [x] `scripts/docs-meta review` parses valid audit finding tables.
+- [x] Invalid audit finding rows are reported deterministically.
+- [x] Routed findings resolve stable-ID, Markdown-link, and path follow-ups.
+- [x] Open/stale/dangling audit findings appear in default human output.
+- [x] Blocked or stale structured TODOs appear in the review queue.
+- [x] Stale ready/in-progress plans and implementation briefs appear in the review queue.
+- [x] Stale open QST, active DIAG, active RSCH, and active EVAL docs appear in the review queue.
+- [x] `--json` returns stable machine-readable records.
+- [x] Existing docs-meta commands and smoke tests remain green.

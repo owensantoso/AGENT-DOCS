@@ -41,6 +41,44 @@ TODO_ID_START_RE = re.compile(r"^TODO-(\d{4})\b")
 TODO_STATUSES = {"backlog", "ready", "in_progress", "blocked", "review", "done", "superseded", "archived"}
 TODO_ACTIVE_STATUSES = {"backlog", "ready", "in_progress", "blocked", "review"}
 
+AUDIT_FINDING_HEADER = ["ID", "Severity", "Status", "Finding", "Route", "Follow-up", "Resolution"]
+AUDIT_FINDING_SEVERITIES = {"critical", "high", "medium", "low", "info"}
+AUDIT_FINDING_STATUSES = {"open", "routed", "resolved", "deferred", "accepted-risk", "archived"}
+AUDIT_FINDING_ROUTES = {"TODO", "DIAG", "RSCH", "EVAL", "QST", "CONC", "LRN", "ADR", "SPEC", "PLAN", "IMPL", "none"}
+REVIEW_SEVERITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+REVIEW_STATUS_RANK = {
+    "invalid": 0,
+    "open": 1,
+    "blocked": 2,
+    "routed": 3,
+    "stale": 4,
+    "deferred": 5,
+    "accepted-risk": 6,
+    "resolved": 7,
+    "archived": 8,
+}
+REVIEW_GROUPS = [
+    ("Invalid audit finding rows", {"invalid-audit-finding", "duplicate-audit-finding"}),
+    ("Routed findings needing follow-up", {"missing-follow-up", "invalid-follow-up", "blocked-follow-up", "archived-follow-up", "stale-follow-up"}),
+    ("Blocked or stale todos", {"blocked-todo", "stale-todo"}),
+    ("Stale open-loop docs", {"stale-doc"}),
+    ("Deferred or accepted risks due for review", {"due-review"}),
+]
+REVIEW_DYNAMIC_GROUPS = {
+    "open-high-critical": "Open high or critical findings",
+    "open-other": "Other open audit findings",
+}
+REVIEW_GROUP_ORDER = {
+    "Invalid audit finding rows": 0,
+    "Open high or critical findings": 1,
+    "Other open audit findings": 2,
+    "Routed findings needing follow-up": 3,
+    "Blocked or stale todos": 4,
+    "Stale open-loop docs": 5,
+    "Deferred or accepted risks due for review": 6,
+    "Other review items": 7,
+}
+
 TYPE_BY_PREFIX = {
     "IDEA": "idea",
     "RSCH": "research-survey",
@@ -336,6 +374,78 @@ class TodoItem:
         }
 
 
+@dataclass
+class AuditFinding:
+    audit_path: str
+    line: int
+    finding_id: str
+    severity: str
+    status: str
+    finding: str
+    route: str
+    follow_up: str
+    resolution: str
+    raw: str
+    malformed: bool = False
+
+    @property
+    def reference(self) -> str:
+        return f"{self.audit_path}#{self.finding_id}"
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "reference": self.reference,
+            "audit_path": self.audit_path,
+            "line": self.line,
+            "id": self.finding_id,
+            "severity": self.severity,
+            "status": self.status,
+            "finding": self.finding,
+            "route": self.route,
+            "follow_up": self.follow_up,
+            "resolution": self.resolution,
+            "raw": self.raw,
+            "malformed": self.malformed,
+        }
+
+
+@dataclass
+class ReviewItem:
+    item_type: str
+    code: str
+    severity: str
+    status: str
+    reference: str
+    source: str
+    line: int
+    message: str
+    detail: str = ""
+    route: str = ""
+    follow_up: str = ""
+    updated_at: str = ""
+    age_days: int | None = None
+
+    def as_dict(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "type": self.item_type,
+            "code": self.code,
+            "severity": self.severity,
+            "status": self.status,
+            "reference": self.reference,
+            "source": self.source,
+            "line": self.line,
+            "message": self.message,
+            "detail": self.detail,
+            "route": self.route,
+            "follow_up": self.follow_up,
+        }
+        if self.updated_at:
+            data["updated_at"] = self.updated_at
+        if self.age_days is not None:
+            data["age_days"] = self.age_days
+        return data
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Scan and update docs metadata.")
     parser.add_argument("--root", default="docs", help="Docs root to scan. Default: docs")
@@ -412,6 +522,15 @@ def parse_args() -> argparse.Namespace:
     check_todos_cmd = sub.add_parser("check-todos", help="Validate structured TODO-* metadata.")
     check_todos_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
     check_todos_cmd.add_argument("--strict", action="store_true", help="Warn on optional metadata that improves routing and freshness.")
+
+    review_cmd = sub.add_parser("review", help="Show open audit findings and stale open-loop docs.")
+    review_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+    review_cmd.add_argument("--type", choices=["audit-findings", "todos", "docs"], help="Filter review items by source type.")
+    review_cmd.add_argument("--status", help="Filter review items by status.")
+    review_cmd.add_argument("--severity", choices=sorted(AUDIT_FINDING_SEVERITIES), help="Filter review items by severity.")
+    review_cmd.add_argument("--limit", type=int, help="Limit number of review items.")
+    review_cmd.add_argument("--width", type=int, help="Output width for human-readable text.")
+    review_cmd.add_argument("--stale-days", type=int, default=14, help="Flag open-loop docs/todos not updated in this many days. Default: 14")
 
     health_cmd = sub.add_parser("health", help="Show advisory docs freshness and workflow warnings.")
     health_cmd.add_argument("--stale-days", type=int, default=14, help="Flag selected docs not updated in this many days. Default: 14")
@@ -601,6 +720,40 @@ def resolve_href(href: str, source: Path, root: Path) -> tuple[Path | None, str,
         except ValueError:
             return candidate, candidate.as_posix(), "outside-repo", fragment
     return candidate, relative_to_root(candidate, root), status, fragment
+
+
+def markdown_anchor_slug(text: str) -> str:
+    slug = text.strip().lower()
+    slug = re.sub(r"`([^`]*)`", r"\1", slug)
+    slug = re.sub(r"<[^>]+>", "", slug)
+    slug = re.sub(r"[^\w\s-]", "", slug, flags=re.UNICODE)
+    slug = re.sub(r"\s+", "-", slug)
+    slug = re.sub(r"-+", "-", slug)
+    return slug.strip("-")
+
+
+def markdown_anchor_exists(path: Path, fragment: str) -> bool:
+    if not fragment:
+        return True
+    decoded = unquote(fragment).strip()
+    if re.fullmatch(r"L\d+(?:-L\d+)?", decoded):
+        return True
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    anchors = set()
+    for line in text.splitlines():
+        heading = re.match(r"^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$", line)
+        if heading:
+            title = re.sub(r"\s+\{#([^}]+)\}\s*$", "", heading.group(1))
+            slug = markdown_anchor_slug(title)
+            if slug:
+                anchors.add(slug)
+            explicit = re.search(r"\{#([^}]+)\}\s*$", heading.group(1))
+            if explicit:
+                anchors.add(explicit.group(1))
+    return decoded in anchors
 
 
 MD_LINK_RE = re.compile(r"(!?)\[([^\]\n]*)\]\(([^)\s]+)([^)]*)\)")
@@ -2792,6 +2945,525 @@ def check_todos(docs: list[Doc], use_json: bool = False, strict: bool = False) -
     return 1 if errors else 0
 
 
+def split_markdown_table_row(line: str) -> list[str]:
+    stripped = line.strip()
+    if not stripped.startswith("|") or not stripped.endswith("|"):
+        return []
+    cells: list[str] = []
+    current: list[str] = []
+    escaped = False
+    for char in stripped[1:-1]:
+        if escaped:
+            current.append(char)
+            escaped = False
+            continue
+        if char == "\\":
+            escaped = True
+            current.append(char)
+            continue
+        if char == "|":
+            cells.append("".join(current).strip().replace("\\|", "|"))
+            current = []
+            continue
+        current.append(char)
+    cells.append("".join(current).strip().replace("\\|", "|"))
+    return cells
+
+
+def is_markdown_table_separator(cells: list[str]) -> bool:
+    return bool(cells) and all(re.fullmatch(r":?-{3,}:?", cell.strip()) for cell in cells)
+
+
+def audit_findings_for_doc(doc: Doc) -> list[AuditFinding]:
+    findings: list[AuditFinding] = []
+    try:
+        text = doc.path.read_text(encoding="utf-8")
+    except OSError:
+        text = doc.content
+    ignored_ranges = markdown_ignored_ranges(text)
+    lines = text.splitlines(keepends=True)
+    offset = 0
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        row_offset = offset
+        offset += len(line)
+        if in_ignored_markdown_range(row_offset, ignored_ranges):
+            index += 1
+            continue
+        cells = split_markdown_table_row(line)
+        if cells != AUDIT_FINDING_HEADER:
+            index += 1
+            continue
+        if index + 1 >= len(lines):
+            index += 1
+            continue
+        separator_cells = split_markdown_table_row(lines[index + 1])
+        if not is_markdown_table_separator(separator_cells):
+            index += 1
+            continue
+
+        offset += len(lines[index + 1])
+        index += 2
+        while index < len(lines):
+            row = lines[index]
+            row_offset = offset
+            offset += len(row)
+            if in_ignored_markdown_range(row_offset, ignored_ranges):
+                index += 1
+                continue
+            row_cells = split_markdown_table_row(row)
+            if len(row_cells) != len(AUDIT_FINDING_HEADER):
+                if row.strip().startswith("|") and row_cells:
+                    row_line = line_number(text, row_offset)
+                    padded = row_cells + [""] * len(AUDIT_FINDING_HEADER)
+                    findings.append(
+                        AuditFinding(
+                            audit_path=doc.relpath,
+                            line=row_line,
+                            finding_id=padded[0] or f"ROW-{row_line}",
+                            severity=padded[1],
+                            status=padded[2],
+                            finding=padded[3],
+                            route=padded[4],
+                            follow_up=padded[5],
+                            resolution=padded[6],
+                            raw=row.strip(),
+                            malformed=True,
+                        )
+                    )
+                    index += 1
+                    continue
+                break
+            findings.append(
+                    AuditFinding(
+                        audit_path=doc.relpath,
+                        line=line_number(text, row_offset),
+                    finding_id=row_cells[0],
+                    severity=row_cells[1],
+                    status=row_cells[2],
+                    finding=row_cells[3],
+                    route=row_cells[4],
+                    follow_up=row_cells[5],
+                    resolution=row_cells[6],
+                    raw=row.strip(),
+                )
+            )
+            index += 1
+        continue
+    return findings
+
+
+def audit_findings(docs: list[Doc]) -> list[AuditFinding]:
+    findings: list[AuditFinding] = []
+    for doc in docs:
+        if doc.doc_type == "repo-health-audit":
+            findings.extend(audit_findings_for_doc(doc))
+    return findings
+
+
+def review_item(
+    item_type: str,
+    code: str,
+    severity: str,
+    status: str,
+    reference: str,
+    source: str,
+    line: int,
+    message: str,
+    detail: str = "",
+    route: str = "",
+    follow_up: str = "",
+    updated_at: str = "",
+    age_days: int | None = None,
+) -> ReviewItem:
+    return ReviewItem(
+        item_type=item_type,
+        code=code,
+        severity=severity,
+        status=status,
+        reference=reference,
+        source=source,
+        line=line,
+        message=message,
+        detail=detail,
+        route=route,
+        follow_up=follow_up,
+        updated_at=updated_at,
+        age_days=age_days,
+    )
+
+
+def resolve_follow_up_target(value: str, finding: AuditFinding, root: Path, docs: list[Doc], todos: list[TodoItem]) -> tuple[str, str, Doc | None, TodoItem | None]:
+    follow_up = value.strip()
+    if not follow_up:
+        return "missing", "empty", None, None
+    if is_external_href(follow_up):
+        return "ok", "external", None, None
+    md_link = re.fullmatch(r"\[[^\]\n]*\]\((\S+)(?:\s+(?:\"[^\"]*\"|'[^']*'|[^)]*))?\)", follow_up)
+    if md_link:
+        href = md_link.group(1)
+        if is_external_href(href):
+            return "ok", "external", None, None
+        audit_doc = next((doc for doc in docs if doc.relpath == finding.audit_path), None)
+        source = audit_doc.path if audit_doc else root / finding.audit_path
+        target, target_rel, status, fragment = resolve_href(href, source, root)
+        if status in {"ok", "root-relative", "absolute-repo-local"} and target:
+            try:
+                rel = target.resolve().relative_to(root.resolve()).as_posix()
+                if not markdown_anchor_exists(target, fragment):
+                    return "invalid-fragment", fragment, next((doc for doc in docs if doc.relpath == rel), None), None
+                return "ok", target_rel or rel, next((doc for doc in docs if doc.relpath == rel), None), None
+            except ValueError:
+                return "ok", target_rel or status, None, None
+        return "missing", target_rel or status, None, None
+    if follow_up.startswith("TODO-"):
+        todo = next((item for item in todos if item.todo_id == follow_up), None)
+        return ("ok" if todo else "missing"), "todo", None, todo
+    if re.fullmatch(r"[A-Z]+-\d{4}(?:-\d{2})?", follow_up):
+        doc = find_doc(docs, follow_up)
+        return ("ok" if doc else "missing"), "stable-id", doc, None
+    if follow_up.endswith(".md") or "/" in follow_up:
+        path_value, _, fragment = split_href(follow_up)
+        path = resolve_path_input(path_value, root, docs)
+        if not path.exists():
+            return "missing", relative_to_root(path, root), None, None
+        rel = relative_to_root(path, root)
+        if not markdown_anchor_exists(path, fragment):
+            return "invalid-fragment", fragment, next((doc for doc in docs if doc.relpath == rel), None), None
+        return "ok", rel, next((doc for doc in docs if doc.relpath == rel), None), None
+    return "invalid", "unstructured", None, None
+
+
+def follow_up_review_item(finding: AuditFinding, root: Path, docs: list[Doc], todos: list[TodoItem], stale_days: int) -> ReviewItem | None:
+    target_status, detail, doc, todo = resolve_follow_up_target(finding.follow_up, finding, root, docs, todos)
+    source = f"{finding.audit_path}:{finding.line}"
+    severity = finding.severity if finding.severity in AUDIT_FINDING_SEVERITIES else "medium"
+    target_updated_at = ""
+    target_age_days: int | None = None
+    if target_status == "missing":
+        return review_item("audit-findings", "missing-follow-up", severity, "routed", finding.reference, source, finding.line, f"Missing follow-up {finding.follow_up}", detail, finding.route, finding.follow_up)
+    if target_status == "invalid":
+        return review_item("audit-findings", "invalid-follow-up", severity, "routed", finding.reference, source, finding.line, f"Invalid follow-up target {finding.follow_up}", detail, finding.route, finding.follow_up)
+    if target_status == "invalid-fragment":
+        return review_item("audit-findings", "invalid-follow-up", severity, "routed", finding.reference, source, finding.line, f"Invalid follow-up fragment #{detail}", finding.follow_up, finding.route, finding.follow_up)
+    if todo:
+        if todo.status == "blocked":
+            return review_item("audit-findings", "blocked-follow-up", severity, "routed", finding.reference, source, finding.line, f"Follow-up {finding.follow_up} is blocked", todo.metadata.get("blocker") or todo.metadata.get("blocked_by") or todo.metadata.get("reason", ""), finding.route, finding.follow_up)
+        updated_at = parse_timestamp(todo.metadata.get("updated"))
+        target_updated_at = todo.metadata.get("updated", "") if isinstance(todo.metadata.get("updated"), str) else ""
+        target_age_days = (dt.datetime.now().astimezone() - updated_at).days if updated_at else None
+        if todo.status in {"ready", "in_progress", "review"} and updated_at and target_age_days is not None and target_age_days >= stale_days:
+            return review_item("audit-findings", "stale-follow-up", severity, "routed", finding.reference, source, finding.line, f"Follow-up {finding.follow_up} is stale", f"{todo.status} since {todo.metadata.get('updated')}", finding.route, finding.follow_up, target_updated_at, target_age_days)
+    if doc:
+        if doc.status in {"archived", "superseded", "rejected"}:
+            return review_item("audit-findings", "archived-follow-up", severity, "routed", finding.reference, source, finding.line, f"Follow-up {finding.follow_up} is {doc.status}", doc.relpath, finding.route, finding.follow_up)
+        if doc.status == "blocked":
+            return review_item("audit-findings", "blocked-follow-up", severity, "routed", finding.reference, source, finding.line, f"Follow-up {finding.follow_up} is blocked", doc.relpath, finding.route, finding.follow_up)
+        updated_at = parse_timestamp(doc.frontmatter.get("updated_at"))
+        target_updated_at = doc.frontmatter.get("updated_at", "") if isinstance(doc.frontmatter.get("updated_at"), str) else ""
+        target_age_days = (dt.datetime.now().astimezone() - updated_at).days if updated_at else None
+        if doc.status in {"ready", "in_progress", "in-progress", "open", "investigating", "active"} and updated_at and target_age_days is not None and target_age_days >= stale_days:
+            return review_item("audit-findings", "stale-follow-up", severity, "routed", finding.reference, source, finding.line, f"Follow-up {finding.follow_up} is stale", doc.relpath, finding.route, finding.follow_up, target_updated_at, target_age_days)
+    return None
+
+
+def has_deferred_reason_and_trigger(resolution: str) -> bool:
+    text = resolution.lower()
+    has_reason = bool(re.search(r"\b(because|reason|due to|blocked by|waiting for)\b", text))
+    has_trigger = bool(re.search(r"\b(revisit|until|after|when|before|by|next)\b", text))
+    return has_reason and has_trigger
+
+
+def has_accepted_risk_rationale_and_owner(resolution: str) -> bool:
+    text = resolution.lower()
+    has_owner = "owner" in text
+    has_rationale = bool(re.search(r"\b(because|rationale|due to|tradeoff|accepted by|accepted because)\b", text))
+    return has_owner and has_rationale
+
+
+def audit_review_items(root: Path, docs: list[Doc], stale_days: int) -> list[ReviewItem]:
+    items: list[ReviewItem] = []
+    findings = audit_findings(docs)
+    todos = todo_items(docs, include_done=True)
+    audit_docs_by_path = {doc.relpath: doc for doc in docs if doc.doc_type == "repo-health-audit"}
+    now = dt.datetime.now().astimezone()
+    seen_by_audit: dict[tuple[str, str], AuditFinding] = {}
+    for finding in findings:
+        source = f"{finding.audit_path}:{finding.line}"
+        key = (finding.audit_path, finding.finding_id)
+        if finding.malformed:
+            items.append(
+                review_item(
+                    "audit-findings",
+                    "invalid-audit-finding",
+                    finding.severity if finding.severity in AUDIT_FINDING_SEVERITIES else "high",
+                    "invalid",
+                    finding.reference,
+                    source,
+                    finding.line,
+                    "Malformed audit finding row",
+                    finding.raw,
+                    finding.route,
+                    finding.follow_up,
+                )
+            )
+        if key in seen_by_audit:
+            items.append(
+                review_item(
+                    "audit-findings",
+                    "duplicate-audit-finding",
+                    "high",
+                    "invalid",
+                    finding.reference,
+                    source,
+                    finding.line,
+                    f"Duplicate finding ID {finding.finding_id}",
+                    f"First seen at {seen_by_audit[key].audit_path}:{seen_by_audit[key].line}",
+                    finding.route,
+                    finding.follow_up,
+                )
+            )
+        else:
+            seen_by_audit[key] = finding
+
+        if finding.severity not in AUDIT_FINDING_SEVERITIES:
+            items.append(
+                review_item(
+                    "audit-findings",
+                    "invalid-audit-finding",
+                    "high",
+                    "invalid",
+                    finding.reference,
+                    source,
+                    finding.line,
+                    f"Invalid severity {finding.severity!r}",
+                    "",
+                    finding.route,
+                    finding.follow_up,
+                )
+            )
+        if finding.status not in AUDIT_FINDING_STATUSES:
+            items.append(
+                review_item(
+                    "audit-findings",
+                    "invalid-audit-finding",
+                    finding.severity if finding.severity in AUDIT_FINDING_SEVERITIES else "high",
+                    "invalid",
+                    finding.reference,
+                    source,
+                    finding.line,
+                    f"Invalid status {finding.status!r}",
+                    "",
+                    finding.route,
+                    finding.follow_up,
+                )
+            )
+        if finding.route not in AUDIT_FINDING_ROUTES:
+            items.append(
+                review_item(
+                    "audit-findings",
+                    "invalid-audit-finding",
+                    finding.severity if finding.severity in AUDIT_FINDING_SEVERITIES else "high",
+                    "invalid",
+                    finding.reference,
+                    source,
+                    finding.line,
+                    f"Invalid route {finding.route!r}",
+                    "",
+                    finding.route,
+                    finding.follow_up,
+                )
+            )
+
+        valid_status = finding.status in AUDIT_FINDING_STATUSES
+        if valid_status and finding.status == "open":
+            items.append(
+                review_item(
+                    "audit-findings",
+                    "open-audit-finding",
+                    finding.severity if finding.severity in AUDIT_FINDING_SEVERITIES else "medium",
+                    "open",
+                    finding.reference,
+                    source,
+                    finding.line,
+                    finding.finding,
+                    "",
+                    finding.route,
+                    finding.follow_up,
+                )
+            )
+        if valid_status and finding.status == "routed":
+            if not finding.follow_up:
+                items.append(review_item("audit-findings", "missing-follow-up", "high", "invalid", finding.reference, source, finding.line, "Routed finding has no follow-up", "", finding.route, finding.follow_up))
+            else:
+                issue = follow_up_review_item(finding, root, docs, todos, stale_days)
+                if issue:
+                    items.append(issue)
+        if valid_status and finding.status == "resolved" and not finding.resolution:
+            items.append(review_item("audit-findings", "invalid-audit-finding", "medium", "invalid", finding.reference, source, finding.line, "Resolved finding has no resolution evidence", "", finding.route, finding.follow_up))
+        if valid_status and finding.status == "deferred" and not has_deferred_reason_and_trigger(finding.resolution):
+            items.append(review_item("audit-findings", "invalid-audit-finding", "medium", "invalid", finding.reference, source, finding.line, "Deferred finding needs reason and revisit trigger", "", finding.route, finding.follow_up))
+        if valid_status and finding.status == "accepted-risk":
+            if finding.route != "none":
+                items.append(review_item("audit-findings", "invalid-audit-finding", "medium", "invalid", finding.reference, source, finding.line, "Accepted risk must use Route = none", "", finding.route, finding.follow_up))
+            if not has_accepted_risk_rationale_and_owner(finding.resolution):
+                items.append(review_item("audit-findings", "invalid-audit-finding", "medium", "invalid", finding.reference, source, finding.line, "Accepted risk needs rationale and owner", "", finding.route, finding.follow_up))
+        if valid_status and finding.status == "archived" and not finding.resolution:
+            items.append(review_item("audit-findings", "invalid-audit-finding", "low", "invalid", finding.reference, source, finding.line, "Archived finding has no reason", "", finding.route, finding.follow_up))
+        if valid_status and finding.status in {"deferred", "accepted-risk"} and finding.resolution:
+            audit_doc = audit_docs_by_path.get(finding.audit_path)
+            updated_at = parse_timestamp(audit_doc.frontmatter.get("updated_at")) if audit_doc else None
+            if updated_at and (now - updated_at).days >= stale_days:
+                updated_at_value = audit_doc.frontmatter.get("updated_at", "") if audit_doc and isinstance(audit_doc.frontmatter.get("updated_at"), str) else ""
+                age_days = (now - updated_at).days
+                items.append(review_item("audit-findings", "due-review", finding.severity if finding.severity in AUDIT_FINDING_SEVERITIES else "medium", finding.status, finding.reference, source, finding.line, f"{finding.status} finding is due for review", f"Audit updated {age_days} days ago", finding.route, finding.follow_up, updated_at_value, age_days))
+    return items
+
+
+def todo_review_items(docs: list[Doc], stale_days: int) -> list[ReviewItem]:
+    items: list[ReviewItem] = []
+    now = dt.datetime.now().astimezone()
+    for item in todo_items(docs, include_done=False):
+        if not item.structured:
+            continue
+        source = f"{item.path}:{item.line}"
+        if item.status == "blocked":
+            items.append(review_item("todos", "blocked-todo", "medium", "blocked", item.todo_id, source, item.line, item.task, item.metadata.get("blocker") or item.metadata.get("blocked_by") or item.metadata.get("reason", ""), "", item.todo_id))
+            continue
+        if item.status in {"ready", "in_progress", "review"}:
+            updated_at = parse_timestamp(item.metadata.get("updated"))
+            age_days = (now - updated_at).days if updated_at else None
+            updated_at_value = item.metadata.get("updated", "") if isinstance(item.metadata.get("updated"), str) else ""
+            if updated_at and age_days is not None and age_days >= stale_days:
+                items.append(review_item("todos", "stale-todo", "medium", "stale", item.todo_id, source, item.line, item.task, f"{item.status} for {age_days} days", "", item.todo_id, updated_at_value, age_days))
+    return items
+
+
+def doc_review_items(docs: list[Doc], stale_days: int) -> list[ReviewItem]:
+    items: list[ReviewItem] = []
+    now = dt.datetime.now().astimezone()
+    stale_doc_types = {"plan", "implementation-brief", "question", "diagnostic-record", "research-survey", "evaluation"}
+    stale_statuses = {"ready", "in_progress", "in-progress", "blocked", "open", "investigating", "active"}
+    archived_statuses = {"archived", "rejected", "superseded", "completed", "resolved", "answered", "implemented"}
+    for doc in docs:
+        if doc.doc_type not in stale_doc_types or doc.status in archived_statuses or doc.status not in stale_statuses:
+            continue
+        updated_at = parse_timestamp(doc.frontmatter.get("updated_at"))
+        if not updated_at:
+            continue
+        age_days = (now - updated_at).days
+        if age_days < stale_days:
+            continue
+        reference = doc.primary_id or doc.relpath
+        items.append(
+            review_item(
+                "docs",
+                "stale-doc",
+                "medium" if doc.status == "blocked" else "info",
+                "stale",
+                reference,
+                doc.relpath,
+                1,
+                f"{reference} is {doc.status} and has not been updated in {age_days} days.",
+                f"Threshold: {stale_days} days",
+                "",
+                "",
+                doc.frontmatter.get("updated_at", "") if isinstance(doc.frontmatter.get("updated_at"), str) else "",
+                age_days,
+            )
+        )
+    return items
+
+
+def filter_review_items(items: list[ReviewItem], args: argparse.Namespace) -> list[ReviewItem]:
+    selected = items
+    if getattr(args, "type", None):
+        selected = [item for item in selected if item.item_type == args.type]
+    if getattr(args, "status", None):
+        selected = [item for item in selected if item.status == args.status]
+    if getattr(args, "severity", None):
+        selected = [item for item in selected if item.severity == args.severity]
+    selected = sorted(
+        selected,
+        key=review_sort_key,
+    )
+    if getattr(args, "limit", None):
+        selected = selected[: args.limit]
+    return selected
+
+
+def review_items(root: Path, docs: list[Doc], stale_days: int) -> list[ReviewItem]:
+    return audit_review_items(root, docs, stale_days) + todo_review_items(docs, stale_days) + doc_review_items(docs, stale_days)
+
+
+def review_group_label(item: ReviewItem) -> str:
+    if item.code == "open-audit-finding":
+        if item.severity in {"critical", "high"}:
+            return REVIEW_DYNAMIC_GROUPS["open-high-critical"]
+        return REVIEW_DYNAMIC_GROUPS["open-other"]
+    for label, codes in REVIEW_GROUPS:
+        if item.code in codes:
+            return label
+    return "Other review items"
+
+
+def review_group_index(item: ReviewItem) -> int:
+    return REVIEW_GROUP_ORDER.get(review_group_label(item), REVIEW_GROUP_ORDER["Other review items"])
+
+
+def review_sort_timestamp(item: ReviewItem) -> float:
+    parsed = parse_timestamp(item.updated_at)
+    if not parsed:
+        return 0
+    return parsed.timestamp()
+
+
+def review_sort_key(item: ReviewItem) -> tuple[int, int, int, float, str, str, str]:
+    return (
+        review_group_index(item),
+        REVIEW_SEVERITY_RANK.get(item.severity, 9),
+        REVIEW_STATUS_RANK.get(item.status, 9),
+        review_sort_timestamp(item),
+        item.source,
+        item.reference,
+        item.code,
+    )
+
+
+def format_review_items(items: list[ReviewItem], width: int | None = None) -> str:
+    if not items:
+        return "No review items found."
+    output_width = width or shutil.get_terminal_size((120, 24)).columns
+    rows = []
+    current_group = ""
+    for item in sorted(items, key=review_sort_key):
+        group = review_group_label(item)
+        if group != current_group:
+            if rows:
+                rows.append("")
+            rows.append(group)
+            current_group = group
+        message = item.message
+        max_message = max(24, output_width - 72)
+        if len(message) > max_message:
+            message = message[: max_message - 1] + "…"
+        rows.append(
+            "\t".join(
+                [
+                    item.severity,
+                    item.status,
+                    item.code,
+                    item.reference,
+                    item.follow_up,
+                    item.source,
+                    message,
+                ]
+            ).rstrip()
+        )
+    return "\n".join(rows)
+
+
 def validate_frontmatter(doc: Doc) -> list[str]:
     errors: list[str] = []
     doc_type = doc.doc_type
@@ -2918,6 +3590,10 @@ def main() -> int:
         return 0
     if args.command == "check-todos":
         return check_todos(docs, args.json, args.strict)
+    if args.command == "review":
+        items = filter_review_items(review_items(root, docs, args.stale_days), args)
+        print_json_or_text([item.as_dict() for item in items], format_review_items(items, args.width), args.json)
+        return 0
     if args.command == "links":
         refs = link_graph(root, docs)
         if args.target:
