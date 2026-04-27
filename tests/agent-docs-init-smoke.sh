@@ -136,7 +136,7 @@ try:
                 break
             output.extend(chunk)
             if not sent and b"Use arrow keys" in output:
-                os.write(master, b"\x1b[C\r")
+                os.write(master, b"\x1b[B\r")
                 sent = True
         if process.poll() is not None:
             break
@@ -157,18 +157,18 @@ print(text)
 if process.returncode != 0:
     raise SystemExit(process.returncode)
 if "Profile: growing" not in text:
-    raise SystemExit("Expected right-arrow interactive picker to choose growing")
-if "Use arrow keys or h/l/j/k" not in text:
-    raise SystemExit("Expected picker to advertise horizontal navigation")
-if "\x1b[1;7mgrowing\x1b[0m" not in text:
-    raise SystemExit("Expected selected profile card title to be styled")
-if "templates: orientation/plans/evidence" not in text:
-    raise SystemExit("Expected profile card to summarize included template bundle")
-if "│ tiny" not in text or "│ small" not in text or "│ \x1b[1;7mgrowing" not in text:
-    raise SystemExit("Expected wide picker to show multiple profile previews")
+    raise SystemExit("Expected down-arrow interactive picker to choose growing")
+if "Use arrow keys or j/k" not in text:
+    raise SystemExit("Expected picker to advertise vertical navigation")
+if "\x1b[1;7m> growing" not in text:
+    raise SystemExit("Expected selected profile row to be styled")
+if "Structure" not in text or "Template/doc types" not in text:
+    raise SystemExit("Expected selected profile details to use two columns")
+if "Core orientation" not in text or "PLAN-* - parent plan" not in text:
+    raise SystemExit("Expected template list to be grouped with explanations")
 if "├── docs/" not in text:
     raise SystemExit("Expected interactive preview to render a tree")
-if "Preview: \x1b[36mstart here\x1b[0m, \x1b[2mtooling\x1b[0m" not in text:
+if "Legend: \x1b[36mstart here\x1b[0m, \x1b[2mtooling\x1b[0m" not in text:
     raise SystemExit("Expected preview to label visual categories")
 if "│   └── \x1b[36morientation/\x1b[0m" not in text:
     raise SystemExit("Expected interactive tree to include nested folders")
@@ -249,12 +249,12 @@ screen = text.split("\x1b[H\x1b[J")[-1].split("\x1b[?25hProfile:", 1)[0]
 screen_lines = [line for line in screen.splitlines() if line]
 if len(screen_lines) > 16:
     raise SystemExit(f"Expected small terminal screen to fit in 16 lines, got {len(screen_lines)}")
+if "\x1b[1;7m> full" not in screen:
+    raise SystemExit("Expected full profile selection to remain visible in small terminal")
 if "… " not in screen:
-    raise SystemExit("Expected oversized preview to be summarized in a small terminal")
-if "│ growing" not in screen or "│ \x1b[1;7mfull\x1b[0m" not in screen:
-    raise SystemExit("Expected small terminal carousel to show the selected card and previous neighbor")
-if "│ tiny" in screen:
-    raise SystemExit("Expected small terminal carousel to scroll older cards out of view")
+    raise SystemExit("Expected oversized selected profile details to be summarized in a small terminal")
+if "Template/doc types" not in screen:
+    raise SystemExit("Expected template column to stay visible in a small terminal")
 PY
 
 python3 - "$installer" "$tmpdir/target-picker-app" >"$tmpdir/target-picker.out" <<'PY'

@@ -32,6 +32,7 @@ class Profile:
     label: str
     summary: str
     template_summary: str
+    template_groups: tuple[tuple[str, tuple[tuple[str, str], ...]], ...]
     implications: tuple[str, ...]
     structure: tuple[str, ...]
     docs_meta_default: bool
@@ -43,6 +44,16 @@ PROFILES = {
         label="Tiny",
         summary="prototype, script, or single-person experiment",
         template_summary="core state + architecture",
+        template_groups=(
+            (
+                "Core docs",
+                (
+                    ("AGENTS.md", "agent entry notes"),
+                    ("CURRENT_STATE.md", "what is true now"),
+                    ("ARCHITECTURE.md", "system shape"),
+                ),
+            ),
+        ),
         implications=(
             "Lowest ceremony.",
             "No generated views by default.",
@@ -56,6 +67,25 @@ PROFILES = {
         label="Small / MVP",
         summary="real app with a few features and occasional agents",
         template_summary="core docs + light planning",
+        template_groups=(
+            (
+                "Core docs",
+                (
+                    ("AGENTS.md", "agent entry notes"),
+                    ("CURRENT_STATE.md", "what is true now"),
+                    ("ARCHITECTURE.md", "system shape"),
+                    ("ROADMAP.md", "sequence and rationale"),
+                ),
+            ),
+            (
+                "Light planning",
+                (
+                    ("plans/", "work plans when useful"),
+                    ("decisions/", "durable choices"),
+                    ("session-logs/", "work receipts"),
+                ),
+            ),
+        ),
         implications=(
             "Still flat enough to scan quickly.",
             "Plans, decisions, and session logs exist only when useful.",
@@ -78,6 +108,27 @@ PROFILES = {
         label="Growing",
         summary="multiple surfaces, recurring handoffs, bugs, or decisions",
         template_summary="orientation/plans/evidence",
+        template_groups=(
+            (
+                "Core orientation",
+                (
+                    ("AGENTS.md", "agent entry notes"),
+                    ("CURRENT_STATE.md", "what is true now"),
+                    ("ARCHITECTURE.md", "system shape"),
+                    ("ROADMAP.md", "sequence and rationale"),
+                ),
+            ),
+            (
+                "Planning and evidence",
+                (
+                    ("PLAN-*", "parent plan"),
+                    ("ADR-*", "durable decision"),
+                    ("session logs", "work receipts"),
+                    ("debugging/", "diagnostic notes"),
+                    ("research/", "research notes"),
+                ),
+            ),
+        ),
         implications=(
             "Introduces topic folders and evidence docs.",
             "Useful once flat docs start competing for space.",
@@ -102,6 +153,45 @@ PROFILES = {
         label="Full",
         summary="long-lived repo with many agents, plans, domains, and generated views",
         template_summary="all doc families + examples",
+        template_groups=(
+            (
+                "Core orientation",
+                (
+                    ("AGENTS.md", "agent entry notes"),
+                    ("CURRENT_STATE.md", "what is true now"),
+                    ("ARCHITECTURE.md", "system shape"),
+                    ("ONBOARDING.md", "human walkthrough"),
+                    ("ROADMAP.md", "sequence and rationale"),
+                ),
+            ),
+            (
+                "Product work",
+                (
+                    ("SPEC-*", "feature contract"),
+                    ("PLAN-*", "parent plan"),
+                    ("IMPL-*", "implementation brief"),
+                    ("IDEA-*", "raw product thought"),
+                    ("CONC-*", "domain concept"),
+                ),
+            ),
+            (
+                "Decisions and learning",
+                (
+                    ("ADR-*", "durable decision"),
+                    ("LRN-*", "learning"),
+                    ("QST-*", "open question"),
+                ),
+            ),
+            (
+                "Repo health",
+                (
+                    ("AUDIT-*", "review finding set"),
+                    ("DIAG-*", "diagnostic record"),
+                    ("EVAL-*", "evaluation harness"),
+                    ("session logs", "work receipts"),
+                ),
+            ),
+        ),
         implications=(
             "Copies the full scaffold tree.",
             "Best for multi-surface or long-running repos.",
@@ -397,45 +487,74 @@ def render_card(title: str, lines: list[str], selected: bool, width: int, height
     return [top, *body, bottom]
 
 
-def render_profile_card(profile: Profile, selected: bool, width: int, height: int) -> list[str]:
-    if height < 4:
-        return []
-    content = [
-        f"{profile.label}",
-        profile.summary,
-        f"templates: {profile.template_summary}",
-        f"docs-meta: {'yes' if profile.docs_meta_default else 'no'}",
+def template_lines(profile: Profile, stylize: bool = False) -> list[str]:
+    lines: list[str] = []
+    for group_index, (group, items) in enumerate(profile.template_groups):
+        if group_index:
+            lines.append("")
+        lines.append(terminal_style(group, "36") if stylize and group_index == 0 else group)
+        for name, description in items:
+            lines.append(f"  {name} - {description}")
+    return lines
+
+
+def split_detail_columns(left: list[str], right: list[str], width: int, height: int) -> list[str]:
+    if width < 72:
+        lines = ["Structure", *left, "", "Template/doc types", *right]
+        if len(lines) > height:
+            return lines[: max(0, height - 1)] + [f"… {len(lines) - max(0, height - 1)} more lines"]
+        return lines
+
+    def cap_column(lines: list[str], label: str) -> list[str]:
+        if len(lines) <= height:
+            return lines
+        shown_count = max(0, height - 1)
+        return lines[:shown_count] + [f"… {len(lines) - shown_count} more {label}"]
+
+    gap = "  "
+    left_width = max(30, int((width - len(gap)) * 0.52))
+    right_width = max(24, width - left_width - len(gap))
+    left_lines = cap_column(["Structure", *left], "structure lines")
+    right_lines = cap_column(["Template/doc types", *right], "template lines")
+    row_count = max(len(left_lines), len(right_lines))
+    rows: list[str] = []
+    for row in range(row_count):
+        left_text = left_lines[row] if row < len(left_lines) else ""
+        right_text = right_lines[row] if row < len(right_lines) else ""
+        rows.append(f"{pad_terminal_line(left_text, left_width)}{gap}{fit_terminal_line_to_width(right_text, right_width)}")
+    return rows
+
+
+def render_profile_details(keys: list[str], index: int, terminal_size: os.terminal_size) -> list[str]:
+    profile = PROFILES[keys[index]]
+    lines = [
+        "Choose AGENT-DOCS project size",
+        "Use arrow keys or j/k, then Enter. Recommended default: small.",
         "",
     ]
-    tree = tree_lines(preview_entries(profile, profile.docs_meta_default), stylize=True)
-    tree_rows = max(0, height - 3 - len(content))
-    if len(tree) > tree_rows and tree_rows > 0:
-        shown_count = max(0, tree_rows - 1)
-        content.extend(tree[:shown_count])
-        content.append(f"… {len(tree) - shown_count} more paths")
-    else:
-        content.extend(tree[:tree_rows])
-
-    return render_card(profile.key, content, selected, width, height)
-
-
-def render_profile_cards(keys: list[str], index: int, terminal_size: os.terminal_size) -> list[str]:
-    visible_count = visible_card_count(terminal_size.columns, len(keys))
-    card_width = max(
-        MIN_CARD_WIDTH,
-        (terminal_size.columns - (CARD_GAP * (visible_count - 1))) // visible_count,
+    for i, key in enumerate(keys):
+        profile_row = PROFILES[key]
+        marker = ">" if i == index else " "
+        row = f"{marker} {profile_row.key:<7} {profile_row.label} - {profile_row.summary}"
+        if i == index:
+            row = terminal_style(fit_terminal_line_to_width(row, terminal_size.columns), "1;7")
+        else:
+            row = fit_terminal_line_to_width(row, terminal_size.columns)
+        lines.append(row)
+    lines.extend(
+        [
+            "",
+            f"Selected: {profile.label}",
+            f"Templates: {profile.template_summary}",
+            f"Legend: {terminal_style('start here', '36')}, {terminal_style('tooling', '2')}",
+            "",
+        ]
     )
-    card_width = min(IDEAL_CARD_WIDTH + 8, card_width)
-    start = profile_window_start(index, visible_count, len(keys))
-    visible_keys = keys[start : start + visible_count]
-    card_height = max(4, terminal_size.lines - 4)
-    cards = [
-        render_profile_card(PROFILES[key], i + start == index, card_width, card_height)
-        for i, key in enumerate(visible_keys)
-    ]
-    if not cards:
-        return []
-    return [(" " * CARD_GAP).join(card[row] for card in cards) for row in range(len(cards[0]))]
+    remaining_rows = max(0, terminal_size.lines - len(lines))
+    structure = tree_lines(preview_entries(profile, profile.docs_meta_default), stylize=True)
+    templates = template_lines(profile, stylize=True)
+    lines.extend(split_detail_columns(structure, templates, terminal_size.columns, remaining_rows))
+    return lines
 
 
 def render_picker_cards(cards: list[PickerCard], index: int, terminal_size: os.terminal_size) -> list[str]:
@@ -515,13 +634,7 @@ def choose_profile() -> str:
             first_draw = False
         else:
             print("\033[H\033[J", end="")
-        lines = [
-            "Choose AGENT-DOCS project size",
-            "Use arrow keys or h/l/j/k, then Enter. Recommended default: small.",
-            f"Preview: {terminal_style('start here', '36')}, {terminal_style('tooling', '2')}",
-        ]
-        lines.extend(render_profile_cards(keys, index, terminal_size))
-        print("\n".join(lines))
+        print("\n".join(render_profile_details(keys, index, terminal_size)))
 
     fd = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
@@ -535,15 +648,15 @@ def choose_profile() -> str:
                 return keys[index]
             if char == "\x03":
                 raise KeyboardInterrupt
-            if char in {"k", "K", "h", "H"}:
+            if char in {"k", "K"}:
                 index = (index - 1) % len(keys)
-            elif char in {"j", "J", "l", "L"}:
+            elif char in {"j", "J"}:
                 index = (index + 1) % len(keys)
             elif char == "\x1b" and sys.stdin.read(1) == "[":
                 arrow = sys.stdin.read(1)
-                if arrow in {"A", "D"}:
+                if arrow == "A":
                     index = (index - 1) % len(keys)
-                elif arrow in {"B", "C"}:
+                elif arrow == "B":
                     index = (index + 1) % len(keys)
     finally:
         print("\033[?25h", end="")
