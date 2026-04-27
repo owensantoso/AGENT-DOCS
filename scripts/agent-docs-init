@@ -7,6 +7,8 @@ import argparse
 import os
 import shutil
 import sys
+import termios
+import tty
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -269,33 +271,58 @@ def render_profile(profile: Profile, include_docs_meta: bool, target: Path, writ
     return "\n".join(lines)
 
 
+def fit_terminal_line(text: str) -> str:
+    width = shutil.get_terminal_size((100, 24)).columns
+    if width < 20:
+        width = 20
+    if len(text) <= width:
+        return text
+    return text[: max(0, width - 3)] + "..."
+
+
 def choose_profile() -> str:
     keys = list(PROFILES)
-    print("Choose AGENT-DOCS project size")
-    print("Recommended default: small. Press Enter to accept it.\n")
-    for number, key in enumerate(keys, start=1):
-        profile = PROFILES[key]
-        default = " (recommended)" if key == "small" else ""
-        docs_meta = "yes" if profile.docs_meta_default else "no"
-        print(f"{number}. {profile.label}{default}")
-        print(f"   Use when: {profile.summary}")
-        print(f"   docs-meta default: {docs_meta}")
-        print("   Structure:")
-        for item in profile.structure:
-            print(f"   - {item}")
-        print("")
+    index = keys.index("small")
 
-    while True:
-        answer = input("Project size [small]: ").strip().lower()
-        if not answer:
-            return "small"
-        if answer in PROFILES:
-            return answer
-        if answer.isdigit():
-            index = int(answer) - 1
-            if 0 <= index < len(keys):
+    def draw() -> None:
+        print("\033[2J\033[H", end="")
+        print("Choose AGENT-DOCS project size")
+        print("Use arrow keys or j/k, then Enter. Recommended default: small.\n")
+        for i, key in enumerate(keys):
+            profile = PROFILES[key]
+            marker = ">" if i == index else " "
+            print(fit_terminal_line(f"{marker} {profile.key:<7} {profile.label} - {profile.summary}"))
+        selected = PROFILES[keys[index]]
+        docs_meta = "yes" if selected.docs_meta_default else "no"
+        print("\nPreview:")
+        for item in selected.structure:
+            print(fit_terminal_line(f"  - {item}"))
+        print(f"\ndocs-meta default: {docs_meta}")
+
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setcbreak(fd)
+        while True:
+            draw()
+            char = sys.stdin.read(1)
+            if char in {"\r", "\n"}:
+                print("")
                 return keys[index]
-        print("Choose one of: tiny, small, growing, full, or 1-4.")
+            if char == "\x03":
+                raise KeyboardInterrupt
+            if char in {"k", "K"}:
+                index = (index - 1) % len(keys)
+            elif char in {"j", "J"}:
+                index = (index + 1) % len(keys)
+            elif char == "\x1b" and sys.stdin.read(1) == "[":
+                arrow = sys.stdin.read(1)
+                if arrow == "A":
+                    index = (index - 1) % len(keys)
+                elif arrow == "B":
+                    index = (index + 1) % len(keys)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
 
 def choose_target() -> Path:

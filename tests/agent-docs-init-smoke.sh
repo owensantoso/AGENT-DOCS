@@ -92,6 +92,68 @@ if [[ "$docs_meta_count" != "1" ]]; then
   exit 1
 fi
 
+python3 - "$installer" "$tmpdir/interactive-app" >"$tmpdir/interactive-picker.out" <<'PY'
+import os
+import select
+import subprocess
+import sys
+import time
+
+installer = sys.argv[1]
+target = sys.argv[2]
+master, slave = os.openpty()
+env = dict(os.environ)
+env["COLUMNS"] = "100"
+process = subprocess.Popen(
+    [installer, target],
+    stdin=slave,
+    stdout=slave,
+    stderr=slave,
+    close_fds=True,
+    env=env,
+)
+os.close(slave)
+
+output = bytearray()
+sent = False
+deadline = time.time() + 5
+try:
+    while time.time() < deadline:
+        ready, _, _ = select.select([master], [], [], 0.1)
+        if ready:
+            try:
+                chunk = os.read(master, 4096)
+            except OSError:
+                break
+            if not chunk:
+                break
+            output.extend(chunk)
+            if not sent and b"Use arrow keys" in output:
+                os.write(master, b"\x1b[B\r")
+                sent = True
+        if process.poll() is not None:
+            break
+finally:
+    try:
+        os.close(master)
+    except OSError:
+        pass
+
+try:
+    process.wait(timeout=1)
+except subprocess.TimeoutExpired:
+    process.kill()
+    process.wait()
+
+text = output.decode("utf-8", errors="replace")
+print(text)
+if process.returncode != 0:
+    raise SystemExit(process.returncode)
+if "Profile: growing" not in text:
+    raise SystemExit("Expected down-arrow interactive picker to choose growing")
+PY
+require_contains "$tmpdir/interactive-picker.out" "Profile: growing"
+
 if "$installer" >"$tmpdir/no-profile.out" 2>&1; then
   echo "Expected non-interactive run without profile to fail" >&2
   exit 1
