@@ -154,22 +154,92 @@ if process.returncode != 0:
     raise SystemExit(process.returncode)
 if "Profile: growing" not in text:
     raise SystemExit("Expected down-arrow interactive picker to choose growing")
-if "\x1b[1;4;36m> growing" not in text:
+if "\x1b[1;7m> growing" not in text:
     raise SystemExit("Expected selected profile row to be styled")
 if "├── docs/" not in text:
     raise SystemExit("Expected interactive preview to render a tree")
-if "│   ├── orientation/" not in text:
+if "│   └── \x1b[1morientation/\x1b[0m" not in text:
     raise SystemExit("Expected interactive tree to include nested folders")
-if "│   │   └── \x1b[1;33mROADMAP.md\x1b[0m" not in text:
+if "│       └── \x1b[1mROADMAP.md\x1b[0m" not in text:
     raise SystemExit("Expected interactive tree to include the growing roadmap")
 if ".gitkeep" in text:
     raise SystemExit("Expected interactive preview to hide .gitkeep placeholders")
+if "── README.md" in text:
+    raise SystemExit("Expected scaffold preview to hide nested README placeholders")
 if text.count("\x1b[2J") > 1:
     raise SystemExit("Expected interactive picker to avoid full-screen clear on every redraw")
 PY
 require_contains "$tmpdir/interactive-picker.out" "Profile: growing"
 require_contains "$tmpdir/interactive-picker.out" "├── docs/"
-require_contains "$tmpdir/interactive-picker.out" $'│   │   └── \033[1;33mROADMAP.md\033[0m'
+require_contains "$tmpdir/interactive-picker.out" $'│       └── \033[1mROADMAP.md\033[0m'
+
+python3 - "$installer" "$tmpdir/small-terminal-app" >"$tmpdir/small-terminal-picker.out" <<'PY'
+import os
+import select
+import subprocess
+import sys
+import time
+
+installer = sys.argv[1]
+target = sys.argv[2]
+master, slave = os.openpty()
+env = dict(os.environ)
+env["COLUMNS"] = "80"
+env["LINES"] = "16"
+process = subprocess.Popen(
+    [installer, target],
+    stdin=slave,
+    stdout=slave,
+    stderr=slave,
+    close_fds=True,
+    env=env,
+)
+os.close(slave)
+
+output = bytearray()
+sent = False
+deadline = time.time() + 5
+try:
+    while time.time() < deadline:
+        ready, _, _ = select.select([master], [], [], 0.1)
+        if ready:
+            try:
+                chunk = os.read(master, 4096)
+            except OSError:
+                break
+            if not chunk:
+                break
+            output.extend(chunk)
+            if not sent and b"Use arrow keys" in output:
+                os.write(master, b"\x1b[B\x1b[B\r")
+                sent = True
+        if process.poll() is not None:
+            break
+finally:
+    try:
+        os.close(master)
+    except OSError:
+        pass
+
+try:
+    process.wait(timeout=1)
+except subprocess.TimeoutExpired:
+    process.kill()
+    process.wait()
+
+text = output.decode("utf-8", errors="replace")
+print(text)
+if process.returncode != 0:
+    raise SystemExit(process.returncode)
+screen = text.split("\x1b[H\x1b[J")[-1].split("\x1b[?25hProfile:", 1)[0]
+screen_lines = [line for line in screen.splitlines() if line]
+if len(screen_lines) > 16:
+    raise SystemExit(f"Expected small terminal screen to fit in 16 lines, got {len(screen_lines)}")
+if "… " not in screen:
+    raise SystemExit("Expected oversized preview to be summarized in a small terminal")
+if "\x1b[1;7m> full" not in screen:
+    raise SystemExit("Expected full profile selection to remain visible in small terminal")
+PY
 
 if "$installer" >"$tmpdir/no-profile.out" 2>&1; then
   echo "Expected non-interactive run without profile to fail" >&2
