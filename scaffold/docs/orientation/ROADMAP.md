@@ -26,7 +26,7 @@ This doc is intentionally different from other docs:
 - `IDEAS.md` and topic-first `ideas/` folders hold later or exploratory ideas.
 - `IDEAS.md` holds the global `IDEA-####` registry; topic-first `ideas/` folders hold lightweight future possibilities.
 - `SPECS.md` holds the global `SPEC-####` registry; topic-first `specs/` folders hold review-first specs.
-- `plans/plan-*.md` holds milestone plans once a feature has a chosen execution shape.
+- `plans/PLAN-*` folders hold milestone plans once a feature has a chosen execution shape.
 
 ## Status legend
 
@@ -49,7 +49,7 @@ This doc is intentionally different from other docs:
 
 | Milestone | Status | Why it matters |
 |---|---|---|
-| `plan-<id>-<slug>.md` | Complete | <rationale> |
+| `PLAN-<id>-<slug>` | Complete | <rationale> |
 
 ## 2. Current mainline
 
@@ -59,14 +59,14 @@ The key principle is:
 
 | Order | Milestone | Status | Why it sits here |
 |---|---|---|---|
-| 1 | `plan-<id>-<slug>.md` | Drafted | <rationale> |
-| 2 | `plan-<id>-<slug>.md` | Not started | <rationale> |
+| 1 | `PLAN-<id>-<slug>` | Drafted | <rationale> |
+| 2 | `PLAN-<id>-<slug>` | Not started | <rationale> |
 
 ## 3. Side branches and polish tracks
 
 | Milestone | Status | Why it is not ahead of the mainline |
 |---|---|---|
-| `plan-<id>-<slug>.md` | Drafted | <rationale> |
+| `PLAN-<id>-<slug>` | Drafted | <rationale> |
 
 ## 4. Post-mainline expansion
 

@@ -2986,7 +2986,9 @@ def main() -> int:
         return check(root, docs)
     if args.command == "health":
         issues = health_issues(root, docs, args.stale_days, args.commit_threshold, args.audit_days)
-        write_generated_view(root, "health", docs, args)
+        markdown = generated_view_markdown(root, "health", docs, args)
+        if args.write:
+            generated_view_path(root, "health").write_text(markdown, encoding="utf-8")
         if args.json:
             print(json.dumps([issue.__dict__ for issue in issues], indent=2))
         else:
@@ -2994,7 +2996,9 @@ def main() -> int:
         return 0
     if args.command == "roadmap":
         rows = roadmap_rows(docs)
-        markdown = write_generated_view(root, "roadmap", docs, args)
+        markdown = generated_view_markdown(root, "roadmap", docs, args)
+        if args.write:
+            generated_view_path(root, "roadmap").write_text(markdown, encoding="utf-8")
         if args.json:
             print(json.dumps(rows, indent=2))
         else:

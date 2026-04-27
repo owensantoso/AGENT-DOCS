@@ -46,7 +46,7 @@ Use these to understand sequencing, target shape, and feature intent.
 These describe how a specific milestone should be executed:
 
 - parent `PLAN-*` docs inside a plan folder
-- task-scoped `impl-task-*` implementation briefs in the same plan folder
+- task-scoped `IMPL-*` implementation briefs in the same plan folder
 
 Use these to decide ordering, grouping, ownership, and verification.
 

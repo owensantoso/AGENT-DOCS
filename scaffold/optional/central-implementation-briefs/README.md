@@ -24,14 +24,14 @@ Parent plan still wins on intent and scope.
 Naming convention:
 
 ```text
-impl-task-<task-ref>-<slug>.md
+IMPL-<plan-id>-<sequence>-<slug>.md
 ```
 
-Use `<task-ref>` to mirror the parent-plan task numbers:
+Use `<sequence>` to keep briefs ordered within the parent plan:
 
-- single task: `2`
-- contiguous range: `1-3`
-- explicit grouped list: `1-2-and-4`
+- first brief: `01`
+- second brief: `02`
+- grouped brief for related tasks: choose the next sequence and explain the grouped scope in the brief
 
 Each brief should also state:
 

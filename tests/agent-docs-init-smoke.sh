@@ -60,6 +60,17 @@ if "$installer" "$tiny_target" --profile tiny --write >"$tmpdir/overwrite.out" 2
 fi
 require_contains "$tmpdir/overwrite.out" "Refusing to overwrite"
 
+symlink_target="$tmpdir/symlink-app"
+outside_target="$tmpdir/outside"
+mkdir -p "$symlink_target" "$outside_target"
+ln -s "$outside_target" "$symlink_target/docs"
+if "$installer" "$symlink_target" --profile tiny --write >"$tmpdir/symlink-write.out" 2>&1; then
+  echo "Expected installer to refuse writing through symlinked target paths" >&2
+  exit 1
+fi
+require_contains "$tmpdir/symlink-write.out" "Refusing to write through symlinked target path"
+require_absent "$outside_target/CURRENT_STATE.md"
+
 meta_target="$tmpdir/meta-app"
 "$installer" "$meta_target" --profile small --docs-meta yes --write >"$tmpdir/meta-write.out"
 require_file "$meta_target/scripts/docs-meta"
@@ -72,6 +83,14 @@ resolved_cwd_target="$(cd "$cwd_target" && pwd -P)"
 (cd "$cwd_target" && "$installer" --profile small --dry-run >"$tmpdir/cwd-dry-run.out")
 require_contains "$tmpdir/cwd-dry-run.out" "Target: $resolved_cwd_target"
 require_contains "$tmpdir/cwd-dry-run.out" "Would create: docs/CURRENT_STATE.md"
+
+full_target="$tmpdir/full-app"
+"$installer" "$full_target" --profile full --dry-run >"$tmpdir/full-dry-run.out"
+docs_meta_count="$(grep -Fc -- "- scripts/docs-meta" "$tmpdir/full-dry-run.out")"
+if [[ "$docs_meta_count" != "1" ]]; then
+  echo "Expected full profile preview to list scripts/docs-meta once, got $docs_meta_count" >&2
+  exit 1
+fi
 
 if "$installer" >"$tmpdir/no-profile.out" 2>&1; then
   echo "Expected non-interactive run without profile to fail" >&2

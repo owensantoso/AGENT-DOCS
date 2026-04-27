@@ -229,7 +229,7 @@ They should not try to fully pre-author every code edit or turn into a pseudo-pa
 Files named like:
 
 ```text
-impl-task-<task-ref>-<slug>.md
+IMPL-<plan-id>-<sequence>-<slug>.md
 ```
 
 These are execution docs for one bounded task or grouped task.
@@ -252,7 +252,7 @@ They should answer:
 
 The important rule is:
 
-> The spec defines requirements truth. The main `plan-*` doc defines intent and boundaries. The `impl-*` brief defines execution details for one bounded slice.
+> The spec defines requirements truth. The parent `PLAN-*` doc defines intent and boundaries. The `IMPL-*` brief defines execution details for one bounded slice.
 
 If both exist:
 
@@ -292,6 +292,7 @@ Use frontmatter for metadata that future tools or Obsidian-style workflows may q
 - `planned_execution_start` / `planned_execution_end`: intended execution window, if known
 - `actual_execution_start` / `actual_execution_end`: filled when execution actually begins/finishes
 - `related_specs`, `related_adrs`, `related_sessions`: links to source docs and receipts
+- `linked_paths`: repo-relative files or folders that matter to the work but are not structured docs
 
 For implementation briefs, also include:
 
@@ -365,11 +366,11 @@ Implementation briefs:
 <domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
 ```
 
-Use `<task-ref>` to mirror the parent-plan task numbers:
+Use `<sequence>` to keep briefs ordered within a parent plan:
 
-- single task: `2`
-- contiguous range: `1-3`
-- explicit grouped list: `1-2-and-4`
+- first brief: `01`
+- second brief: `02`
+- grouped brief for related tasks: choose the next sequence and explain the grouped scope in the brief
 
 ## Grouping guidance
 

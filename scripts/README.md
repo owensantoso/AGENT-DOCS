@@ -10,19 +10,19 @@ This folder contains two main scripts:
 
 ## Agent Docs Init
 
-From the repo you want to document, install or update the command and immediately run the init flow. For the private `AGENT-DOCS` repo, authenticate with GitHub CLI first:
+From the repo you want to document, install or update the command and immediately run the init flow:
 
 ```bash
-gh auth login
-gh auth setup-git
-curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
 ```
 
 Use `--no-run` when you only want to install or update the command:
 
 ```bash
-curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
 ```
+
+For private forks, authenticate with GitHub CLI, add an `Authorization` header to the raw request, and set `AGENT_DOCS_REPO_URL` so the installer clones that fork.
 
 Then use `agent-docs-init` to install the smallest useful AGENT-DOCS shape into another repo:
 

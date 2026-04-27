@@ -24,6 +24,7 @@ related_learnings: []
 related_explainers: []
 related_sessions: []
 related_todos: []
+linked_paths: []
 supersedes: []
 superseded_by: []
 repo_state:

@@ -26,6 +26,24 @@ github_repo_from_url() {
   fi
 }
 
+repo_url_matches() {
+  local expected="$1"
+  local actual="$2"
+  local expected_repo
+  local actual_repo
+
+  expected_repo="$(github_repo_from_url "$expected")"
+  actual_repo="$(github_repo_from_url "$actual")"
+  if [[ -n "$expected_repo" && -n "$actual_repo" ]]; then
+    [[ "$expected_repo" == "$actual_repo" ]]
+    return
+  fi
+
+  expected="${expected%.git}"
+  actual="${actual%.git}"
+  [[ "$expected" == "$actual" ]]
+}
+
 clone_repo() {
   local github_repo
   github_repo="$(github_repo_from_url "$repo_url")"
@@ -36,6 +54,21 @@ clone_repo() {
     echo "gh repo clone failed; falling back to git clone" >&2
   fi
   git clone --quiet "$repo_url" "$agent_docs_home"
+}
+
+require_python() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "agent-docs-init requires Python 3.10 or newer, but python3 was not found." >&2
+    exit 1
+  fi
+  if ! python3 - <<'PY' >/dev/null 2>&1
+import sys
+raise SystemExit(0 if sys.version_info >= (3, 10) else 1)
+PY
+  then
+    echo "agent-docs-init requires Python 3.10 or newer." >&2
+    exit 1
+  fi
 }
 
 while [[ $# -gt 0 ]]; do
@@ -60,11 +93,25 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+require_python
+
 if [[ -z "$source_dir" ]]; then
   if [[ -d "$agent_docs_home/.git" ]]; then
+    origin_url="$(git -C "$agent_docs_home" config --get remote.origin.url || true)"
+    if [[ -z "$origin_url" ]] || ! repo_url_matches "$repo_url" "$origin_url"; then
+      echo "Refusing to update existing checkout with unexpected origin: $agent_docs_home" >&2
+      echo "Expected: $repo_url" >&2
+      echo "Actual: ${origin_url:-<none>}" >&2
+      echo "Move it aside, remove it manually, or set AGENT_DOCS_HOME to another path." >&2
+      exit 1
+    fi
     git -C "$agent_docs_home" pull --ff-only --quiet
   else
-    rm -rf "$agent_docs_home"
+    if [[ -e "$agent_docs_home" ]]; then
+      echo "Refusing to replace existing non-git directory: $agent_docs_home" >&2
+      echo "Move it aside, remove it manually, or set AGENT_DOCS_HOME to another path." >&2
+      exit 1
+    fi
     clone_repo
   fi
   source_dir="$agent_docs_home"
@@ -82,6 +129,12 @@ if [[ -L "$installed_bin" && "$(readlink "$installed_bin")" == "$init_script" ]]
   already_installed=true
 else
   already_installed=false
+fi
+
+if [[ ( -e "$installed_bin" || -L "$installed_bin" ) && "$already_installed" != true ]]; then
+  echo "Refusing to replace existing command: $installed_bin" >&2
+  echo "Move it aside, remove it manually, or set AGENT_DOCS_BIN_DIR to another path." >&2
+  exit 1
 fi
 
 ln -sfn "$init_script" "$installed_bin"

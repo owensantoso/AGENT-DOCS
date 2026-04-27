@@ -51,8 +51,8 @@ If the repo includes `skills/structured-docs-workflow/SKILL.md`, read it before 
 - Capture durable unresolved questions as `QST-*` docs only when they need status, ownership, links, or resolution history across sessions. Ask ordinary clarification questions in chat.
 - If the repo uses `docs/architecture/areas/AREA-*.md`, use those exact `AREA-*` IDs in plan frontmatter, session logs, PRs, issues, and `Area:` commit trailers.
 - Planning doc hierarchy matters.
-  - Parent `plan-*` docs define scope, architecture, invariants, and non-goals.
-  - `impl-*` briefs define task-level execution details for one bounded task or grouped task.
+  - Parent `PLAN-*` docs define scope, architecture, invariants, and non-goals.
+  - `IMPL-*` briefs define task-level execution details for one bounded task or grouped task.
   - Parent plans win on intent and boundaries.
   - Implementation briefs win on execution order and verification details.
 - Do not implement from an implementation brief alone without first reading its parent plan.

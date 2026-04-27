@@ -1,5 +1,16 @@
 .DS_Store
 .obsidian/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.coverage
+coverage/
+dist/
+build/
+*.log
+*.tmp
 artifacts/diagnostics/
 artifacts/evaluations/
 *.raw.jsonl

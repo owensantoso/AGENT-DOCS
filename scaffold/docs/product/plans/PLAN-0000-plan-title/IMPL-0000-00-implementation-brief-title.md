@@ -21,6 +21,7 @@ related_adrs: []
 related_sessions: []
 related_issues: []
 related_prs: []
+linked_paths: []
 repo_state:
   based_on_commit:
   last_reviewed_commit:

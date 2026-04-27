@@ -6,11 +6,12 @@ This folder is a reusable documentation kit for agent-driven software work.
 
 1. `README.md`
 2. `INSTALL.md` when setting this workflow up in another repo
-3. `guides/workflow-overview.md`
-4. `guides/doc-types-and-responsibilities.md`
-5. `guides/subagent-execution-loop.md`
-6. `guides/adoption-checklist.md`
-7. the files under `scaffold/` that match the repo you are setting up
+3. `skills/structured-docs-workflow/SKILL.md` before implementation or planning in repos that use plans, briefs, TODOs, or docs-meta
+4. `guides/workflow-overview.md`
+5. `guides/doc-types-and-responsibilities.md`
+6. `guides/subagent-execution-loop.md`
+7. `guides/adoption-checklist.md`
+8. the files under `scaffold/` that match the repo you are setting up
 
 ## Purpose
 

@@ -209,7 +209,7 @@ Should answer:
 - what is explicitly not decided yet?
 - where does it live in the topic-first docs tree?
 
-## Parent `plan-*` doc
+## Parent `PLAN-*` Doc
 
 Purpose:
 
@@ -225,7 +225,7 @@ Should answer:
 - where should work be grouped or split?
 - what is the plan status, creation time, and execution window?
 
-## `impl-*` implementation brief
+## `IMPL-*` Implementation Brief
 
 Purpose:
 

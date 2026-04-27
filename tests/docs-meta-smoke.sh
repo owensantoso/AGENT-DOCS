@@ -21,6 +21,13 @@ require_file() {
   fi
 }
 
+require_absent() {
+  if [[ -e "$1" ]]; then
+    echo "Expected path to be absent: $1" >&2
+    exit 1
+  fi
+}
+
 require_contains() {
   local file="$1"
   local pattern="$2"
@@ -313,9 +320,12 @@ if grep -Fq "Follow up on TODO-0001" $tmpdir/docs-meta-todos-structured.out; the
   echo "Expected non-leading TODO reference to remain a local checkbox" >&2
   exit 1
 fi
+rm "$docs_root/ROADMAP-VIEW.md"
 run_meta roadmap --json >$tmpdir/docs-meta-roadmap.json
 require_contains $tmpdir/docs-meta-roadmap.json "\"id\": \"PLAN-0001\""
 require_contains $tmpdir/docs-meta-roadmap.json "\"plan_name\": \"PLAN-0001-shared-capture-implementation\""
+require_absent "$docs_root/ROADMAP-VIEW.md"
+run_meta roadmap --write >$tmpdir/docs-meta-roadmap-write.out
 require_file "$docs_root/ROADMAP-VIEW.md"
 run_meta show PLAN-0001 >$tmpdir/docs-meta-show-plan.out
 require_contains $tmpdir/docs-meta-show-plan.out $'Linked Paths:'
@@ -420,7 +430,7 @@ perl -0pi -e 's/updated_at: "[^"]+"/updated_at: "2026-01-01 00:00:00 JST +0900"/
 run_meta health --stale-days 1 >$tmpdir/docs-meta-health.out
 require_contains $tmpdir/docs-meta-health.out "stale-by-time"
 require_contains $tmpdir/docs-meta-health.out "AREA-capture"
-require_contains "$docs_root/HEALTH.md" "updated_at:"
+require_absent "$docs_root/HEALTH.md"
 run_meta health --stale-days 1 --write >$tmpdir/docs-meta-health-write.out
 require_file "$docs_root/HEALTH.md"
 require_contains "$docs_root/HEALTH.md" "Docs Health"

@@ -18,6 +18,7 @@ related_issues: []
 related_prs: []
 related_adrs: []
 related_sessions: []
+linked_paths: []
 supersedes: []
 superseded_by: []
 repo_state:

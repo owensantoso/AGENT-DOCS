@@ -8,12 +8,10 @@ This is a **scalable workflow**, not a requirement to install every folder and d
 
 ## Quick Start
 
-From the repo you want to document, install or update the CLI and immediately run the init flow. For the private `AGENT-DOCS` repo, authenticate with GitHub CLI first:
+From the repo you want to document, install or update the CLI and immediately run the init flow:
 
 ```bash
-gh auth login
-gh auth setup-git
-curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
 ```
 
 The installer asks where to install, explains the project-size profiles, previews the tree, and defaults to dry-run. Re-run with `--write` when the preview looks right. Use `small` when unsure. Existing target files are listed first, and write mode refuses to overwrite them unless you pass `--force`.
@@ -21,13 +19,15 @@ The installer asks where to install, explains the project-size profiles, preview
 Install or update the CLI without running init:
 
 ```bash
-curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
 ```
 
-If this repo is ever public, the unauthenticated form also works:
+If you are installing from a private fork, authenticate with GitHub CLI and use an authenticated raw request:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+gh auth login
+gh auth setup-git
+curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/OWNER/AGENT-DOCS/main/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash
 ```
 
 Non-interactive examples:
@@ -106,10 +106,10 @@ For a full AGENT-DOCS-style repo, use [scaffold/](scaffold/) as the source tree 
 
 ## Install
 
-Use the interactive installer when you want the CLI to explain profiles, show the structure preview, and copy the selected scaffold. If you omit the target path, it uses the current directory in non-interactive mode and asks about the current directory in interactive mode:
+Use the installed command when you want the CLI to explain profiles, show the structure preview, and copy the selected scaffold. If you omit the target path, it uses the current directory in non-interactive mode and asks about the current directory in interactive mode:
 
 ```bash
-scripts/agent-docs-init
+agent-docs-init
 ```
 
 The installer is idempotent around existing project files: it may create missing docs inside an existing `docs/` folder, but it lists exact file conflicts and refuses to overwrite those files in write mode unless `--force` is explicitly provided.
@@ -117,12 +117,14 @@ The installer is idempotent around existing project files: it may create missing
 Non-interactive examples:
 
 ```bash
-scripts/agent-docs-init --profile small --dry-run
-scripts/agent-docs-init --profile small --write
-scripts/agent-docs-init /path/to/project --profile small --dry-run
-scripts/agent-docs-init /path/to/project --profile small --docs-meta yes --write
-scripts/agent-docs-init /path/to/project --profile full --write
+agent-docs-init --profile small --dry-run
+agent-docs-init --profile small --write
+agent-docs-init /path/to/project --profile small --dry-run
+agent-docs-init /path/to/project --profile small --docs-meta yes --write
+agent-docs-init /path/to/project --profile full --write
 ```
+
+If you have cloned this repo and want to run the script directly during development, use `scripts/agent-docs-init` from the repo root.
 
 `tiny` and `small` synthesize smaller files, including a simpler `ARCHITECTURE.md`. `growing` and `full` copy selected files from the full scaffold. This keeps small-project docs lighter without duplicating the whole scaffold tree.
 
@@ -141,7 +143,7 @@ chmod +x ./scripts/docs-meta ./tests/docs-meta-smoke.sh
 
 Then adapt placeholders, delete irrelevant examples, and make `AGENTS.md` plus the current-state doc truthful for that repo.
 
-Reusable global and surface-level agent instructions live under [scaffold/agent-instructions/](scaffold/agent-instructions/). These are reusable `AGENTS.md` templates, not Codex `SKILL.md` skills.
+Reusable global and surface-level agent instructions live under [scaffold/agent-instructions/](scaffold/agent-instructions/). These are reusable `AGENTS.md` templates, not Codex `SKILL.md` skills. Repo-local skills live under [skills/](skills/), while [scaffold/skills/](scaffold/skills/) contains copies intended for target repos.
 
 ## Workflow
 
