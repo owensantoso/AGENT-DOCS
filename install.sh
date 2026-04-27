@@ -156,8 +156,16 @@ esac
 
 if [[ "$run_after_install" == true ]]; then
   if [[ -r /dev/tty && -t 1 ]]; then
-    "$bin_dir/agent-docs-init" "${run_args[@]}" </dev/tty
+    if [[ "${#run_args[@]}" -gt 0 ]]; then
+      "$bin_dir/agent-docs-init" "${run_args[@]}" </dev/tty
+    else
+      "$bin_dir/agent-docs-init" </dev/tty
+    fi
   else
-    "$bin_dir/agent-docs-init" "${run_args[@]}"
+    if [[ "${#run_args[@]}" -gt 0 ]]; then
+      "$bin_dir/agent-docs-init" "${run_args[@]}"
+    else
+      "$bin_dir/agent-docs-init"
+    fi
   fi
 fi

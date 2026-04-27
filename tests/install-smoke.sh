@@ -61,6 +61,21 @@ require_contains "$tmpdir/run.out" "Profile: small"
 require_contains "$tmpdir/run.out" "Target: $resolved_run_target"
 require_contains "$tmpdir/run.out" "Would create: docs/CURRENT_STATE.md"
 
+macos_bash_source="$tmpdir/macos-bash-source"
+macos_bash_bin="$tmpdir/macos-bash-bin"
+mkdir -p "$macos_bash_source/scripts"
+cat >"$macos_bash_source/scripts/agent-docs-init" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "fake init argc=$#"
+SH
+chmod +x "$macos_bash_source/scripts/agent-docs-init"
+AGENT_DOCS_SOURCE="$macos_bash_source" \
+AGENT_DOCS_HOME="$tmpdir/macos-bash-home" \
+AGENT_DOCS_BIN_DIR="$macos_bash_bin" \
+  /bin/bash "$repo_root/install.sh" >"$tmpdir/macos-bash-install.out"
+require_contains "$tmpdir/macos-bash-install.out" "fake init argc=0"
+
 fakebin="$tmpdir/fakebin"
 fake_home="$tmpdir/private-home"
 mkdir -p "$fakebin"
