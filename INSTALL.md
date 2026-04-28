@@ -148,6 +148,7 @@ Keep:
 - `docs/orientation/explainers/` for reusable human-facing explanations
 - `docs/decisions/learnings/` for lessons learned and corrected assumptions
 - `docs/decisions/questions/` for durable questions with status and resolution history
+- `docs/repo-health/audits/` for reusable audit guides and repo-health audit receipts
 - `docs/repo-health/session-logs/` for timestamped receipts
 - `docs/decisions/adr/` for durable decisions
 

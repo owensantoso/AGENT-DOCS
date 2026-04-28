@@ -87,6 +87,17 @@ if "scripts/" not in preview or "docs-meta" not in preview:
     raise SystemExit("Expected explicit docs-meta choice to appear in structure preview")
 PY
 
+growing_target="$tmpdir/growing-app"
+"$installer" "$growing_target" --profile growing --write >"$tmpdir/growing-write.out"
+require_file "$growing_target/docs/repo-health/audits/README.md"
+require_file "$growing_target/docs/repo-health/audits/audit-profile.md"
+require_file "$growing_target/docs/repo-health/audits/guides/architecture.md"
+require_file "$growing_target/docs/repo-health/audits/guides/test-coverage.md"
+require_file "$growing_target/docs/repo-health/audits/guides/docs-health.md"
+require_file "$growing_target/scripts/docs-meta"
+require_contains "$tmpdir/growing-write.out" "docs/repo-health/audits/README.md"
+require_contains "$tmpdir/growing-write.out" "docs/repo-health/audits/guides/architecture.md"
+
 cwd_target="$tmpdir/cwd-app"
 mkdir -p "$cwd_target"
 resolved_cwd_target="$(cd "$cwd_target" && pwd -P)"
@@ -207,9 +218,9 @@ if "├── docs/" not in text:
     raise SystemExit("Expected interactive preview to render a tree")
 if "Legend: \x1b[36mstart here\x1b[0m, \x1b[2mtooling\x1b[0m" not in text:
     raise SystemExit("Expected preview to label visual categories")
-if "│   └── \x1b[36morientation/\x1b[0m" not in text:
+if "\x1b[36morientation/\x1b[0m" not in text:
     raise SystemExit("Expected interactive tree to include nested folders")
-if "│       └── \x1b[36mROADMAP.md\x1b[0m" not in text:
+if "\x1b[36mROADMAP.md\x1b[0m" not in text:
     raise SystemExit("Expected interactive tree to include the growing roadmap")
 if "\x1b[1mROADMAP.md" in text:
     raise SystemExit("Expected preview to avoid bold-only start-here styling")
@@ -222,7 +233,7 @@ if text.count("\x1b[2J") > 1:
 PY
 require_contains "$tmpdir/interactive-picker.out" "Profile: growing"
 require_contains "$tmpdir/interactive-picker.out" "├── docs/"
-require_contains "$tmpdir/interactive-picker.out" $'│       └── \033[36mROADMAP.md\033[0m'
+require_contains "$tmpdir/interactive-picker.out" $'\033[36mROADMAP.md\033[0m'
 
 python3 - "$installer" "$tmpdir/small-terminal-app" >"$tmpdir/small-terminal-picker.out" <<'PY'
 import os

@@ -263,7 +263,7 @@ The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. Copy 
 |---|---|
 | [scaffold/AGENTS.md](scaffold/AGENTS.md) | root agent index and repo rules |
 | [scaffold/agent-instructions/](scaffold/agent-instructions/) | reusable global and surface `AGENTS.md` templates |
-| [guides/audits/](guides/audits/) | reusable repo-agnostic audit-kind guides, copied into full-profile repos under `docs/repo-health/audits/guides/` |
+| [guides/audits/](guides/audits/) | reusable repo-agnostic audit-kind guides, copied into growing/full-profile repos under `docs/repo-health/audits/guides/` |
 | [scaffold/docs/README.md](scaffold/docs/README.md) | target repo docs map and doc-type workflow diagram |
 | [scaffold/docs/orientation/](scaffold/docs/orientation/) | current state, onboarding, roadmap, architecture |
 | [scaffold/docs/architecture/](scaffold/docs/architecture/) | architecture hub and `AREA-*` example |

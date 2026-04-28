@@ -108,6 +108,7 @@ PROFILES = {
             (
                 "Evidence",
                 (
+                    ("audit", "dated review finding set"),
                     ("DIAG-*", "diagnostic record"),
                     ("research note", "source survey or finding"),
                 ),
@@ -126,6 +127,9 @@ PROFILES = {
             "docs/orientation/ROADMAP.md",
             "docs/product/plans/README.md",
             "docs/decisions/adr/README.md",
+            "docs/repo-health/audits/README.md",
+            "docs/repo-health/audits/audit-profile.md",
+            "docs/repo-health/audits/guides/README.md",
             "docs/repo-health/session-logs/README.md",
             "docs/repo-health/debugging/README.md",
             "docs/research/README.md",
@@ -285,6 +289,14 @@ def copy_actions(relpaths: tuple[str, ...]) -> list[Action]:
     return actions
 
 
+def audit_guide_actions() -> list[Action]:
+    actions: list[Action] = []
+    for path in sorted((REPO_ROOT / "guides" / "audits").rglob("*.md")):
+        target = Path("docs/repo-health/audits/guides") / path.relative_to(REPO_ROOT / "guides" / "audits")
+        actions.append(Action(target, source=path))
+    return actions
+
+
 def growing_files(_: Profile) -> list[Action]:
     rels = (
         "AGENTS.md",
@@ -294,11 +306,13 @@ def growing_files(_: Profile) -> list[Action]:
         "docs/orientation/ROADMAP.md",
         "docs/product/plans/README.md",
         "docs/decisions/adr/README.md",
+        "docs/repo-health/audits/README.md",
+        "docs/repo-health/audits/audit-profile.md",
         "docs/repo-health/session-logs/README.md",
         "docs/repo-health/debugging/README.md",
         "docs/research/README.md",
     )
-    return copy_actions(rels)
+    return [*copy_actions(rels), *audit_guide_actions()]
 
 
 def full_files(_: Profile) -> list[Action]:
@@ -306,10 +320,7 @@ def full_files(_: Profile) -> list[Action]:
     for path in sorted((SCAFFOLD / "docs").rglob("*")):
         if path.is_file():
             actions.append(Action(path.relative_to(SCAFFOLD), source=path, executable=os.access(path, os.X_OK)))
-    for path in sorted((REPO_ROOT / "guides" / "audits").rglob("*.md")):
-        target = Path("docs/repo-health/audits/guides") / path.relative_to(REPO_ROOT / "guides" / "audits")
-        actions.append(Action(target, source=path))
-    return actions
+    return [*actions, *audit_guide_actions()]
 
 
 def docs_meta_actions() -> list[Action]:
