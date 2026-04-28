@@ -101,7 +101,7 @@ Decision shortcut:
 - Keep `LEARNINGS.md` as the global registry for one continuous `LRN-####` sequence when the repo uses learning records.
 - Store specs in topic-first folders such as `product/specs/`, `architecture/specs/`, or `repo-health/specs/`.
 - Put plans under the domain that owns the outcome.
-- Use `sequence` frontmatter for roadmap order; keep `PLAN-*` IDs stable.
+- Keep `PLAN-*` numbering and `sequence` roadmap order aligned before implementation starts. If order changes later, move/renumber pre-implementation docs or record the correction when IDs already have history.
 - Use repo-health audits for periodic docs, architecture, duplication/refactor, test, tooling, and paper-trail checkups.
 - Use `RSCH-*` research surveys for sourced option landscapes, not repeatable bakeoffs or one failed run.
 - Use `EVAL-*` evaluations for repeatable fixtures, metrics, thresholds, and bakeoffs.

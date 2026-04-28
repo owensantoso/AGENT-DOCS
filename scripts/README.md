@@ -354,7 +354,7 @@ scripts/docs-meta roadmap --json
 scripts/docs-meta roadmap --write
 ```
 
-`roadmap` sorts `type: plan` docs by `sequence` frontmatter. `PLAN-*` stays stable identity; `sequence.roadmap`, `sequence.sort_key`, `sequence.after`, and `sequence.before` own execution order. Running it also refreshes `docs/ROADMAP-VIEW.md`.
+`roadmap` sorts `type: plan` docs by `sequence` frontmatter. In normal pre-implementation planning, `PLAN-*` numbering and `sequence` order should agree; if execution order changes, move or renumber the docs rather than relying on hidden dependencies. After commits, PRs, or session logs point at a plan, keep the ID stable and record any ordering correction in the docs. Running it also refreshes `docs/ROADMAP-VIEW.md`.
 
 Print and refresh any generated Markdown view:
 
