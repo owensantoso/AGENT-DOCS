@@ -197,6 +197,27 @@ Use the smallest durable doc that answers the actual question.
 | Session log | Receipt | what happened in a meaningful session | Future readers need timeline, verification, and decisions |
 | Audit | Repo-health check | docs/tooling/codebase workflow health | The repo needs periodic drift or hygiene review |
 
+## Stable File Naming
+
+AGENT-DOCS artifacts use uppercase stable IDs in both frontmatter and filenames.
+Do not create generic source docs like `plan.md`, `spec.md`, or `brief.md` when
+the artifact has an ID family.
+
+Required patterns:
+
+```text
+docs/<domain>/specs/SPEC-0001-<slug>.md
+docs/<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
+docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
+```
+
+The parent plan folder and parent plan filename must repeat the same `PLAN-####`
+ID and slug. Implementation briefs live in that plan folder and use
+`IMPL-<plan-id>-<sequence>-<slug>.md`.
+
+When `scripts/docs-meta` exists, prefer it over guessing IDs or paths. When it
+does not exist, inspect existing docs and preserve the same uppercase ID pattern.
+
 ## Folder Model
 
 Use a topic-first docs hierarchy. The top-level folder should describe the kind of work or knowledge, and artifact folders like `plans/` should live under the topic that owns them.

@@ -48,6 +48,17 @@ These describe how a specific milestone should be executed:
 - parent `PLAN-*` docs inside a plan folder
 - task-scoped `IMPL-*` implementation briefs in the same plan folder
 
+The filename convention is mandatory for plan artifacts:
+
+```text
+<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
+<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
+```
+
+Do not use a generic `plan.md` for a parent plan. The `PLAN-####` ID is stable
+identity used by commits, issues, PRs, session logs, generated views, and
+implementation briefs.
+
 Use these to decide ordering, grouping, ownership, and verification.
 
 Plans should live under the topic that owns the work:

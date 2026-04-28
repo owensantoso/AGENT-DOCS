@@ -107,6 +107,10 @@ Decision shortcut:
 - Use `EVAL-*` evaluations for repeatable fixtures, metrics, thresholds, and bakeoffs.
 - Use `DIAG-*` diagnostics for real-run failures, freezes, slow flows, crash logs, timing traces, and privacy-sensitive debugging evidence.
 - Give each meaningful plan its own folder.
+- Name parent plans as `PLAN-####-slug/PLAN-####-slug.md`; never use a generic
+  `plan.md` for a stable parent plan.
+- Name implementation briefs as `IMPL-####-NN-slug.md` inside the parent plan
+  folder.
 - Use session logs for per-session receipts.
 - Use ADRs for durable cross-plan decisions.
 - Use `CONC-*` notes for semi-mature domain models, taxonomy, ontology, naming, or source-of-truth sketches before they harden into specs, ADRs, plans, architecture docs, or explainers.

@@ -44,6 +44,9 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 - Make sure parent plans state dependencies and safe parallelization explicitly.
 - Make sure implementation briefs state ownership and write-conflict notes.
 - Make sure naming conventions are unambiguous.
+- Make sure parent plans use `PLAN-####-slug/PLAN-####-slug.md`, not `plan.md`.
+- Make sure specs use `SPEC-####-slug.md` and implementation briefs use
+  `IMPL-####-NN-slug.md` in the parent plan folder.
 - Make sure `CURRENT_STATE.md` is fresh enough to trust.
 - Make sure session logs have exact local timestamps for meaningful actions.
 - Make sure agents know to use `reflect-and-improve` when feedback reveals a wrong assumption, ambiguous docs, missed rule, or tooling gap.

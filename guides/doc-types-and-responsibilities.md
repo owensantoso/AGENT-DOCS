@@ -232,12 +232,19 @@ Should answer:
 - what is explicitly not decided yet?
 - where does it live in the topic-first docs tree?
 
+Naming:
+
+- `SPEC-####-<slug>.md`
+- include `id: SPEC-####` in frontmatter
+- example: `docs/product/specs/SPEC-0001-download-queue.md`
+
 ## Parent `PLAN-*` Doc
 
 Purpose:
 
 - define milestone intent, architecture, invariants, tasks, dependencies, and safe parallelization
 - identify important domain terms and interface choices that implementation must preserve
+- provide one globally unique `PLAN-####` paper-trail ID
 
 Should answer:
 
@@ -248,11 +255,23 @@ Should answer:
 - where should work be grouped or split?
 - what is the plan status, creation time, and execution window?
 
+Naming:
+
+- folder: `PLAN-####-<slug>/`
+- file: `PLAN-####-<slug>.md`
+- include `id: PLAN-####` in frontmatter
+- full pattern: `docs/<domain>/plans/PLAN-####-<slug>/PLAN-####-<slug>.md`
+
+Do not use `plan.md` for a parent plan. The folder and file repeat the same
+uppercase `PLAN-####` ID because that ID is the stable reference used by related
+`IMPL-*` briefs, session logs, issues, PRs, and generated views.
+
 ## `IMPL-*` Implementation Brief
 
 Purpose:
 
 - define one bounded execution slice for an implementer or subagent
+- preserve execution detail with an ID tied to its parent plan
 
 Should answer:
 
@@ -261,6 +280,14 @@ Should answer:
 - what does this brief own?
 - what verification proves it is done?
 - when was the brief created and executed?
+
+Naming:
+
+- `IMPL-<plan-id>-<sequence>-<slug>.md`
+- include the implementation ID and parent plan ID in frontmatter
+- full pattern: `docs/<domain>/plans/PLAN-####-<slug>/IMPL-####-NN-<slug>.md`
+
+Read the parent `PLAN-*` before implementing from an `IMPL-*` brief.
 
 ## Codebase map
 

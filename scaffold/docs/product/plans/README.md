@@ -51,6 +51,17 @@ Each meaningful plan should get its own folder:
   IMPL-0001-01-<slug>.md
 ```
 
+The parent plan folder and parent plan file must both use the same uppercase
+`PLAN-####-<slug>` identity:
+
+```text
+<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
+```
+
+Do not name the parent plan `plan.md`. A generic filename breaks the stable
+paper trail because commits, session logs, issues, generated views, and
+implementation briefs refer to the `PLAN-####` ID.
+
 Use the old flat file convention only when the repo intentionally chooses simpler docs.
 
 ## Source-of-truth stack
