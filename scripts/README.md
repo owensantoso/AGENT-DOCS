@@ -80,10 +80,10 @@ Schema version 1 contains:
 
 File records use conservative ownership. Reusable tooling such as
 `scripts/docs-meta` and `tests/docs-meta-smoke.sh` is recorded as
-`agent-docs-owned` with a SHA-256 checksum. Starter docs and templates are
-recorded as `project-owned-after-install` without checksums, because target-repo
-Markdown becomes local truth after installation and is not an automatic upgrade
-target.
+`agent-docs-owned` with a SHA-256 checksum and expected mode such as `755`.
+Starter docs and templates are recorded as `project-owned-after-install` without
+checksums, because target-repo Markdown becomes local truth after installation
+and is not an automatic upgrade target.
 
 ### Doctor And Upgrade Dry Run
 
@@ -91,6 +91,7 @@ Inspect a manifest-backed target without writing files:
 
 ```bash
 agent-docs doctor /path/to/project
+agent-docs upgrade /path/to/project
 agent-docs upgrade --dry-run /path/to/project
 ```
 
@@ -99,14 +100,34 @@ include exact paths and reasons for healthy/current files, missing legacy
 manifests, missing AGENT-DOCS-owned tooling, checksum drift, safe automatic
 additions, candidate tooling updates, generated-view refreshes, project-owned manual-review
 items, and refused or unknown shapes. Legacy installs without a manifest remain
-manual-review in this slice. `agent-docs upgrade --write` is intentionally not
-implemented yet and exits `2`.
+manual-review.
+
+### Tooling-Only Upgrade Write Mode
+
+The only supported upgrade write path is:
+
+```bash
+agent-docs upgrade --write --tooling-only /path/to/project
+```
+
+`agent-docs upgrade --write` without `--tooling-only` exits `2`. Tooling-only
+write mode may restore missing AGENT-DOCS-owned files, update manifest-clean
+owned files from the current upstream action set, repair a missing executable bit
+when the file content still matches the manifest, and update
+`.agent-docs/manifest.json` last. It creates backups for touched existing files
+under `.agent-docs/backups/<timestamp>/` and writes
+`.agent-docs/backups/<timestamp>/audit.json` with the touched paths, operation
+kinds, and backup paths. Project-owned Markdown and generated views are
+report-only in this slice.
 
 Exit codes:
 
 - `0`: healthy/current
 - `1`: warnings or actionable drift
 - `2`: invalid usage, refused, unknown, or incompatible shapes
+
+Tooling-only write mode exits with the post-write classification, so a target
+that is fully repaired by the write exits `0`.
 
 Supported platforms and prerequisites: Bash on macOS or Linux, Git for installer clone/update paths, Python 3.10 or newer, symlink support, and a user-local bin directory such as `~/.local/bin` on `PATH` or an explicit `AGENT_DOCS_BIN_DIR`.
 

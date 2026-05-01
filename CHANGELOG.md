@@ -17,6 +17,12 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
   --dry-run [target]` reports for manifest health, drift, safe additions,
   candidate tooling updates, generated-view refreshes, manual-review items,
   and refused shapes.
+- Added `agent-docs upgrade --write --tooling-only [target]` for deterministic
+  AGENT-DOCS-owned tooling updates, missing owned-file restores, executable-bit
+  repairs, backups under `.agent-docs/backups/<timestamp>/`, and manifest-last
+  updates. Bare `agent-docs upgrade` remains a read-only preview, and
+  `--write` without `--tooling-only` is refused. Successful tooling-only writes
+  return the post-write classification, so fully repaired targets exit `0`.
 - Public-readiness work now favors preview-first install and init flows so first
   runs show intended changes before writing files.
 - Supported platform and prerequisite guidance is clearer for macOS and Linux
@@ -45,6 +51,12 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 - Added manifest assertions to init/install smoke coverage and Python compile
   coverage for the new command entry point.
 - Added doctor and upgrade dry-run smoke coverage to `scripts/release-check`.
+- Added tooling-only upgrade write-mode smoke coverage for preview defaulting,
+  write refusal, missing owned-file restore, manifest-clean tooling update,
+  executable-bit repair, local drift refusal, symlink refusal, backups, and
+  project-owned Markdown non-mutation.
+- Hardened tooling-only write mode to refuse unsafe backup paths, non-directory
+  parent path conflicts, and exact-mode drift before writing.
 - Added `scripts/changelog-check` for local and CI changelog enforcement.
 - Added smoke coverage for changelog-required, changelog-present, internal-only,
   and explicit-exemption cases.

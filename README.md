@@ -148,8 +148,8 @@ Explicit write installs create `.agent-docs/manifest.json`. Manifest schema
 version 1 records the AGENT-DOCS source repo/ref/commit when available, the
 selected profile, optional components such as `docs-meta`, installed file
 records, and timestamps. Only reusable AGENT-DOCS tooling such as
-`scripts/docs-meta` and `tests/docs-meta-smoke.sh` is checksummed as
-`agent-docs-owned`; starter Markdown is recorded as
+`scripts/docs-meta` and `tests/docs-meta-smoke.sh` is checksummed and given an
+expected file mode as `agent-docs-owned`; starter Markdown is recorded as
 `project-owned-after-install` so future update tooling does not treat target
 repo truth as automatically replaceable.
 
@@ -157,16 +157,34 @@ After a manifest-backed install, inspect the target without writing files:
 
 ```bash
 agent-docs doctor /path/to/project
+agent-docs upgrade /path/to/project
 agent-docs upgrade --dry-run /path/to/project
 ```
 
 `doctor` reports manifest health, missing owned tooling, checksum drift, safe
 automatic additions, candidate tooling updates, generated-view refreshes, project-owned manual
-review items, and refused or unknown shapes. `upgrade --dry-run` uses the same
-read-only classifier and previews categories only; `upgrade --write` is not
-implemented yet. Exit codes are `0` for healthy/current, `1` for warnings or
-actionable drift, and `2` for invalid usage, refused, unknown, or incompatible
-shapes.
+review items, and refused or unknown shapes. Bare `agent-docs upgrade` and
+`agent-docs upgrade --dry-run` use the same read-only classifier and preview
+categories only.
+
+The narrow write path is explicit:
+
+```bash
+agent-docs upgrade --write --tooling-only /path/to/project
+```
+
+Tooling-only write mode may restore missing manifest-owned tooling, update
+manifest-clean AGENT-DOCS-owned tooling to the current upstream action, repair a
+missing executable bit when content still matches the manifest, and update the
+manifest last. It creates backups under `.agent-docs/backups/<timestamp>/` for
+touched existing files plus `.agent-docs/backups/<timestamp>/audit.json` for the
+write batch. `agent-docs upgrade --write` without `--tooling-only` is refused,
+and project-owned Markdown remains report-only.
+
+Exit codes are `0` for healthy/current, `1` for warnings or actionable drift,
+and `2` for invalid usage, refused, unknown, or incompatible shapes.
+Tooling-only write mode exits with the post-write classification, so a target
+that is fully repaired by the write exits `0`.
 
 Non-interactive examples:
 

@@ -72,23 +72,36 @@ Supported platforms and prerequisites:
 Write mode also creates `.agent-docs/manifest.json` with schema version 1. The
 manifest records source metadata when Git can provide it, the selected profile,
 optional components such as `docs-meta`, installed files, and timestamps. It
-checksums AGENT-DOCS-owned reusable tooling only; starter Markdown is recorded as
-`project-owned-after-install` because target repos are expected to customize
-those docs.
+checksums AGENT-DOCS-owned reusable tooling and records expected file modes;
+starter Markdown is recorded as `project-owned-after-install` because target
+repos are expected to customize those docs.
 
-Use the read-only inspection commands before considering any future upgrade
-write mode:
+Use the read-only inspection commands before considering upgrade write mode:
 
 ```bash
 agent-docs doctor /path/to/project
+agent-docs upgrade /path/to/project
 agent-docs upgrade --dry-run /path/to/project
 ```
 
 Legacy installs without `.agent-docs/manifest.json` are reported as
-manual-review. `upgrade --dry-run` does not write files and `upgrade --write` is
-intentionally refused in the current release. Exit codes are `0` for
-healthy/current, `1` for warnings or actionable drift, and `2` for invalid
-usage, refused, unknown, or incompatible shapes.
+manual-review. Bare `upgrade` and `upgrade --dry-run` do not write files.
+`upgrade --write` is refused unless it is paired with `--tooling-only`:
+
+```bash
+agent-docs upgrade --write --tooling-only /path/to/project
+```
+
+Tooling-only write mode is limited to deterministic AGENT-DOCS-owned tooling:
+restoring missing owned files, updating manifest-clean owned files, repairing
+missing executable bits when content still matches the manifest, and updating
+`.agent-docs/manifest.json` last. Backups for touched existing files are written
+under `.agent-docs/backups/<timestamp>/`, with an `audit.json` file for the
+write batch. Project-owned Markdown stays report-only. Exit codes are `0` for
+healthy/current, `1` for warnings or actionable drift, and `2` for invalid usage,
+refused, unknown, or incompatible shapes. Tooling-only write mode exits with the
+post-write classification, so a target that is fully repaired by the write exits
+`0`.
 
 Manual full-scaffold install:
 

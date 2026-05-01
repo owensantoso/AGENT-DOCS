@@ -398,6 +398,7 @@ def manifest_for(target: Path, profile: Profile, include_docs_meta: bool, action
         }
         if record["ownership"] == "agent-docs-owned":
             record["checksum_sha256"] = hashlib.sha256((target / action.relpath).read_bytes()).hexdigest()
+            record["mode"] = "755" if action.executable else "644"
         records.append(record)
     return {
         "schema_version": 1,

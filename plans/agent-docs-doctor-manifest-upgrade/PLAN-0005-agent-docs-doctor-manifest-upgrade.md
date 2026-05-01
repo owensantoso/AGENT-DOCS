@@ -5,7 +5,7 @@ title: Agent Docs Doctor Manifest Upgrade
 domain: repo-health
 status: in_progress
 created_at: "2026-05-02 02:40:23 JST +0900"
-updated_at: "2026-05-02 04:56:46 JST +0900"
+updated_at: "2026-05-02 05:29:15 JST +0900"
 planned_execution_start:
 planned_execution_end:
 actual_execution_start: "2026-05-02 03:00:00 JST +0900"
@@ -32,6 +32,7 @@ related_sessions:
   - session-logs/2026-05-02-plan-0005-slice-a-manifest-foundation.md
   - session-logs/2026-05-02-plan-0005-slice-b-doctor-upgrade-dry-run.md
   - session-logs/2026-05-02-plan-0005-post-review-upgrade-semantics.md
+  - session-logs/2026-05-02-plan-0005-slice-c-tooling-only-write-mode.md
 related_issues: []
 related_prs: []
 repo_state:
@@ -47,8 +48,9 @@ mode.
 
 **Architecture:** Build trust in layers. First record what AGENT-DOCS installed,
 then make drift visible without writing, then preview upgrade categories, and
-only then allow writes for manifest-recognized AGENT-DOCS-owned tooling,
-generated views, and non-conflicting additions.
+only then allow writes for manifest-recognized AGENT-DOCS-owned tooling and
+non-conflicting additions. Generated views stay report-only in this plan until a
+separate generator-specific write slice proves that path.
 
 **Tech Stack:** Bash installer, Python `agent-docs` and `agent-docs-init` entry
 points, JSON manifest files, Markdown scaffold, `docs-meta`, smoke tests, and
@@ -230,7 +232,8 @@ is trusted.
 - Update AGENT-DOCS-owned tooling when the current checksum matches the manifest
   base.
 - Add missing non-conflicting AGENT-DOCS-owned files.
-- Regenerate generated views through the installed generator.
+- Leave generated views report-only for this slice; a future generator-specific
+  write slice can regenerate them after the tooling-only path is proven.
 - Create a backup plan for touched files before writing.
 - Write files through temp paths or another safe replacement path where
   practical.
@@ -245,6 +248,7 @@ Verification:
 - Manifest checksums update only after successful writes.
 - Backups are created before touched files are replaced.
 - `agent-docs upgrade` without flags remains read-only.
+- Generated views remain report-only and are not advertised as write-mode work.
 
 ### Task 6: Document And Gate The Workflow
 
@@ -281,6 +285,7 @@ lands.
 - [x] Existing installs have a deliberate baseline path or remain manual-review.
 - [x] `doctor` is read-only and classifies install state deterministically.
 - [x] Upgrade dry-run reports safe, manual-review, refused, and unknown work.
-- [ ] Tooling-only write mode updates only manifest-recognized safe files.
+- [x] Tooling-only write mode updates only manifest-recognized safe owned
+  tooling; generated views remain report-only.
 - [x] Project-owned Markdown is never overwritten by default.
 - [x] Release-check and CI cover the shipped command path.

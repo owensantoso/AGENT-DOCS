@@ -64,6 +64,12 @@ require_contains "$tmpdir/healthy-doctor.out" "agent-docs doctor $healthy_target
 require_exit 0 "$tmpdir/healthy-upgrade.out" "$agent_docs" upgrade --dry-run "$healthy_target"
 require_contains "$tmpdir/healthy-upgrade.out" "AGENT-DOCS upgrade dry-run"
 require_contains "$tmpdir/healthy-upgrade.out" "Status: healthy/current"
+snapshot_tree "$healthy_target" "$tmpdir/healthy-before-bare-upgrade.sha"
+require_exit 0 "$tmpdir/healthy-bare-upgrade.out" "$agent_docs" upgrade "$healthy_target"
+snapshot_tree "$healthy_target" "$tmpdir/healthy-after-bare-upgrade.sha"
+cmp "$tmpdir/healthy-before-bare-upgrade.sha" "$tmpdir/healthy-after-bare-upgrade.sha"
+require_contains "$tmpdir/healthy-bare-upgrade.out" "AGENT-DOCS upgrade dry-run"
+require_contains "$tmpdir/healthy-bare-upgrade.out" "Status: healthy/current"
 
 missing_project_owned_target="$tmpdir/missing-project-owned"
 "$installer" "$missing_project_owned_target" --profile small --docs-meta yes --write >"$tmpdir/missing-project-owned-install.out"
@@ -499,4 +505,299 @@ require_contains "$tmpdir/mixed-upgrade.out" "refused/unknown/incompatible shape
 require_contains "$tmpdir/mixed-upgrade.out" "../escape.txt"
 
 require_exit 2 "$tmpdir/write-refused.out" "$agent_docs" upgrade --write "$healthy_target"
-require_contains "$tmpdir/write-refused.out" 'Only `agent-docs upgrade --dry-run [target]` is supported'
+require_contains "$tmpdir/write-refused.out" '`agent-docs upgrade --write` requires `--tooling-only`'
+
+write_missing_target="$tmpdir/write-missing-tool"
+"$installer" "$write_missing_target" --profile small --docs-meta yes --write >"$tmpdir/write-missing-tool-install.out"
+rm "$write_missing_target/scripts/docs-meta"
+require_exit 0 "$tmpdir/write-missing-tool.out" "$agent_docs" upgrade --write --tooling-only "$write_missing_target"
+require_file "$write_missing_target/scripts/docs-meta"
+require_contains "$tmpdir/write-missing-tool.out" "AGENT-DOCS upgrade write tooling-only"
+require_contains "$tmpdir/write-missing-tool.out" "Restored: scripts/docs-meta"
+python3 - "$write_missing_target" "$repo_root/scripts/docs-meta" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+upstream = pathlib.Path(sys.argv[2])
+manifest = json.loads((target / ".agent-docs/manifest.json").read_text(encoding="utf-8"))
+records = {record["path"]: record for record in manifest["files"]}
+record = records["scripts/docs-meta"]
+expected = hashlib.sha256(upstream.read_bytes()).hexdigest()
+assert record["checksum_sha256"] == expected
+assert record["source"]["path"] == "scripts/docs-meta"
+assert record["source"]["type"] == "agent-docs-action"
+assert manifest["source"]["commit"]
+assert manifest["updated_at"]
+PY
+
+write_update_target="$tmpdir/write-update-tool"
+"$installer" "$write_update_target" --profile small --docs-meta yes --write >"$tmpdir/write-update-tool-install.out"
+python3 - "$write_update_target" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+tool = target / "scripts/docs-meta"
+tool.write_text("#!/usr/bin/env python3\nprint('old docs-meta')\n", encoding="utf-8")
+tool.chmod(tool.stat().st_mode | 0o111)
+old_checksum = hashlib.sha256(tool.read_bytes()).hexdigest()
+manifest_path = target / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["source"]["commit"] = "old-commit"
+for record in manifest["files"]:
+    if record["path"] == "scripts/docs-meta":
+        record["checksum_sha256"] = old_checksum
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 0 "$tmpdir/write-update-tool.out" "$agent_docs" upgrade --write --tooling-only "$write_update_target"
+require_contains "$tmpdir/write-update-tool.out" "Updated: scripts/docs-meta"
+require_contains "$tmpdir/write-update-tool.out" "Backup: .agent-docs/backups/"
+python3 - "$write_update_target" "$repo_root/scripts/docs-meta" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+upstream = pathlib.Path(sys.argv[2])
+manifest = json.loads((target / ".agent-docs/manifest.json").read_text(encoding="utf-8"))
+records = {record["path"]: record for record in manifest["files"]}
+expected = hashlib.sha256(upstream.read_bytes()).hexdigest()
+assert hashlib.sha256((target / "scripts/docs-meta").read_bytes()).hexdigest() == expected
+assert records["scripts/docs-meta"]["checksum_sha256"] == expected
+assert records["scripts/docs-meta"]["source"]["path"] == "scripts/docs-meta"
+assert records["scripts/docs-meta"]["mode"] == "755"
+assert manifest["source"]["commit"] != "old-commit"
+backups = list((target / ".agent-docs/backups").glob("*/scripts/docs-meta"))
+assert backups, "expected replaced file backup"
+assert any(path.read_text(encoding="utf-8") == "#!/usr/bin/env python3\nprint('old docs-meta')\n" for path in backups)
+PY
+
+write_mode_target="$tmpdir/write-mode-repair"
+"$installer" "$write_mode_target" --profile small --docs-meta yes --write >"$tmpdir/write-mode-repair-install.out"
+chmod 644 "$write_mode_target/scripts/docs-meta"
+require_exit 0 "$tmpdir/write-mode-repair.out" "$agent_docs" upgrade --write --tooling-only "$write_mode_target"
+require_contains "$tmpdir/write-mode-repair.out" "Repaired executable bit: scripts/docs-meta"
+test -x "$write_mode_target/scripts/docs-meta"
+python3 - "$write_mode_target/scripts/docs-meta" <<'PY'
+import pathlib
+import stat
+import sys
+
+mode = stat.S_IMODE(pathlib.Path(sys.argv[1]).stat().st_mode)
+assert mode == 0o755, oct(mode)
+PY
+find "$write_mode_target/.agent-docs/backups" -type f -path "*/scripts/docs-meta" | grep -q .
+
+write_mode_drift_target="$tmpdir/write-mode-drift-refused"
+"$installer" "$write_mode_drift_target" --profile small --docs-meta yes --write >"$tmpdir/write-mode-drift-install.out"
+chmod 777 "$write_mode_drift_target/scripts/docs-meta"
+snapshot_tree "$write_mode_drift_target" "$tmpdir/write-mode-drift-before.sha"
+require_exit 2 "$tmpdir/write-mode-drift.out" "$agent_docs" upgrade --write --tooling-only "$write_mode_drift_target"
+snapshot_tree "$write_mode_drift_target" "$tmpdir/write-mode-drift-after.sha"
+cmp "$tmpdir/write-mode-drift-before.sha" "$tmpdir/write-mode-drift-after.sha"
+require_contains "$tmpdir/write-mode-drift.out" "current mode 777 differs from manifest mode 755"
+require_contains "$tmpdir/write-mode-drift.out" "refusing tooling-only write"
+
+write_missing_mode_target="$tmpdir/write-missing-mode-refused"
+"$installer" "$write_missing_mode_target" --profile small --docs-meta yes --write >"$tmpdir/write-missing-mode-install.out"
+python3 - "$write_missing_mode_target" <<'PY'
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+manifest_path = target / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+for record in manifest["files"]:
+    if record["path"] == "scripts/docs-meta":
+        record.pop("mode", None)
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+chmod 777 "$write_missing_mode_target/scripts/docs-meta"
+snapshot_tree "$write_missing_mode_target" "$tmpdir/write-missing-mode-before.sha"
+require_exit 2 "$tmpdir/write-missing-mode.out" "$agent_docs" upgrade --write --tooling-only "$write_missing_mode_target"
+snapshot_tree "$write_missing_mode_target" "$tmpdir/write-missing-mode-after.sha"
+cmp "$tmpdir/write-missing-mode-before.sha" "$tmpdir/write-missing-mode-after.sha"
+require_contains "$tmpdir/write-missing-mode.out" "agent-docs-owned mode must be recorded as a string"
+require_contains "$tmpdir/write-missing-mode.out" "refusing tooling-only write"
+
+write_missing_mode_missing_file_target="$tmpdir/write-missing-mode-missing-file-refused"
+"$installer" "$write_missing_mode_missing_file_target" --profile small --docs-meta yes --write >"$tmpdir/write-missing-mode-missing-file-install.out"
+python3 - "$write_missing_mode_missing_file_target" <<'PY'
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+manifest_path = target / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+for record in manifest["files"]:
+    if record["path"] == "scripts/docs-meta":
+        record.pop("mode", None)
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+rm "$write_missing_mode_missing_file_target/scripts/docs-meta"
+snapshot_tree "$write_missing_mode_missing_file_target" "$tmpdir/write-missing-mode-missing-file-before.sha"
+require_exit 2 "$tmpdir/write-missing-mode-missing-file.out" "$agent_docs" upgrade --write --tooling-only "$write_missing_mode_missing_file_target"
+snapshot_tree "$write_missing_mode_missing_file_target" "$tmpdir/write-missing-mode-missing-file-after.sha"
+cmp "$tmpdir/write-missing-mode-missing-file-before.sha" "$tmpdir/write-missing-mode-missing-file-after.sha"
+require_absent "$write_missing_mode_missing_file_target/scripts/docs-meta"
+require_contains "$tmpdir/write-missing-mode-missing-file.out" "agent-docs-owned mode must be recorded as a string"
+require_contains "$tmpdir/write-missing-mode-missing-file.out" "refusing tooling-only write"
+
+write_hardlink_target="$tmpdir/write-hardlink-repair"
+"$installer" "$write_hardlink_target" --profile small --docs-meta yes --write >"$tmpdir/write-hardlink-install.out"
+write_outside_hardlink="$tmpdir/write-outside-hardlink-docs-meta"
+rm "$write_hardlink_target/scripts/docs-meta"
+cp "$repo_root/scripts/docs-meta" "$write_outside_hardlink"
+chmod 644 "$write_outside_hardlink"
+ln "$write_outside_hardlink" "$write_hardlink_target/scripts/docs-meta"
+outside_hardlink_before="$(shasum -a 256 "$write_outside_hardlink")"
+outside_hardlink_mode_before="$(stat -f '%Lp' "$write_outside_hardlink")"
+require_exit 0 "$tmpdir/write-hardlink.out" "$agent_docs" upgrade --write --tooling-only "$write_hardlink_target"
+outside_hardlink_after="$(shasum -a 256 "$write_outside_hardlink")"
+outside_hardlink_mode_after="$(stat -f '%Lp' "$write_outside_hardlink")"
+test "$outside_hardlink_before" = "$outside_hardlink_after"
+test "$outside_hardlink_mode_before" = "$outside_hardlink_mode_after"
+test -x "$write_hardlink_target/scripts/docs-meta"
+require_contains "$tmpdir/write-hardlink.out" "Repaired executable bit: scripts/docs-meta"
+
+write_drift_target="$tmpdir/write-drift-refused"
+"$installer" "$write_drift_target" --profile small --docs-meta yes --write >"$tmpdir/write-drift-install.out"
+printf '\n# local drift\n' >>"$write_drift_target/scripts/docs-meta"
+snapshot_tree "$write_drift_target" "$tmpdir/write-drift-before.sha"
+require_exit 2 "$tmpdir/write-drift.out" "$agent_docs" upgrade --write --tooling-only "$write_drift_target"
+snapshot_tree "$write_drift_target" "$tmpdir/write-drift-after.sha"
+cmp "$tmpdir/write-drift-before.sha" "$tmpdir/write-drift-after.sha"
+require_contains "$tmpdir/write-drift.out" "checksum drift/local modification"
+require_contains "$tmpdir/write-drift.out" "refusing tooling-only write"
+
+write_symlink_target="$tmpdir/write-symlink-refused"
+"$installer" "$write_symlink_target" --profile small --docs-meta yes --write >"$tmpdir/write-symlink-install.out"
+write_outside_scripts="$tmpdir/write-outside-scripts"
+mkdir -p "$write_outside_scripts"
+rm -rf "$write_symlink_target/scripts"
+ln -s "$write_outside_scripts" "$write_symlink_target/scripts"
+printf 'outside stays put\n' >"$write_outside_scripts/docs-meta"
+snapshot_tree "$write_symlink_target" "$tmpdir/write-symlink-before.sha"
+outside_before="$(shasum -a 256 "$write_outside_scripts/docs-meta")"
+require_exit 2 "$tmpdir/write-symlink.out" "$agent_docs" upgrade --write --tooling-only "$write_symlink_target"
+snapshot_tree "$write_symlink_target" "$tmpdir/write-symlink-after.sha"
+outside_after="$(shasum -a 256 "$write_outside_scripts/docs-meta")"
+cmp "$tmpdir/write-symlink-before.sha" "$tmpdir/write-symlink-after.sha"
+test "$outside_before" = "$outside_after"
+require_contains "$tmpdir/write-symlink.out" "existing symlink inside target"
+require_contains "$tmpdir/write-symlink.out" "refusing tooling-only write"
+
+write_backup_symlink_target="$tmpdir/write-backup-symlink-refused"
+"$installer" "$write_backup_symlink_target" --profile small --docs-meta yes --write >"$tmpdir/write-backup-symlink-install.out"
+python3 - "$write_backup_symlink_target" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+tool = target / "scripts/docs-meta"
+tool.write_text("#!/usr/bin/env python3\nprint('old docs-meta')\n", encoding="utf-8")
+tool.chmod(tool.stat().st_mode | 0o111)
+old_checksum = hashlib.sha256(tool.read_bytes()).hexdigest()
+manifest_path = target / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+for record in manifest["files"]:
+    if record["path"] == "scripts/docs-meta":
+        record["checksum_sha256"] = old_checksum
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+write_outside_backups="$tmpdir/write-outside-backups"
+mkdir -p "$write_outside_backups"
+ln -s "$write_outside_backups" "$write_backup_symlink_target/.agent-docs/backups"
+snapshot_tree "$write_backup_symlink_target" "$tmpdir/write-backup-symlink-before.sha"
+require_exit 2 "$tmpdir/write-backup-symlink.out" "$agent_docs" upgrade --write --tooling-only "$write_backup_symlink_target"
+snapshot_tree "$write_backup_symlink_target" "$tmpdir/write-backup-symlink-after.sha"
+cmp "$tmpdir/write-backup-symlink-before.sha" "$tmpdir/write-backup-symlink-after.sha"
+if find "$write_outside_backups" -mindepth 1 -print | grep -q .; then
+  echo "Expected backup symlink refusal to leave outside backup directory untouched" >&2
+  find "$write_outside_backups" -mindepth 1 -print >&2
+  exit 1
+fi
+require_contains "$tmpdir/write-backup-symlink.out" "backup path would traverse existing symlink inside target"
+require_contains "$tmpdir/write-backup-symlink.out" "refusing tooling-only write"
+
+write_backup_nested_symlink_target="$tmpdir/write-backup-nested-symlink-refused"
+"$installer" "$write_backup_nested_symlink_target" --profile small --docs-meta yes --write >"$tmpdir/write-backup-nested-symlink-install.out"
+python3 - "$write_backup_nested_symlink_target" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+tool = target / "scripts/docs-meta"
+tool.write_text("#!/usr/bin/env python3\nprint('old docs-meta')\n", encoding="utf-8")
+tool.chmod(tool.stat().st_mode | 0o111)
+old_checksum = hashlib.sha256(tool.read_bytes()).hexdigest()
+manifest_path = target / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+for record in manifest["files"]:
+    if record["path"] == "scripts/docs-meta":
+        record["checksum_sha256"] = old_checksum
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+write_outside_nested_backups="$tmpdir/write-outside-nested-backups"
+mkdir -p "$write_outside_nested_backups"
+python3 - "$write_backup_nested_symlink_target" "$write_outside_nested_backups" <<'PY'
+import datetime
+import os
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+outside = pathlib.Path(sys.argv[2])
+backup_parent = target / ".agent-docs/backups"
+backup_parent.mkdir(parents=True, exist_ok=True)
+now = datetime.datetime.now(datetime.timezone.utc)
+for offset in range(-1, 5):
+    root = backup_parent / (now + datetime.timedelta(seconds=offset)).strftime("%Y%m%dT%H%M%SZ")
+    root.mkdir(parents=True, exist_ok=True)
+    symlink = root / "scripts"
+    if not symlink.exists():
+        os.symlink(outside, symlink)
+PY
+require_exit 2 "$tmpdir/write-backup-nested-symlink.out" "$agent_docs" upgrade --write --tooling-only "$write_backup_nested_symlink_target"
+if find "$write_outside_nested_backups" -mindepth 1 -print | grep -q .; then
+  echo "Expected nested backup symlink refusal to leave outside backup directory untouched" >&2
+  find "$write_outside_nested_backups" -mindepth 1 -print >&2
+  exit 1
+fi
+require_contains "$tmpdir/write-backup-nested-symlink.out" "backup destination would traverse existing symlink inside target"
+require_contains "$tmpdir/write-backup-nested-symlink.out" "refusing tooling-only write"
+
+write_parent_file_target="$tmpdir/write-parent-file-refused"
+"$installer" "$write_parent_file_target" --profile small --docs-meta yes --write >"$tmpdir/write-parent-file-install.out"
+rm -rf "$write_parent_file_target/scripts"
+printf 'not a directory\n' >"$write_parent_file_target/scripts"
+require_exit 2 "$tmpdir/write-parent-file.out" "$agent_docs" upgrade --write --tooling-only "$write_parent_file_target"
+require_absent "$write_parent_file_target/.agent-docs/backups"
+require_contains "$tmpdir/write-parent-file.out" "path parent is not a directory"
+require_contains "$tmpdir/write-parent-file.out" "refusing tooling-only write"
+if grep -Fq -- "Traceback" "$tmpdir/write-parent-file.out"; then
+  echo "Expected parent file conflict refusal without traceback" >&2
+  cat "$tmpdir/write-parent-file.out" >&2
+  exit 1
+fi
+
+write_project_owned_target="$tmpdir/write-project-owned"
+"$installer" "$write_project_owned_target" --profile small --docs-meta yes --write >"$tmpdir/write-project-owned-install.out"
+printf '# Local Agents\n\nLocal truth.\n' >"$write_project_owned_target/AGENTS.md"
+project_owned_before="$(shasum -a 256 "$write_project_owned_target/AGENTS.md")"
+require_exit 0 "$tmpdir/write-project-owned.out" "$agent_docs" upgrade --write --tooling-only "$write_project_owned_target"
+project_owned_after="$(shasum -a 256 "$write_project_owned_target/AGENTS.md")"
+test "$project_owned_before" = "$project_owned_after"
+require_contains "$tmpdir/write-project-owned.out" "project-owned/manual-review items"

@@ -142,6 +142,9 @@ for path in ("scripts/docs-meta", "tests/docs-meta-smoke.sh"):
     expected = hashlib.sha256((target / path).read_bytes()).hexdigest()
     if record.get("checksum_sha256") != expected:
         raise SystemExit(f"Expected checksum for {path}")
+    expected_mode = "755"
+    if record.get("mode") != expected_mode:
+        raise SystemExit(f"Expected mode {expected_mode} for {path}")
 for path in ("AGENTS.md", "docs/CURRENT_STATE.md"):
     if records[path].get("ownership") != "project-owned-after-install":
         raise SystemExit(f"Expected {path} to be project-owned after install")

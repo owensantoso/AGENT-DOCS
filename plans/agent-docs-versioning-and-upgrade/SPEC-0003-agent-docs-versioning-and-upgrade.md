@@ -59,8 +59,9 @@ to:
   AGENT-DOCS changes.
 - Let target repos inspect their installed AGENT-DOCS shape and drift without
   writing files.
-- Allow narrow, safe automatic updates for AGENT-DOCS-owned tooling and generated
-  artifacts.
+- Allow narrow, safe automatic updates for AGENT-DOCS-owned tooling first, with
+  generated artifacts left report-only until a generator-specific write slice is
+  proven.
 - Keep customized project docs protected by default.
 - Make CI able to enforce that adopter-facing AGENT-DOCS changes are documented.
 - Preserve a simple workflow that does not turn every small commit into release
@@ -137,7 +138,7 @@ The manifest should include:
 - selected profile;
 - installed optional components, such as `docs-meta`;
 - installed file records for AGENT-DOCS-owned files;
-- checksums for AGENT-DOCS-owned files only;
+- checksums and expected file modes for AGENT-DOCS-owned files only;
 - generated-view records when applicable;
 - install or last-upgrade timestamp.
 
@@ -232,8 +233,12 @@ Write mode may:
 - update `agent-docs-owned` tooling when the current checksum matches the
   manifest base;
 - add missing non-conflicting AGENT-DOCS-owned files;
-- regenerate generated views through the target repo's installed generator;
 - update `.agent-docs/manifest.json`.
+
+Generated views remain report-only in the first tooling-only write
+implementation. A later generated-view write slice may regenerate manifest-
+tracked generated views through the target repo's installed generator after that
+path has its own safety checks.
 
 Write mode must not:
 
@@ -301,8 +306,9 @@ Usually deterministic:
 
 - updating manifest-clean AGENT-DOCS-owned tooling;
 - adding missing non-conflicting AGENT-DOCS-owned files;
-- regenerating manifest-tracked generated views through known generators;
 - adding new generated views where the component/profile owns them.
+- regenerating manifest-tracked generated views through known generators, after
+  a generator-specific write slice exists.
 
 Usually manual/adaptive:
 
@@ -385,8 +391,9 @@ only the boring safe part should happen.
 - `agent-docs doctor` can classify an installed target repo without writing
   files.
 - Upgrade dry-run can show safe, manual-review, and refused changes by category.
-- Tooling-only write mode updates only manifest-recognized AGENT-DOCS-owned files,
-  generated views, and non-conflicting additions.
+- Tooling-only write mode updates only manifest-recognized AGENT-DOCS-owned files
+  and non-conflicting additions; generated views remain report-only until a
+  generator-specific write slice exists.
 - Project-owned Markdown is never overwritten by default.
 
 ## Promotion Notes

@@ -10,10 +10,14 @@ import importlib.machinery
 import json
 import os
 import re
+import shutil
+import stat
 import subprocess
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -45,6 +49,15 @@ class Report:
         return any(self.categories.get(category) for category in categories)
 
 
+@dataclass
+class ToolingOperation:
+    kind: str
+    relpath: Path
+    action: object
+    record: dict | None
+    backup_relpath: Path | None = None
+
+
 WARNING_CATEGORIES = {
     "missing manifest/legacy/manual review",
     "missing AGENT-DOCS-owned tooling",
@@ -64,7 +77,7 @@ def print_help() -> None:
 Commands:
   init      Install an AGENT-DOCS scaffold profile into a target repository.
   doctor    Read-only install and drift report.
-  upgrade   Safe upgrade preview. This slice supports --dry-run only.
+  upgrade   Safe upgrade preview, or --write --tooling-only for owned tooling.
 
 Exit codes:
   0 healthy/current
@@ -103,6 +116,12 @@ def action_checksum(action) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def action_content(action) -> bytes:
+    if action.source:
+        return action.source.read_bytes()
+    return (action.content or "").encode("utf-8")
+
+
 def safe_manifest_relpath(value: object) -> Path | None:
     if not isinstance(value, str) or not value:
         return None
@@ -121,6 +140,15 @@ def existing_symlink_in_target_path(target: Path, relpath: Path) -> Path | None:
     for index, part in enumerate(relpath.parts):
         current = current / part
         if current.is_symlink():
+            return Path(*relpath.parts[: index + 1])
+    return None
+
+
+def existing_non_directory_parent_in_target_path(target: Path, relpath: Path) -> Path | None:
+    current = target
+    for index, part in enumerate(relpath.parts[:-1]):
+        current = current / part
+        if current.exists() and not current.is_dir():
             return Path(*relpath.parts[: index + 1])
     return None
 
@@ -148,6 +176,132 @@ def safe_checksum(path: Path) -> tuple[str | None, str | None]:
         return checksum(path), None
     except OSError as error:
         return None, f"could not read file for checksum: {error}"
+
+
+def utc_timestamp() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def backup_timestamp() -> str:
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def action_mode(action) -> str:
+    return "755" if action.executable else "644"
+
+
+def expected_mode_value(action) -> int:
+    return 0o755 if action.executable else 0o644
+
+
+def file_mode(path: Path) -> str:
+    return f"{stat.S_IMODE(path.stat().st_mode):03o}"
+
+
+def current_source_metadata(init_module) -> dict:
+    return {
+        "repository": init_module.git_output(["config", "--get", "remote.origin.url"]),
+        "ref": init_module.git_output(["symbolic-ref", "--quiet", "--short", "HEAD"]),
+        "commit": init_module.git_output(["rev-parse", "--verify", "HEAD"]),
+        "path": str(init_module.REPO_ROOT),
+    }
+
+
+def source_metadata_for_action(action) -> dict:
+    return {
+        "type": "agent-docs-action",
+        "path": action.relpath.as_posix(),
+    }
+
+
+def update_owned_record(record: dict, action) -> None:
+    record["checksum_sha256"] = action_checksum(action)
+    record["mode"] = action_mode(action)
+    record["source"] = source_metadata_for_action(action)
+
+
+def atomic_write_bytes(destination: Path, data: bytes, executable: bool) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temp_path: str | None = None
+    try:
+        with NamedTemporaryFile("wb", dir=destination.parent, prefix=f".{destination.name}.", delete=False) as temp_file:
+            temp_file.write(data)
+            temp_path = temp_file.name
+        temp = Path(temp_path)
+        temp.chmod(0o755 if executable else 0o644)
+        os.replace(temp, destination)
+    finally:
+        if temp_path is not None:
+            try:
+                Path(temp_path).unlink()
+            except FileNotFoundError:
+                pass
+
+
+def atomic_write_json(destination: Path, data: dict) -> None:
+    atomic_write_bytes(
+        destination,
+        (json.dumps(data, indent=2, sort_keys=True) + "\n").encode("utf-8"),
+        executable=False,
+    )
+
+
+def backup_destination_refusal(target: Path, backup_root: Path, relpath: Path) -> Finding | None:
+    backup = backup_root / relpath
+    backup_relpath = backup.relative_to(target)
+    symlink_relpath = existing_symlink_in_target_path(target, backup_relpath)
+    if symlink_relpath is not None:
+        return Finding(
+            backup_relpath.as_posix(),
+            f"backup destination would traverse existing symlink inside target: {symlink_relpath}",
+        )
+    non_directory_parent = existing_non_directory_parent_in_target_path(target, backup_relpath)
+    if non_directory_parent is not None:
+        return Finding(
+            backup_relpath.as_posix(),
+            f"backup destination parent is not a directory: {non_directory_parent}",
+        )
+    try:
+        target_resolved = target.resolve()
+        backup_resolved = backup.resolve(strict=False)
+        backup_resolved.relative_to(target_resolved)
+    except (OSError, ValueError) as error:
+        return Finding(backup_relpath.as_posix(), f"backup destination resolves outside target: {error}")
+    return None
+
+
+def backup_existing_file(target: Path, backup_root: Path, relpath: Path) -> Path:
+    refusal = backup_destination_refusal(target, backup_root, relpath)
+    if refusal is not None:
+        raise RuntimeError(refusal.reason)
+    source = target / relpath
+    backup = backup_root / relpath
+    backup.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, backup)
+    return backup.relative_to(target)
+
+
+def backup_root_refusal(target: Path, backup_root: Path) -> Finding | None:
+    relpath = backup_root.relative_to(target)
+    symlink_relpath = existing_symlink_in_target_path(target, relpath)
+    if symlink_relpath is not None:
+        return Finding(
+            relpath.as_posix(),
+            f"backup path would traverse existing symlink inside target: {symlink_relpath}",
+        )
+    non_directory_parent = existing_non_directory_parent_in_target_path(target, relpath)
+    if non_directory_parent is not None:
+        return Finding(
+            relpath.as_posix(),
+            f"backup path parent is not a directory: {non_directory_parent}",
+        )
+    try:
+        target_resolved = target.resolve()
+        backup_resolved = backup_root.resolve(strict=False)
+        backup_resolved.relative_to(target_resolved)
+    except (OSError, ValueError) as error:
+        return Finding(relpath.as_posix(), f"backup path resolves outside target: {error}")
+    return None
 
 
 def read_manifest(report: Report) -> dict | None:
@@ -276,6 +430,14 @@ def classify_target(target: Path) -> Report:
                 f"path would traverse existing symlink inside target: {symlink_relpath}",
             )
             continue
+        non_directory_parent = existing_non_directory_parent_in_target_path(report.target, relpath)
+        if non_directory_parent is not None:
+            report.add(
+                "refused/unknown/incompatible shapes",
+                relpath,
+                f"path parent is not a directory: {non_directory_parent}",
+            )
+            continue
 
         if ownership == "agent-docs-owned":
             manifest_checksum = record.get("checksum_sha256")
@@ -294,6 +456,21 @@ def classify_target(target: Path) -> Report:
                     "agent-docs-owned file is not known in this AGENT-DOCS version",
                 )
                 continue
+            manifest_mode = record.get("mode")
+            if not isinstance(manifest_mode, str):
+                report.add(
+                    "refused/unknown/incompatible shapes",
+                    relpath,
+                    "agent-docs-owned mode must be recorded as a string",
+                )
+                continue
+            if manifest_mode != action_mode(upstream_action):
+                report.add(
+                    "refused/unknown/incompatible shapes",
+                    relpath,
+                    f"agent-docs-owned mode must be {action_mode(upstream_action)!r} for this upstream action",
+                )
+                continue
             if not destination.exists():
                 report.add("missing AGENT-DOCS-owned tooling", relpath, "manifest records this owned file, but it is missing")
                 report.add("safe automatic additions", relpath, "missing owned tooling can be restored from AGENT-DOCS upstream")
@@ -307,6 +484,13 @@ def classify_target(target: Path) -> Report:
                     "checksum drift/local modification",
                     relpath,
                     "current checksum differs from manifest; requires manual review before any automatic update",
+                )
+                continue
+            if file_mode(destination) != manifest_mode and not (upstream_action.executable and not os.access(destination, os.X_OK)):
+                report.add(
+                    "checksum drift/local modification",
+                    relpath,
+                    f"current mode {file_mode(destination)} differs from manifest mode {manifest_mode}",
                 )
                 continue
             if upstream_action.executable and not os.access(destination, os.X_OK):
@@ -355,6 +539,14 @@ def classify_target(target: Path) -> Report:
                 f"path would traverse existing symlink inside target: {symlink_relpath}",
             )
             continue
+        non_directory_parent = existing_non_directory_parent_in_target_path(report.target, upstream_action.relpath)
+        if non_directory_parent is not None:
+            report.add(
+                "refused/unknown/incompatible shapes",
+                upstream_action.relpath,
+                f"path parent is not a directory: {non_directory_parent}",
+            )
+            continue
         if destination.exists():
             report.add(
                 "refused/unknown/incompatible shapes",
@@ -390,6 +582,14 @@ def classify_target(target: Path) -> Report:
                 "refused/unknown/incompatible shapes",
                 relpath,
                 f"path would traverse existing symlink inside target: {symlink_relpath}",
+            )
+            continue
+        non_directory_parent = existing_non_directory_parent_in_target_path(report.target, relpath)
+        if non_directory_parent is not None:
+            report.add(
+                "refused/unknown/incompatible shapes",
+                relpath,
+                f"path parent is not a directory: {non_directory_parent}",
             )
             continue
         destination = report.target / relpath
@@ -500,17 +700,225 @@ def doctor(args: list[str]) -> int:
     return report_exit_code(report)
 
 
+def manifest_and_upstream_actions(target: Path, report: Report) -> tuple[dict | None, dict[str, object], object | None]:
+    manifest = read_manifest(report)
+    if manifest is None:
+        return None, {}, None
+    init_module = load_init_module()
+    profile_key = manifest.get("profile") if isinstance(manifest.get("profile"), str) else None
+    optional_components = manifest.get("optional_components", [])
+    include_docs_meta = isinstance(optional_components, list) and "docs-meta" in optional_components
+    if profile_key not in init_module.PROFILES:
+        return manifest, {}, init_module
+    profile = init_module.PROFILES[profile_key]
+    return (
+        manifest,
+        {
+            action.relpath.as_posix(): action
+            for action in init_module.profile_actions(profile, include_docs_meta)
+            if init_module.action_ownership(action) == "agent-docs-owned"
+        },
+        init_module,
+    )
+
+
+def build_tooling_operations(report: Report) -> tuple[list[ToolingOperation], list[Finding], dict | None, object | None]:
+    validation_report = Report(target=report.target)
+    manifest, upstream_actions, init_module = manifest_and_upstream_actions(report.target, validation_report)
+    if manifest is None:
+        return [], [finding for findings in validation_report.categories.values() for finding in findings], None, init_module
+
+    operations: list[ToolingOperation] = []
+    blocking_drift: list[Finding] = []
+    seen_paths: set[str] = set()
+    files = manifest.get("files", [])
+    if not isinstance(files, list):
+        return [], [Finding("files", "manifest files field is not a list")], manifest, init_module
+
+    for record in files:
+        if not isinstance(record, dict):
+            continue
+        relpath = safe_manifest_relpath(record.get("path"))
+        if relpath is None:
+            continue
+        rel = relpath.as_posix()
+        seen_paths.add(rel)
+        if record.get("ownership") != "agent-docs-owned":
+            continue
+        action = upstream_actions.get(rel)
+        if action is None:
+            continue
+        manifest_checksum = record.get("checksum_sha256")
+        if not valid_sha256(manifest_checksum):
+            continue
+        manifest_mode = record.get("mode")
+        if not isinstance(manifest_mode, str):
+            blocking_drift.append(
+                Finding(
+                    relpath.as_posix(),
+                    "agent-docs-owned mode must be recorded as a string",
+                )
+            )
+            continue
+        if manifest_mode != action_mode(action):
+            blocking_drift.append(
+                Finding(
+                    relpath.as_posix(),
+                    f"manifest mode {manifest_mode!r} does not match expected mode {action_mode(action)!r}",
+                )
+            )
+            continue
+        destination = report.target / relpath
+        if not destination.exists():
+            operations.append(ToolingOperation("restore", relpath, action, record))
+            continue
+        current_checksum, checksum_error = safe_checksum(destination)
+        if checksum_error is not None or current_checksum is None:
+            continue
+        if current_checksum != manifest_checksum:
+            blocking_drift.append(
+                Finding(
+                    relpath.as_posix(),
+                    "current checksum differs from manifest; refusing tooling-only write",
+                )
+            )
+            continue
+        if file_mode(destination) != manifest_mode:
+            if action.executable and not os.access(destination, os.X_OK):
+                operations.append(ToolingOperation("chmod", relpath, action, record))
+            else:
+                blocking_drift.append(
+                    Finding(
+                        relpath.as_posix(),
+                        f"current mode {file_mode(destination)} differs from manifest mode {manifest_mode}",
+                    )
+                )
+            continue
+        upstream_checksum = action_checksum(action)
+        if upstream_checksum != manifest_checksum:
+            operations.append(ToolingOperation("update", relpath, action, record))
+        elif action.executable and not os.access(destination, os.X_OK):
+            operations.append(ToolingOperation("chmod", relpath, action, record))
+
+    for rel, action in sorted(upstream_actions.items()):
+        if rel in seen_paths:
+            continue
+        destination = report.target / action.relpath
+        if not destination.exists():
+            operations.append(ToolingOperation("add", action.relpath, action, None))
+
+    return operations, blocking_drift, manifest, init_module
+
+
+def write_audit(backup_root: Path, operations: list[ToolingOperation]) -> None:
+    audit = {
+        "created_at": utc_timestamp(),
+        "operation": "agent-docs upgrade --write --tooling-only",
+        "touched": [
+            {
+                "path": operation.relpath.as_posix(),
+                "kind": operation.kind,
+                "backup": operation.backup_relpath.as_posix() if operation.backup_relpath else None,
+            }
+            for operation in operations
+        ],
+    }
+    atomic_write_json(backup_root / "audit.json", audit)
+
+
+def apply_tooling_operations(report: Report, operations: list[ToolingOperation], manifest: dict, init_module, backup_root: Path) -> None:
+    backup_root.mkdir(parents=True, exist_ok=True)
+    if (report.target / MANIFEST_PATH).is_file():
+        backup_existing_file(report.target, backup_root, MANIFEST_PATH)
+
+    files = manifest.setdefault("files", [])
+    for operation in operations:
+        destination = report.target / operation.relpath
+        if operation.kind in {"update", "chmod"} and destination.exists():
+            operation.backup_relpath = backup_existing_file(report.target, backup_root, operation.relpath)
+        if operation.kind == "chmod":
+            atomic_write_bytes(destination, action_content(operation.action), operation.action.executable)
+            if operation.record is not None:
+                update_owned_record(operation.record, operation.action)
+            print(f"Repaired executable bit: {operation.relpath}")
+            print(f"Backup: {operation.backup_relpath}")
+            continue
+
+        atomic_write_bytes(destination, action_content(operation.action), operation.action.executable)
+        if operation.record is None:
+            operation.record = {
+                "path": operation.relpath.as_posix(),
+                "ownership": "agent-docs-owned",
+            }
+            files.append(operation.record)
+        update_owned_record(operation.record, operation.action)
+        if operation.kind == "update":
+            print(f"Updated: {operation.relpath}")
+            print(f"Backup: {operation.backup_relpath}")
+        elif operation.kind == "restore":
+            print(f"Restored: {operation.relpath}")
+        else:
+            print(f"Added: {operation.relpath}")
+
+    manifest["source"] = current_source_metadata(init_module)
+    manifest["updated_at"] = utc_timestamp()
+    write_audit(backup_root, operations)
+    atomic_write_json(report.target / MANIFEST_PATH, manifest)
+    print(f"Updated: {MANIFEST_PATH}")
+
+
 def upgrade(args: list[str]) -> int:
-    if "--write" in args:
-        print("Only `agent-docs upgrade --dry-run [target]` is supported in this slice.", file=sys.stderr)
-        return 2
-    parser = argparse.ArgumentParser(prog="agent-docs upgrade", description="Read-only safe upgrade preview.")
-    parser.add_argument("--dry-run", action="store_true", required=True, help="Preview changes without writing.")
+    parser = argparse.ArgumentParser(prog="agent-docs upgrade", description="Safe upgrade preview or tooling-only write mode.")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="Preview changes without writing. This is the default.")
+    mode.add_argument("--write", action="store_true", help="Apply deterministic safe updates.")
+    parser.add_argument("--tooling-only", action="store_true", help="Required with --write; limits writes to AGENT-DOCS-owned tooling.")
     parser.add_argument("target", nargs="?", type=Path, default=Path.cwd(), help="Target repository root. Defaults to the current directory.")
     parsed = parser.parse_args(args)
     report = classify_target(parsed.target.expanduser())
-    print_report("upgrade dry-run", report)
-    return report_exit_code(report)
+    if not parsed.write:
+        print_report("upgrade dry-run", report)
+        return report_exit_code(report)
+    if not parsed.tooling_only:
+        print("`agent-docs upgrade --write` requires `--tooling-only`.", file=sys.stderr)
+        print("Use `agent-docs upgrade [target]` or `agent-docs upgrade --dry-run [target]` for a read-only preview.", file=sys.stderr)
+        return 2
+
+    print_report("upgrade write tooling-only", report)
+    if report.has_any(REFUSED_CATEGORIES):
+        print("refusing tooling-only write: refused/unknown/incompatible shapes are present", file=sys.stderr)
+        return 2
+
+    operations, blocking_drift, manifest, init_module = build_tooling_operations(report)
+    if blocking_drift:
+        print("refusing tooling-only write: checksum drift/local modification is present", file=sys.stderr)
+        for finding in blocking_drift:
+            print(f"- {finding.path}: {finding.reason}", file=sys.stderr)
+        return 2
+    if manifest is None or init_module is None:
+        print("refusing tooling-only write: manifest or upstream action set is unavailable", file=sys.stderr)
+        return 2
+    if not operations:
+        print("No tooling-only writes needed.")
+        return report_exit_code(report)
+
+    print("Applying tooling-only writes:")
+    backup_root = report.target / ".agent-docs/backups" / backup_timestamp()
+    backup_refusal = backup_root_refusal(report.target, backup_root)
+    if backup_refusal is not None:
+        print("refusing tooling-only write: backup path is unsafe", file=sys.stderr)
+        print(f"- {backup_refusal.path}: {backup_refusal.reason}", file=sys.stderr)
+        return 2
+    for operation in operations:
+        if operation.kind in {"update", "chmod"}:
+            backup_refusal = backup_destination_refusal(report.target, backup_root, operation.relpath)
+            if backup_refusal is not None:
+                print("refusing tooling-only write: backup path is unsafe", file=sys.stderr)
+                print(f"- {backup_refusal.path}: {backup_refusal.reason}", file=sys.stderr)
+                return 2
+    apply_tooling_operations(report, operations, manifest, init_module, backup_root)
+    post_write_report = classify_target(report.target)
+    return report_exit_code(post_write_report)
 
 
 def main(argv: list[str]) -> int:
