@@ -462,7 +462,7 @@ class ReviewItem:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Scan and update docs metadata.")
+    parser = argparse.ArgumentParser(description="Run deterministic docs operations.")
     parser.add_argument("--root", default="docs", help="Docs root to scan. Default: docs")
 
     sub = parser.add_subparsers(dest="command", required=True)
@@ -510,6 +510,23 @@ def parse_args() -> argparse.Namespace:
     new_cmd.add_argument("--plan", help="Parent plan for impl docs, e.g. PLAN-0034")
     new_cmd.add_argument("--spec", action="append", default=[], help="Related SPEC-* ID. Repeatable.")
     new_cmd.add_argument("--kind", "--audit-kind", dest="audit_kind", choices=sorted(AUDIT_KINDS), help="Audit kind for repo-health audit docs.")
+
+    draft_cmd = sub.add_parser("draft", help="Create a draft spec or plan without claiming a stable numeric ID.")
+    draft_cmd.add_argument("family", choices=["spec", "plan"])
+    draft_cmd.add_argument("title")
+    draft_cmd.add_argument("--domain", default="repo-health")
+    draft_cmd.add_argument("--spec-type", default="repo-health")
+    draft_cmd.add_argument("--status", default="draft")
+    draft_cmd.add_argument("--owner", default="")
+    draft_cmd.add_argument("--source-type", default="conversation")
+    draft_cmd.add_argument("--source-link", default="")
+    draft_cmd.add_argument("--promotion-reason", default="Avoid claiming a stable ID while parallel planning work is in progress.")
+
+    promote_cmd = sub.add_parser("promote", help="Promote an approved draft spec or plan to the next stable ID.")
+    promote_cmd.add_argument("draft", help="Draft doc path or draft ID.")
+    promote_cmd.add_argument("--dry-run", action="store_true", help="Preview changes without writing. This is the default unless --write is passed.")
+    promote_cmd.add_argument("--write", action="store_true", help="Promote the draft, move it, and rewrite Markdown backlinks.")
+    promote_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
 
     status_cmd = sub.add_parser("status", help="Show doc statuses.")
     status_cmd.add_argument("id", nargs="?")
@@ -963,10 +980,15 @@ def print_json_or_text(payload: object, text: str, use_json: bool) -> None:
 
 def rewrite_markdown_hrefs(path: Path, replacements: list[tuple[int, int, str]], write: bool) -> str:
     text = path.read_text(encoding="utf-8")
-    for start, end, href in sorted(replacements, reverse=True):
-        text = text[:start] + href + text[end:]
+    text = apply_text_replacements(text, replacements)
     if write:
         path.write_text(text, encoding="utf-8")
+    return text
+
+
+def apply_text_replacements(text: str, replacements: list[tuple[int, int, str]]) -> str:
+    for start, end, href in sorted(replacements, reverse=True):
+        text = text[:start] + href + text[end:]
     return text
 
 
@@ -1183,6 +1205,21 @@ def next_id(family: str, docs: list[Doc], plan: str | None = None) -> str:
     return f"{family.upper()}-{max_num + 1:04d}"
 
 
+def is_draft_doc(doc: Doc) -> bool:
+    return bool(re.fullmatch(r"(SPEC|PLAN|IMPL)-DRAFT(?:-[a-z0-9][a-z0-9-]*)?", doc.primary_id))
+
+
+def draft_family(doc: Doc) -> str:
+    doc_id = doc.primary_id
+    if doc_id.startswith("SPEC-DRAFT"):
+        return "spec"
+    if doc_id.startswith("PLAN-DRAFT"):
+        return "plan"
+    if doc_id.startswith("IMPL-DRAFT"):
+        return "impl"
+    return ""
+
+
 def next_todo_id(docs: list[Doc]) -> str:
     max_num = 0
     for item in todo_items(docs, include_done=True):
@@ -1374,6 +1411,234 @@ def new_doc(args: argparse.Namespace, root: Path, docs: list[Doc]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(body, encoding="utf-8")
     return path
+
+
+def draft_doc(args: argparse.Namespace, root: Path) -> Path:
+    title = args.title
+    slug = slugify(title)
+    timestamp = now_string()
+    commit = git_head()
+    family = args.family
+    prefix = family.upper()
+    doc_id = f"{prefix}-DRAFT-{slug}"
+    path = root / "drafts" / f"{doc_id}.md"
+    if path.exists():
+        raise SystemExit(f"Refusing to overwrite existing file: {path}")
+
+    draft_args = argparse.Namespace(
+        title=title,
+        domain=args.domain,
+        spec_type=args.spec_type,
+        status=args.status,
+        owner=args.owner,
+        source_type=args.source_type,
+        source_link=args.source_link,
+        spec=[],
+    )
+    if family == "spec":
+        body = spec_doc(doc_id, title, draft_args, timestamp, commit)
+    else:
+        body = plan_doc(doc_id, title, draft_args, timestamp, commit)
+    body = add_draft_metadata(body, family, args.promotion_reason)
+    body = re.sub(rf"^# {re.escape(doc_id)} - ", "# " + doc_id + " - ", body, count=1, flags=re.MULTILINE)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body, encoding="utf-8")
+    return path
+
+
+def add_draft_metadata(text: str, family: str, promotion_reason: str) -> str:
+    if not text.startswith("---\n"):
+        return text
+    end = text.find("\n---", 4)
+    if end == -1:
+        return text
+    block = f"""draft:
+  promotion_target: {family}
+  promotion_reason: {promotion_reason}
+"""
+    return text[:end] + "\n" + block + text[end:]
+
+
+def remove_draft_metadata(text: str) -> str:
+    if not text.startswith("---\n"):
+        return text
+    end = text.find("\n---", 4)
+    if end == -1:
+        return text
+    frontmatter = text[:end]
+    rest = text[end:]
+    frontmatter = re.sub(r"\ndraft:\n(?:  .*(?:\n|$))*", "\n", frontmatter)
+    return frontmatter.rstrip() + rest
+
+
+def replace_frontmatter_text(text: str, old: str, new: str) -> tuple[str, bool]:
+    if not text.startswith("---\n"):
+        return text, False
+    end = text.find("\n---", 4)
+    if end == -1:
+        return text, False
+    frontmatter = text[:end]
+    if old not in frontmatter:
+        return text, False
+    return frontmatter.replace(old, new) + text[end:], True
+
+
+def stable_destination_for_promoted_doc(root: Path, doc: Doc, stable_id: str) -> Path:
+    slug = slugify(doc.title)
+    domain = doc.frontmatter.get("domain")
+    domain_name = domain if isinstance(domain, str) and domain else "repo-health"
+    domain_path = Path(domain_name)
+    if domain_path.is_absolute() or ".." in domain_path.parts or len(domain_path.parts) != 1:
+        raise SystemExit(f"Draft domain must be a single safe path segment: {domain_name!r}")
+    stem = f"{stable_id}-{slug}"
+    family = draft_family(doc)
+    if family == "spec":
+        destination = root / domain_path / "specs" / f"{stem}.md"
+    elif family == "plan":
+        destination = root / domain_path / "plans" / stem / f"{stem}.md"
+    else:
+        raise SystemExit(f"Draft promotion is not supported for {doc.primary_id}")
+    try:
+        destination.resolve(strict=False).relative_to(root.resolve())
+    except ValueError:
+        raise SystemExit(f"Promotion destination resolves outside docs root: {destination}")
+    return destination
+
+
+def validate_draft_for_promotion(doc: Doc, family: str) -> None:
+    errors = draft_validation_errors(doc)
+    if errors:
+        raise SystemExit(errors[0])
+
+
+def draft_validation_errors(doc: Doc) -> list[str]:
+    errors: list[str] = []
+    family = draft_family(doc)
+    expected_type = {"spec": "spec", "plan": "plan"}.get(family)
+    if expected_type is None:
+        errors.append(f"Draft promotion is not supported for {doc.primary_id}")
+        return errors
+    if doc.doc_type != expected_type:
+        errors.append(f"Draft {doc.primary_id} has type {doc.doc_type!r}; expected {expected_type!r}")
+    draft = doc.frontmatter.get("draft")
+    if not isinstance(draft, dict):
+        errors.append(f"Draft {doc.primary_id} must include draft promotion metadata")
+    else:
+        promotion_target = draft.get("promotion_target")
+        if promotion_target != family:
+            errors.append(f"Draft {doc.primary_id} promotion_target must be {family!r}")
+    return errors
+
+
+def promoted_status(doc: Doc, family: str) -> str:
+    status = doc.status or "draft"
+    doc_type = {"spec": "spec", "plan": "plan"}[family]
+    allowed = STATUS_BY_TYPE.get(doc_type, COMMON_STATUSES)
+    if status not in allowed:
+        return "draft"
+    return status
+
+
+def promoted_text(doc: Doc, stable_id: str, destination: Path, source_replacements: list[tuple[int, int, str]] | None = None) -> str:
+    text = doc.path.read_text(encoding="utf-8")
+    if source_replacements:
+        text = apply_text_replacements(text, source_replacements)
+    old_id = doc.primary_id
+    family = draft_family(doc)
+    timestamp = now_string()
+    text = remove_draft_metadata(text)
+    text = re.sub(rf"^id:\s*{re.escape(old_id)}\s*$", f"id: {stable_id}", text, count=1, flags=re.MULTILINE)
+    text = re.sub(r"^status:\s*.+$", f"status: {promoted_status(doc, family)}", text, count=1, flags=re.MULTILINE)
+    text = re.sub(r"^updated_at:\s*.+$", f'updated_at: "{timestamp}"', text, count=1, flags=re.MULTILINE)
+    text = re.sub(rf"^#\s+{re.escape(old_id)}\s+-\s+", f"# {stable_id} - ", text, count=1, flags=re.MULTILINE)
+    text = re.sub(r"^#\s+(SPEC|PLAN|IMPL)-DRAFT\s+-\s+", f"# {stable_id} - ", text, count=1, flags=re.MULTILINE)
+    text = text.replace(old_id, stable_id)
+    return text
+
+
+def perform_promote(root: Path, docs: list[Doc], draft_value: str, write: bool) -> dict[str, object]:
+    doc = find_doc(docs, draft_value)
+    if doc is None:
+        draft_path = resolve_path_input(draft_value, root, docs).resolve()
+        doc = next((item for item in docs if item.path.resolve() == draft_path), None)
+    if doc is None:
+        raise SystemExit(f"No draft document found for {draft_value}")
+    if not is_draft_doc(doc):
+        raise SystemExit(f"Document is not a draft: {doc.primary_id or doc.relpath}")
+    if not doc.relpath.startswith("drafts/"):
+        raise SystemExit(f"Draft docs can only be promoted from drafts/: {doc.relpath}")
+    family = draft_family(doc)
+    if family not in {"spec", "plan"}:
+        raise SystemExit(f"Draft promotion is not supported for {doc.primary_id}")
+    validate_draft_for_promotion(doc, family)
+
+    stable_id = next_id(family, docs)
+    destination = stable_destination_for_promoted_doc(root, doc, stable_id)
+    if destination.exists():
+        raise SystemExit(f"Promotion destination already exists: {destination}")
+
+    refs = link_graph(root, docs)
+    old_path = doc.path.resolve()
+    new_path = destination.resolve()
+    replacements_by_file: dict[Path, list[tuple[int, int, str]]] = {}
+    changes: list[dict[str, object]] = []
+    for ref in markdown_link_refs(refs):
+        if ref.status not in {"ok", "root-relative", "absolute-repo-local"}:
+            continue
+        if ref.source.resolve() != old_path and (not ref.target or ref.target.resolve() != old_path):
+            continue
+        if not ref.target:
+            continue
+        _, suffix, _ = split_href(ref.href)
+        source_after_move = new_path if ref.source.resolve() == old_path else ref.source
+        target_after_move = new_path if ref.target.resolve() == old_path else ref.target
+        new_href = relative_href(source_after_move, target_after_move, suffix)
+        if new_href == ref.href:
+            continue
+        replacements_by_file.setdefault(ref.source, []).append((ref.href_start, ref.href_end, new_href))
+        changes.append({"file": ref.source_rel, "line": ref.line, "from": ref.href, "to": new_href})
+
+    source_replacements = replacements_by_file.get(doc.path, [])
+    output_text = promoted_text(doc, stable_id, destination, source_replacements)
+    id_reference_changes: list[dict[str, object]] = []
+    if write:
+        for path, replacements in replacements_by_file.items():
+            if path.resolve() == doc.path.resolve():
+                continue
+            rewrite_markdown_hrefs(path, replacements, True)
+        for path in sorted(root.rglob("*.md")):
+            if path.resolve() == doc.path.resolve():
+                continue
+            text = path.read_text(encoding="utf-8")
+            updated, changed = replace_frontmatter_text(text, doc.primary_id, stable_id)
+            if not changed:
+                continue
+            path.write_text(updated, encoding="utf-8")
+            id_reference_changes.append({"file": relative_to_root(path, root), "from": doc.primary_id, "to": stable_id})
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(output_text, encoding="utf-8")
+        doc.path.unlink()
+    else:
+        for path in sorted(root.rglob("*.md")):
+            if path.resolve() == doc.path.resolve():
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            _, changed = replace_frontmatter_text(text, doc.primary_id, stable_id)
+            if changed:
+                id_reference_changes.append({"file": relative_to_root(path, root), "from": doc.primary_id, "to": stable_id})
+
+    return {
+        "old": doc.relpath,
+        "new": relative_to_root(destination, root),
+        "old_id": doc.primary_id,
+        "new_id": stable_id,
+        "write": write,
+        "link_changes": changes,
+        "id_reference_changes": id_reference_changes,
+    }
 
 
 def status_for_new(args: argparse.Namespace, doc_type: str) -> str:
@@ -2883,25 +3148,26 @@ def write_generated_view(root: Path, name: str, docs: list[Doc], args: argparse.
 
 
 def update(root: Path, docs: list[Doc]) -> None:
-    if any(doc.primary_id.startswith("IDEA-") for doc in docs) or (root / "IDEAS.md").exists():
-        write_generated_view(root, "ideas", docs)
-    if any(doc.primary_id.startswith("CONC-") for doc in docs) or (root / "CONCEPTS.md").exists():
-        write_generated_view(root, "concepts", docs)
-    if any(doc.primary_id.startswith("LRN-") for doc in docs) or (root / "LEARNINGS.md").exists():
-        write_generated_view(root, "learnings", docs)
-    if any(doc.primary_id.startswith("EXPL-") for doc in docs) or (root / "EXPLAINERS.md").exists():
-        write_generated_view(root, "explainers", docs)
-    if any(doc.primary_id.startswith("QST-") for doc in docs) or (root / "QUESTIONS.md").exists():
-        write_generated_view(root, "questions", docs)
-    write_generated_view(root, "specs", docs)
-    write_generated_view(root, "registry", docs)
-    write_generated_view(root, "todos", docs)
-    if any(doc.doc_type == "repo-health-audit" for doc in docs) or (root / "AUDITS.md").exists():
-        write_generated_view(root, "audits", docs)
-    if any(doc.doc_type == "plan" for doc in docs) or (root / "ROADMAP-VIEW.md").exists():
-        write_generated_view(root, "roadmap", docs)
-    if any(doc.doc_type == "architecture-area" for doc in docs) or (root / "AREAS.md").exists():
-        write_generated_view(root, "areas", docs)
+    stable_docs = [doc for doc in docs if not is_draft_doc(doc)]
+    if any(doc.primary_id.startswith("IDEA-") for doc in stable_docs) or (root / "IDEAS.md").exists():
+        write_generated_view(root, "ideas", stable_docs)
+    if any(doc.primary_id.startswith("CONC-") for doc in stable_docs) or (root / "CONCEPTS.md").exists():
+        write_generated_view(root, "concepts", stable_docs)
+    if any(doc.primary_id.startswith("LRN-") for doc in stable_docs) or (root / "LEARNINGS.md").exists():
+        write_generated_view(root, "learnings", stable_docs)
+    if any(doc.primary_id.startswith("EXPL-") for doc in stable_docs) or (root / "EXPLAINERS.md").exists():
+        write_generated_view(root, "explainers", stable_docs)
+    if any(doc.primary_id.startswith("QST-") for doc in stable_docs) or (root / "QUESTIONS.md").exists():
+        write_generated_view(root, "questions", stable_docs)
+    write_generated_view(root, "specs", stable_docs)
+    write_generated_view(root, "registry", stable_docs)
+    write_generated_view(root, "todos", stable_docs)
+    if any(doc.doc_type == "repo-health-audit" for doc in stable_docs) or (root / "AUDITS.md").exists():
+        write_generated_view(root, "audits", stable_docs)
+    if any(doc.doc_type == "plan" for doc in stable_docs) or (root / "ROADMAP-VIEW.md").exists():
+        write_generated_view(root, "roadmap", stable_docs)
+    if any(doc.doc_type == "architecture-area" for doc in stable_docs) or (root / "AREAS.md").exists():
+        write_generated_view(root, "areas", stable_docs)
 
 
 def check(root: Path, docs: list[Doc]) -> int:
@@ -2921,27 +3187,28 @@ def check(root: Path, docs: list[Doc]) -> int:
         errors.extend(validate_frontmatter(doc))
         errors.extend(validate_linked_paths(doc, root))
 
+    stable_docs = [doc for doc in docs if not is_draft_doc(doc)]
     generated = {
-        root / "SPECS.md": specs_markdown(docs),
-        root / "DOCS-REGISTRY.md": registry_markdown(docs),
-        root / "TODOS.md": todos_markdown(docs),
+        root / "SPECS.md": specs_markdown(stable_docs),
+        root / "DOCS-REGISTRY.md": registry_markdown(stable_docs),
+        root / "TODOS.md": todos_markdown(stable_docs),
     }
-    if any(doc.primary_id.startswith("IDEA-") for doc in docs) or (root / "IDEAS.md").exists():
-        generated[root / "IDEAS.md"] = ideas_markdown(docs)
-    if any(doc.primary_id.startswith("CONC-") for doc in docs) or (root / "CONCEPTS.md").exists():
-        generated[root / "CONCEPTS.md"] = concepts_markdown(docs)
-    if any(doc.primary_id.startswith("LRN-") for doc in docs) or (root / "LEARNINGS.md").exists():
-        generated[root / "LEARNINGS.md"] = learnings_markdown(docs)
-    if any(doc.primary_id.startswith("EXPL-") for doc in docs) or (root / "EXPLAINERS.md").exists():
-        generated[root / "EXPLAINERS.md"] = explainers_markdown(docs)
-    if any(doc.primary_id.startswith("QST-") for doc in docs) or (root / "QUESTIONS.md").exists():
-        generated[root / "QUESTIONS.md"] = questions_markdown(docs)
-    if any(doc.doc_type == "repo-health-audit" for doc in docs) or (root / "AUDITS.md").exists():
-        generated[root / "AUDITS.md"] = audits_markdown(docs)
-    if any(doc.doc_type == "plan" for doc in docs) or (root / "ROADMAP-VIEW.md").exists():
-        generated[root / "ROADMAP-VIEW.md"] = roadmap_markdown(docs)
-    if any(doc.doc_type == "architecture-area" for doc in docs) or (root / "AREAS.md").exists():
-        generated[root / "AREAS.md"] = areas_markdown(docs)
+    if any(doc.primary_id.startswith("IDEA-") for doc in stable_docs) or (root / "IDEAS.md").exists():
+        generated[root / "IDEAS.md"] = ideas_markdown(stable_docs)
+    if any(doc.primary_id.startswith("CONC-") for doc in stable_docs) or (root / "CONCEPTS.md").exists():
+        generated[root / "CONCEPTS.md"] = concepts_markdown(stable_docs)
+    if any(doc.primary_id.startswith("LRN-") for doc in stable_docs) or (root / "LEARNINGS.md").exists():
+        generated[root / "LEARNINGS.md"] = learnings_markdown(stable_docs)
+    if any(doc.primary_id.startswith("EXPL-") for doc in stable_docs) or (root / "EXPLAINERS.md").exists():
+        generated[root / "EXPLAINERS.md"] = explainers_markdown(stable_docs)
+    if any(doc.primary_id.startswith("QST-") for doc in stable_docs) or (root / "QUESTIONS.md").exists():
+        generated[root / "QUESTIONS.md"] = questions_markdown(stable_docs)
+    if any(doc.doc_type == "repo-health-audit" for doc in stable_docs) or (root / "AUDITS.md").exists():
+        generated[root / "AUDITS.md"] = audits_markdown(stable_docs)
+    if any(doc.doc_type == "plan" for doc in stable_docs) or (root / "ROADMAP-VIEW.md").exists():
+        generated[root / "ROADMAP-VIEW.md"] = roadmap_markdown(stable_docs)
+    if any(doc.doc_type == "architecture-area" for doc in stable_docs) or (root / "AREAS.md").exists():
+        generated[root / "AREAS.md"] = areas_markdown(stable_docs)
     for path, expected in generated.items():
         if path.exists() and normalize_generated_view(path.read_text(encoding="utf-8")) != normalize_generated_view(expected):
             errors.append(f"Generated file is stale: {path.relative_to(root)}")
@@ -3572,6 +3839,10 @@ def validate_frontmatter(doc: Doc) -> list[str]:
 
     frontmatter_id = doc.frontmatter.get("id")
     if isinstance(frontmatter_id, str) and frontmatter_id:
+        if is_draft_doc(doc) and not doc.relpath.startswith("drafts/"):
+            errors.append(f"Draft ID {frontmatter_id} is only allowed under drafts/: {doc.relpath}")
+        if is_draft_doc(doc):
+            errors.extend(f"{error} in {doc.relpath}" for error in draft_validation_errors(doc))
         filename_ids = set(find_ids(doc.path.name))
         family = frontmatter_id.split("-", 1)[0]
         mismatches = sorted(doc_id for doc_id in filename_ids if doc_id.startswith(f"{family}-") and doc_id != frontmatter_id)
@@ -3631,7 +3902,10 @@ def validate_linked_paths(doc: Doc, root: Path) -> list[str]:
 
 def main() -> int:
     args = parse_args()
-    root = docs_root(args.root)
+    root_value = args.root
+    if args.command in {"draft", "promote"} and root_value == "docs" and Path("plans").is_dir():
+        root_value = "plans"
+    root = docs_root(root_value)
     docs = read_docs(root)
 
     if args.command == "next":
@@ -3643,6 +3917,30 @@ def main() -> int:
     if args.command == "new":
         path = new_doc(args, root, docs)
         print(path)
+        return 0
+    if args.command == "draft":
+        path = draft_doc(args, root)
+        print(path)
+        return 0
+    if args.command == "promote":
+        result = perform_promote(root, docs, args.draft, bool(args.write))
+        lines = [
+            ("PROMOTE" if args.write else "DRY-RUN") + f"\t{result['old']} -> {result['new']}",
+            f"ID:\t{result['old_id']} -> {result['new_id']}",
+            "Link changes:",
+        ]
+        link_changes = result["link_changes"]
+        if isinstance(link_changes, list) and link_changes:
+            lines.extend(f"- {item['file']}:{item['line']}\t{item['from']} -> {item['to']}" for item in link_changes)
+        else:
+            lines.append("- none")
+        id_reference_changes = result["id_reference_changes"]
+        lines.append("ID reference changes:")
+        if isinstance(id_reference_changes, list) and id_reference_changes:
+            lines.extend(f"- {item['file']}\t{item['from']} -> {item['to']}" for item in id_reference_changes)
+        else:
+            lines.append("- none")
+        print_json_or_text(result, "\n".join(lines), args.json)
         return 0
     if args.command == "status":
         selected = [find_doc(docs, args.id)] if args.id else [doc for doc in docs if doc.primary_id]
@@ -3754,8 +4052,9 @@ def main() -> int:
     if args.command == "check":
         return check(root, docs)
     if args.command == "health":
-        issues = health_issues(root, docs, args.stale_days, args.commit_threshold, args.audit_days)
-        markdown = generated_view_markdown(root, "health", docs, args)
+        stable_docs = [doc for doc in docs if not is_draft_doc(doc)]
+        issues = health_issues(root, stable_docs, args.stale_days, args.commit_threshold, args.audit_days)
+        markdown = generated_view_markdown(root, "health", stable_docs, args)
         if args.write:
             generated_view_path(root, "health").write_text(markdown, encoding="utf-8")
         if args.json:
@@ -3764,8 +4063,9 @@ def main() -> int:
             print(health_text(issues))
         return 0
     if args.command == "roadmap":
-        rows = roadmap_rows(docs)
-        markdown = generated_view_markdown(root, "roadmap", docs, args)
+        stable_docs = [doc for doc in docs if not is_draft_doc(doc)]
+        rows = roadmap_rows(stable_docs)
+        markdown = generated_view_markdown(root, "roadmap", stable_docs, args)
         if args.write:
             generated_view_path(root, "roadmap").write_text(markdown, encoding="utf-8")
         if args.json:
@@ -3774,7 +4074,7 @@ def main() -> int:
             print(markdown)
         return 0
     if args.command == "view":
-        markdown = write_generated_view(root, args.name, docs, args)
+        markdown = write_generated_view(root, args.name, [doc for doc in docs if not is_draft_doc(doc)], args)
         print(markdown)
         return 0
     raise SystemExit(f"Unknown command: {args.command}")

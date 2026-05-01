@@ -1,6 +1,6 @@
 ---
 type: spec
-id: SPEC-DRAFT
+id: SPEC-DRAFT-docs-ops-command-surface-and-draft-promotion
 title: Docs Operations Command Surface And Draft Promotion
 spec_type: repo-health
 domain: repo-health
@@ -157,7 +157,7 @@ Draft frontmatter should make the temporary state explicit:
 
 ```yaml
 type: spec
-id: SPEC-DRAFT
+id: SPEC-DRAFT-docs-ops-command-surface-and-draft-promotion
 status: draft
 draft:
   promotion_target: spec

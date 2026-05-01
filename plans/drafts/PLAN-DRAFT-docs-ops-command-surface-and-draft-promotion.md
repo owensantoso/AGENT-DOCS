@@ -1,11 +1,11 @@
 ---
 type: plan
-id: PLAN-DRAFT
+id: PLAN-DRAFT-docs-ops-command-surface-and-draft-promotion
 title: Docs Operations Command Surface And Draft Promotion
 domain: repo-health
-status: draft
+status: in_progress
 created_at: "2026-05-02 07:54:05 JST +0900"
-updated_at: "2026-05-02 07:54:05 JST +0900"
+updated_at: "2026-05-02 08:31:00 JST +0900"
 owner: codex
 sequence:
   roadmap:
@@ -44,8 +44,9 @@ draft:
 parallel planning branches, and prepare the feature for eventual package-style
 organization without breaking installed repos.
 
-**Status:** Draft. This plan should be promoted only after rebasing onto the
-branch that will own the final stable `PLAN-*` ID.
+**Status:** In progress on `codex/docs-ops-continuity`. This plan should be
+promoted only after rebasing onto the branch that will own the final stable
+`PLAN-*` ID.
 
 **Source Spec:** [SPEC-DRAFT - Docs Operations Command Surface And Draft Promotion](SPEC-DRAFT-docs-ops-command-surface-and-draft-promotion.md)
 
@@ -264,10 +265,10 @@ git diff --check
 
 ## Done Checklist
 
-- [ ] Preferred `agent-docs docs ...` command namespace exists.
-- [ ] `scripts/docs-meta` remains compatible.
-- [ ] Draft docs are recognized and constrained to approved draft locations.
-- [ ] Draft creation and promotion commands exist.
-- [ ] Promotion refuses collisions and updates the promoted doc consistently.
-- [ ] Docs explain Docs Operations, compatibility, and draft promotion.
-- [ ] Feature-package preparation is documented without breaking install flows.
+- [x] Preferred `agent-docs docs ...` command namespace exists.
+- [x] `scripts/docs-meta` remains compatible.
+- [x] Draft docs are recognized and constrained to approved draft locations.
+- [x] Draft creation and promotion commands exist.
+- [x] Promotion refuses collisions and updates the promoted doc consistently.
+- [x] Docs explain Docs Operations, compatibility, and draft promotion.
+- [x] Feature-package preparation is documented without breaking install flows.

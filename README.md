@@ -402,13 +402,13 @@ The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. Copy 
 | [scaffold/docs/marketing/](scaffold/docs/marketing/) | launch and campaign planning |
 | [scripts/agent-docs](scripts/agent-docs) | command namespace for AGENT-DOCS workflows |
 | [scripts/agent-docs-init](scripts/agent-docs-init) | compatibility selected scaffold installer |
-| [scripts/docs-meta](scripts/docs-meta) | deterministic docs metadata CLI |
+| [scripts/docs-meta](scripts/docs-meta) | legacy compatibility command for deterministic docs operations |
 
-## Docs Meta
+## Docs Operations
 
-When installed in a repo, [scripts/docs-meta](scripts/docs-meta) scans Markdown filenames and frontmatter as the source of truth, then creates generated views from that state.
+When installed in a repo, [scripts/docs-meta](scripts/docs-meta) scans Markdown filenames and frontmatter as the source of truth, then creates generated views from that state. In an AGENT-DOCS checkout, prefer the clearer `agent-docs docs ...` namespace; it delegates to the same deterministic docs operations behavior.
 
-This exists because agents are good at synthesis but unreliable at bookkeeping. They can forget the next ID, miss a stale status, or hand-edit a registry that no longer matches the repo. `docs-meta` moves that work into a small script.
+This exists because agents are good at synthesis but unreliable at bookkeeping. They can forget the next ID, miss a stale status, or hand-edit a registry that no longer matches the repo. Docs Operations moves that work into a small deterministic command surface.
 
 | Need | Command |
 |---|---|
@@ -421,8 +421,10 @@ This exists because agents are good at synthesis but unreliable at bookkeeping. 
 | Inspect links | `scripts/docs-meta links`, `check-links`, `backlinks`, `orphans` |
 | Move docs safely | `scripts/docs-meta move OLD NEW --dry-run` |
 | Check freshness | `scripts/docs-meta health --write` |
+| Create a draft planning doc | `agent-docs docs draft spec "<title>" --domain <domain>` |
+| Promote a draft after rebase | `agent-docs docs promote plans/drafts/SPEC-DRAFT-<slug>.md --write` |
 
-Supported stable-ID families include `IDEA`, `RSCH`, `EVAL`, `DIAG`, `CONC`, `SPEC`, `PLAN`, `IMPL`, `ADR`, `LRN`, `EXPL`, `QST`, and `TODO`.
+Supported stable-ID families include `IDEA`, `RSCH`, `EVAL`, `DIAG`, `CONC`, `SPEC`, `PLAN`, `IMPL`, `ADR`, `LRN`, `EXPL`, `QST`, and `TODO`. Draft planning IDs such as `SPEC-DRAFT-<slug>` and `PLAN-DRAFT-<slug>` are allowed only under `plans/drafts/` until promoted.
 
 Generated files such as `IDEAS.md`, `CONCEPTS.md`, `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, `AREAS.md`, `AUDITS.md`, `ROADMAP-VIEW.md`, and `HEALTH.md` are views, not separate state. Fix the source docs, then regenerate.
 

@@ -8,6 +8,12 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 
 ### For adopters
 
+- Added `agent-docs docs ...` as the preferred namespace for deterministic docs
+  operations while keeping `scripts/docs-meta ...` as the compatible portable
+  command installed into target repos.
+- Added draft planning docs and promotion commands so parallel worktrees can use
+  `SPEC-DRAFT-<slug>` and `PLAN-DRAFT-<slug>` under `plans/drafts/`, then
+  promote them to stable IDs after rebasing onto the target branch.
 - The installer now publishes `agent-docs` as the future command namespace while
   keeping `agent-docs-init` as the compatible init command.
 - Explicit write installs now create `.agent-docs/manifest.json` with schema
@@ -48,6 +54,10 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 
 ### Tooling changes
 
+- Added `scripts/docs-meta draft` and `scripts/docs-meta promote` plus smoke
+  coverage for namespace delegation, draft creation, draft-location validation,
+  dry-run promotion, write promotion, backlink rewriting, and draft metadata
+  removal.
 - Added `agent-docs init ...` as a thin delegator to `agent-docs-init`.
 - Added exit-code semantics for doctor/dry-run reports: `0` healthy/current,
   `1` warnings or actionable drift, and `2` invalid usage, refused, unknown, or

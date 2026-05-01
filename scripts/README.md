@@ -1,13 +1,13 @@
-# Docs Meta
+# Docs Operations
 
 This folder contains two main scripts:
 
 | Script | Purpose |
 |---|---|
 | `../install.sh` | bootstrap installer that puts `agent-docs` and `agent-docs-init` on PATH |
-| `agent-docs` | command namespace for AGENT-DOCS workflows |
+| `agent-docs` | command namespace for AGENT-DOCS workflows, including `agent-docs docs ...` |
 | `agent-docs-init` | compatibility selected scaffold installer for target repos |
-| `docs-meta` | deterministic metadata helper once docs are installed |
+| `docs-meta` | legacy compatibility command for deterministic docs operations once docs are installed |
 | `changelog-check` | changelog gate for reusable adopter-facing surfaces |
 | `release-check` | local release-readiness wrapper used by CI |
 
@@ -152,9 +152,11 @@ that is fully repaired by the write exits `0`.
 
 Supported platforms and prerequisites: Bash on macOS or Linux, Git for installer clone/update paths, Python 3.10 or newer, symlink support, and a user-local bin directory such as `~/.local/bin` on `PATH` or an explicit `AGENT_DOCS_BIN_DIR`.
 
-## Docs Meta
+## Docs Operations
 
-`docs-meta` is a deterministic metadata helper for agent-friendly docs.
+Docs Operations is the deterministic command surface for agent-friendly docs.
+Use `agent-docs docs ...` as the preferred namespace. `scripts/docs-meta ...`
+remains the portable compatibility command installed into target repos.
 
 It exists to keep repository memory queryable without asking a human or AI agent to manually maintain counters, status tables, generated registries, or todo dashboards. The important rule is simple: Markdown files, filenames, and frontmatter are the source of truth. Generated files are views.
 
@@ -168,7 +170,9 @@ Agent-driven projects tend to accumulate small bits of comprehension debt:
 - todos are scattered across specs, plans, and implementation briefs
 - a future session cannot easily reconstruct what docs exist or where work stands
 
-`docs-meta` turns those into mechanical operations. It scans the repo, derives state, and either writes reproducible generated files or fails when they are stale.
+Docs Operations turns those into mechanical operations. It scans the repo,
+derives state, and either writes reproducible generated files or fails when they
+are stale.
 
 ## Source Of Truth
 
@@ -236,6 +240,7 @@ changed without changing adopter behavior.
 Show the next ID:
 
 ```bash
+agent-docs docs next spec
 scripts/docs-meta next spec
 scripts/docs-meta next idea
 scripts/docs-meta next rsch
@@ -253,6 +258,7 @@ scripts/docs-meta next conc
 Create new docs:
 
 ```bash
+agent-docs docs new spec "Shared Capture Workflow" --domain product --spec-type feature
 scripts/docs-meta new spec "Shared Capture Workflow" --domain product --spec-type feature
 scripts/docs-meta new idea "Repo Memory Timeline" --domain product
 scripts/docs-meta new concept "Selections, Snapshots, And Dynamic Sections" --domain product
@@ -266,6 +272,26 @@ scripts/docs-meta new learning "Why plans and specs are separate" --domain repo-
 scripts/docs-meta new explainer "How specs and plans fit together" --domain orientation
 scripts/docs-meta new question "Should specs and plans be one-to-one?" --domain repo-health
 ```
+
+Create branch-local drafts when parallel worktrees should not claim stable
+`SPEC-*` or `PLAN-*` IDs yet:
+
+```bash
+agent-docs docs draft spec "Docs Operations Command Surface" --domain repo-health
+agent-docs docs draft plan "Docs Operations Migration" --domain repo-health
+```
+
+Promote drafts only after rebasing or merging onto the branch that will own the
+stable IDs:
+
+```bash
+agent-docs docs promote plans/drafts/SPEC-DRAFT-docs-operations-command-surface.md --dry-run
+agent-docs docs promote plans/drafts/SPEC-DRAFT-docs-operations-command-surface.md --write
+```
+
+Promotion assigns the next stable ID from the current checkout, moves the doc to
+the stable destination, rewrites Markdown backlinks, removes draft metadata, and
+refuses if the destination already exists.
 
 Inspect or update status:
 

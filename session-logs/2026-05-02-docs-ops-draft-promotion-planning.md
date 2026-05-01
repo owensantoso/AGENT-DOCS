@@ -4,7 +4,7 @@ title: Docs Operations Draft Promotion Planning
 domain: repo-health
 status: completed
 created_at: "2026-05-02 07:54:05 JST +0900"
-updated_at: "2026-05-02 07:54:05 JST +0900"
+updated_at: "2026-05-02 08:31:00 JST +0900"
 owner: codex
 areas:
   - agent-docs
@@ -29,6 +29,10 @@ while Agent Continuity and manifest work continues in parallel.
 Added the matching branch-local draft plan so implementation can be scoped
 without claiming `PLAN-0007`.
 
+Implemented the first pass directly from the draft plan: `agent-docs docs ...`
+delegation, draft creation, draft validation, draft promotion, docs updates, and
+smoke coverage.
+
 ## Decisions Captured
 
 - Treat `docs-meta` as the legacy compatibility command.
@@ -45,3 +49,5 @@ without claiming `PLAN-0007`.
 
 - `scripts/docs-meta --root plans check`
 - `scripts/docs-meta --root plans check-links`
+- `tests/docs-meta-smoke.sh`
+- `python3 -m py_compile scripts/agent-docs scripts/docs-meta`

@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 docs_meta="$repo_root/scripts/docs-meta"
+agent_docs="$repo_root/scripts/agent-docs"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -12,6 +13,10 @@ mkdir -p "$docs_root/architecture/areas"
 
 run_meta() {
   "$docs_meta" --root "$docs_root" "$@"
+}
+
+run_agent_docs() {
+  "$agent_docs" docs --root "$docs_root" "$@"
 }
 
 require_file() {
@@ -119,6 +124,158 @@ require_contains "$completed_audit_path" "id: AUDT-0002"
 require_contains "$completed_audit_path" "status: completed"
 require_contains "$completed_audit_path" "audit_started_at: \""
 require_contains "$completed_audit_path" "audit_ended_at: \""
+
+agent_docs_next_spec="$(run_agent_docs next spec)"
+if [[ "$agent_docs_next_spec" != "SPEC-0002" ]]; then
+  echo "Expected agent-docs docs namespace to delegate next spec, got $agent_docs_next_spec" >&2
+  exit 1
+fi
+
+draft_spec_path="$(run_agent_docs draft spec "Parallel Planning Contract" --domain repo-health)"
+draft_plan_path="$(run_meta draft plan "Parallel Planning Contract" --domain repo-health)"
+mkdir -p "$docs_root/drafts/assets"
+echo "draft-local note" > "$docs_root/drafts/assets/note.md"
+cat >> "$draft_spec_path" <<'DRAFTLINK'
+
+## Draft Local Link
+
+See [draft-local note](assets/note.md).
+DRAFTLINK
+require_file "$draft_spec_path"
+require_file "$draft_plan_path"
+require_contains "$draft_spec_path" "id: SPEC-DRAFT-parallel-planning-contract"
+require_contains "$draft_plan_path" "id: PLAN-DRAFT-parallel-planning-contract"
+require_contains "$draft_spec_path" "promotion_target: spec"
+require_contains "$draft_plan_path" "promotion_target: plan"
+perl -0pi -e 's/related_specs:\s*\[\]/related_specs:\n  - SPEC-DRAFT-parallel-planning-contract/' "$draft_plan_path"
+
+run_meta check
+run_meta promote "$draft_spec_path" --dry-run >"$tmpdir/promote-draft-spec-dry-run.out"
+require_contains "$tmpdir/promote-draft-spec-dry-run.out" "DRY-RUN"
+require_contains "$tmpdir/promote-draft-spec-dry-run.out" "SPEC-DRAFT-parallel-planning-contract -> SPEC-0002"
+run_meta promote "$draft_spec_path" --write >"$tmpdir/promote-draft-spec-write.out"
+require_contains "$tmpdir/promote-draft-spec-write.out" "PROMOTE"
+promoted_spec_path="$docs_root/repo-health/specs/SPEC-0002-parallel-planning-contract.md"
+require_file "$promoted_spec_path"
+require_absent "$draft_spec_path"
+require_contains "$promoted_spec_path" "id: SPEC-0002"
+require_contains "$promoted_spec_path" "# SPEC-0002 - Parallel Planning Contract"
+require_contains "$promoted_spec_path" "](../../drafts/assets/note.md)"
+require_contains "$draft_plan_path" "related_specs:"
+require_contains "$draft_plan_path" "  - SPEC-0002"
+if grep -Fq "SPEC-DRAFT-parallel-planning-contract" "$draft_plan_path"; then
+  echo "Expected promotion to update draft ID references in related draft plan" >&2
+  exit 1
+fi
+if grep -Fq "draft:" "$promoted_spec_path"; then
+  echo "Expected promoted spec to remove draft metadata" >&2
+  exit 1
+fi
+
+unsafe_draft_path="$(run_meta draft spec "Unsafe Domain Draft" --domain ../../outside)"
+if run_meta promote "$unsafe_draft_path" --write >"$tmpdir/unsafe-domain-promote.out" 2>&1; then
+  echo "Expected unsafe domain promotion to fail" >&2
+  exit 1
+fi
+require_contains "$tmpdir/unsafe-domain-promote.out" "Draft domain must be a single safe path segment"
+require_file "$unsafe_draft_path"
+require_absent "$tmpdir/outside"
+
+namespace_target="$tmpdir/namespace-app"
+mkdir -p "$namespace_target/plans"
+(cd "$namespace_target" && "$agent_docs" docs draft spec "Namespace Root Inference" --domain repo-health >"$tmpdir/namespace-draft.out")
+namespace_draft="$namespace_target/plans/drafts/SPEC-DRAFT-namespace-root-inference.md"
+require_file "$namespace_draft"
+(cd "$namespace_target" && "$agent_docs" docs promote plans/drafts/SPEC-DRAFT-namespace-root-inference.md --write >"$tmpdir/namespace-promote.out")
+require_contains "$tmpdir/namespace-promote.out" "PROMOTE"
+require_file "$namespace_target/plans/repo-health/specs/SPEC-0001-namespace-root-inference.md"
+
+mismatched_draft="$docs_root/drafts/SPEC-DRAFT-mismatched.md"
+cat > "$mismatched_draft" <<'MISMATCHED'
+---
+type: plan
+id: SPEC-DRAFT-mismatched
+title: Mismatched Draft
+domain: repo-health
+status: draft
+created_at: "2026-05-02 10:00:00 JST +0900"
+updated_at: "2026-05-02 10:00:00 JST +0900"
+areas: []
+related_specs: []
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+draft:
+  promotion_target: spec
+  promotion_reason: smoke
+---
+
+# SPEC-DRAFT - Mismatched Draft
+MISMATCHED
+if run_meta promote "$mismatched_draft" --write >"$tmpdir/mismatched-promote.out" 2>&1; then
+  echo "Expected mismatched draft promotion to fail" >&2
+  exit 1
+fi
+require_contains "$tmpdir/mismatched-promote.out" "expected 'spec'"
+rm "$mismatched_draft"
+
+missing_metadata_draft="$docs_root/drafts/SPEC-DRAFT-missing-metadata.md"
+cat > "$missing_metadata_draft" <<'MISSINGMETA'
+---
+type: spec
+id: SPEC-DRAFT-missing-metadata
+title: Missing Metadata Draft
+spec_type: repo-health
+domain: repo-health
+status: draft
+created_at: "2026-05-02 10:00:00 JST +0900"
+updated_at: "2026-05-02 10:00:00 JST +0900"
+source:
+  type: smoke
+  link:
+  notes:
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
+# SPEC-DRAFT - Missing Metadata Draft
+MISSINGMETA
+if run_meta check >"$tmpdir/missing-metadata-check.out" 2>&1; then
+  echo "Expected missing draft metadata check to fail" >&2
+  exit 1
+fi
+require_contains "$tmpdir/missing-metadata-check.out" "must include draft promotion metadata"
+rm "$missing_metadata_draft"
+
+misplaced_draft="$docs_root/repo-health/specs/SPEC-DRAFT-misplaced.md"
+cat > "$misplaced_draft" <<'MISPLACED'
+---
+type: spec
+id: SPEC-DRAFT-misplaced
+title: Misplaced Draft
+spec_type: repo-health
+domain: repo-health
+status: draft
+created_at: "2026-05-02 10:00:00 JST +0900"
+updated_at: "2026-05-02 10:00:00 JST +0900"
+source:
+  type: smoke
+  link:
+  notes:
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
+# SPEC-DRAFT - Misplaced Draft
+MISPLACED
+if run_meta check >"$tmpdir/misplaced-draft-check.out" 2>&1; then
+  echo "Expected misplaced draft check to fail" >&2
+  exit 1
+fi
+require_contains "$tmpdir/misplaced-draft-check.out" "Draft ID SPEC-DRAFT-misplaced is only allowed under drafts/"
+rm "$misplaced_draft"
 
 mkdir -p "$tmpdir/app/src"
 touch "$tmpdir/app/src/todo.ts"
