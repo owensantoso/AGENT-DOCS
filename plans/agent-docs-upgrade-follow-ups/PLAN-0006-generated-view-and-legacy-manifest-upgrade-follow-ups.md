@@ -3,13 +3,13 @@ type: plan
 id: PLAN-0006
 title: Generated View And Legacy Manifest Upgrade Follow-ups
 domain: repo-health
-status: in_progress
+status: completed
 created_at: "2026-05-02 06:10:23 JST +0900"
-updated_at: "2026-05-02 07:39:15 JST +0900"
+updated_at: "2026-05-02 07:51:06 JST +0900"
 planned_execution_start:
 planned_execution_end:
 actual_execution_start: "2026-05-02 06:36:33 JST +0900"
-actual_execution_end:
+actual_execution_end: "2026-05-02 07:51:06 JST +0900"
 owner: codex
 sequence:
   roadmap:
@@ -32,6 +32,7 @@ related_sessions:
   - session-logs/2026-05-02-plan-0006-briefing.md
   - session-logs/2026-05-02-impl-0006-01-legacy-manifest-baseline.md
   - session-logs/2026-05-02-impl-0006-02-generated-view-upgrade-writes-briefing.md
+  - session-logs/2026-05-02-impl-0006-02-generated-view-upgrade-writes.md
 related_issues: []
 related_prs: []
 repo_state:
@@ -45,9 +46,9 @@ repo_state:
 deferred: deliberate manifest baselining for legacy installs first, then safe
 generated-view write mode after the generator-specific safety model is proven.
 
-**Status:** In progress. Legacy manifest baseline work from `IMPL-0006-01` is
-implemented. Generated-view writes are scoped by `IMPL-0006-02` and ready for a
-separate implementation pass.
+**Status:** Completed. Legacy manifest baseline work from `IMPL-0006-01` is
+implemented, and generated-view writes from `IMPL-0006-02` are available behind
+explicit `agent-docs upgrade --write --tooling-only --generated-views`.
 
 **Source Spec:** [SPEC-0003 - AGENT-DOCS Versioning And Safe Upgrade](../agent-docs-versioning-and-upgrade/SPEC-0003-agent-docs-versioning-and-upgrade.md)
 
@@ -75,8 +76,8 @@ baseline manifest.
 - No project-owned Markdown replacement or merge automation.
 - No broad `--force` semantics.
 - No deletion of target-repo files because upstream no longer ships a template.
-- No implementation work beyond `IMPL-0006-01` until additional tasks are
-  promoted into concrete implementation briefs.
+- No implementation work beyond `IMPL-0006-01` and `IMPL-0006-02` until
+  additional tasks are promoted into concrete implementation briefs.
 
 ## Task Dependencies / Parallelization
 
@@ -127,10 +128,10 @@ Verification:
 through known generator commands after the generated-view safety model is
 specified.
 
-Keep this as a later brief because generator writes need separate decisions
-around stale source docs, generator version drift, existing hand-edited generated
-files, and whether generation should happen before or after owned-tooling
-updates in one transaction.
+Implemented in `IMPL-0006-02` behind explicit `--generated-views`. The first
+supported generator is `scripts/docs-meta update`; unsupported generators,
+malformed generated-view records, unsafe generated-view paths, hand-edited
+current files without generated markers, and generator failures are refused.
 
 ## Validation
 
@@ -150,7 +151,7 @@ separate targeted smoke tests for generated-view writes before shipping Task 2.
 
 - [x] Legacy baseline creation is explicit, previewable, and refuses ambiguous
   installs.
-- [ ] Generated-view write semantics are specified and tested before mutation is
+- [x] Generated-view write semantics are specified and tested before mutation is
   enabled.
-- [ ] PLAN-0005 tooling-only write mode remains unchanged unless a promoted
+- [x] PLAN-0005 tooling-only write mode remains unchanged unless a promoted
   task intentionally extends it.

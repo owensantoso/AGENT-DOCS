@@ -105,6 +105,7 @@ manual-review. Bare `upgrade` and `upgrade --dry-run` do not write files.
 
 ```bash
 agent-docs upgrade --write --tooling-only /path/to/project
+agent-docs upgrade --write --tooling-only --generated-views /path/to/project
 ```
 
 Tooling-only write mode is limited to deterministic AGENT-DOCS-owned tooling:
@@ -112,9 +113,12 @@ restoring missing owned files, updating manifest-clean owned files, repairing
 missing executable bits when content still matches the manifest, and updating
 `.agent-docs/manifest.json` last. Backups for touched existing files are written
 under `.agent-docs/backups/<timestamp>/`, with an `audit.json` file for the
-write batch. Project-owned Markdown stays report-only. Exit codes are `0` for
-healthy/current, `1` for warnings or actionable drift, and `2` for invalid usage,
-refused, unknown, or incompatible shapes. Tooling-only write mode exits with the
+write batch. Project-owned Markdown stays report-only. Generated views also stay
+report-only unless `--generated-views` is explicitly provided; that mode
+regenerates manifest-tracked generated views with supported local generators,
+initially `scripts/docs-meta update`. Exit codes are `0` for healthy/current,
+`1` for warnings or actionable drift, and `2` for invalid usage, refused,
+unknown, or incompatible shapes. Tooling-only write mode exits with the
 post-write classification, so a target that is fully repaired by the write exits
 `0`.
 

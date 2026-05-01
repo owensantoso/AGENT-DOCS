@@ -3,9 +3,9 @@ type: implementation-brief
 id: IMPL-0006-02
 title: Generated View Upgrade Writes
 domain: repo-health
-status: ready
+status: completed
 created_at: "2026-05-02 07:39:15 JST +0900"
-updated_at: "2026-05-02 07:39:15 JST +0900"
+updated_at: "2026-05-02 07:51:06 JST +0900"
 parent_plan: PLAN-0006
 task_refs:
   - task-2
@@ -23,6 +23,7 @@ related_adrs: []
 related_sessions:
   - session-logs/2026-05-02-plan-0006-briefing.md
   - session-logs/2026-05-02-impl-0006-01-legacy-manifest-baseline.md
+  - session-logs/2026-05-02-impl-0006-02-generated-view-upgrade-writes.md
 related_issues: []
 related_prs: []
 linked_paths:
@@ -53,7 +54,8 @@ rewritten automatically.
 `agent-docs doctor` and `agent-docs upgrade --dry-run` already classify manifest
 `generated_views` records as `generated view refreshes` when the target file is
 missing or its checksum differs from the manifest. `agent-docs upgrade --write
---tooling-only` currently leaves those refreshes report-only.
+--tooling-only` leaves those refreshes report-only unless `--generated-views` is
+also provided.
 
 Fresh installs and legacy baselines currently write an empty `generated_views`
 array. This brief only enables writes for generated views that are already
@@ -176,11 +178,11 @@ git diff --check
 
 ## Done Checklist
 
-- [ ] Generated-view write behavior implemented behind explicit
+- [x] Generated-view write behavior implemented behind explicit
   `--generated-views`.
-- [ ] Unsupported or ambiguous generated-view/generator shapes refuse before
+- [x] Unsupported or ambiguous generated-view/generator shapes refuse before
   writing.
-- [ ] Generated-view backups and manifest-last write behavior are covered.
-- [ ] Default dry-run and tooling-only write semantics remain unchanged.
-- [ ] Docs, changelog, plan state, and session log updated.
-- [ ] Full verification passes.
+- [x] Generated-view backups and manifest-last write behavior are covered.
+- [x] Default dry-run and tooling-only write semantics remain unchanged.
+- [x] Docs, changelog, plan state, and session log updated.
+- [x] Full verification passes.

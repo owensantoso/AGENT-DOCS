@@ -23,6 +23,10 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
   updates. Bare `agent-docs upgrade` remains a read-only preview, and
   `--write` without `--tooling-only` is refused. Successful tooling-only writes
   return the post-write classification, so fully repaired targets exit `0`.
+- Added explicit generated-view upgrade writes with `agent-docs upgrade --write
+  --tooling-only --generated-views [target]`. The first supported generator is
+  `scripts/docs-meta update`, and only manifest-tracked generated views are
+  refreshed.
 - Added `agent-docs baseline --dry-run|--write [target] --profile <profile>
   --docs-meta auto|yes|no` so legacy installs without `.agent-docs/manifest.json`
   can preview and create a conservative manifest for matching AGENT-DOCS-owned
@@ -65,6 +69,11 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
   existing-manifest refusal, empty-target refusal, missing/drifted/wrong-mode
   owned tooling refusal, symlink and hardlink refusal, and project-owned Markdown
   non-mutation.
+- Added generated-view upgrade write smoke coverage for dry-run/no-write
+  preservation, explicit opt-in regeneration, missing view recreation,
+  unsupported generator refusal, malformed record refusal, unsafe path refusal,
+  hand-edited drift refusal, generator failure, backups, audits, and manifest
+  checksum updates.
 - Added `scripts/changelog-check` for local and CI changelog enforcement.
 - Added smoke coverage for changelog-required, changelog-present, internal-only,
   and explicit-exemption cases.

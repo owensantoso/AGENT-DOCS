@@ -129,6 +129,7 @@ The only supported upgrade write path is:
 
 ```bash
 agent-docs upgrade --write --tooling-only /path/to/project
+agent-docs upgrade --write --tooling-only --generated-views /path/to/project
 ```
 
 `agent-docs upgrade --write` without `--tooling-only` exits `2`. Tooling-only
@@ -138,8 +139,10 @@ when the file content still matches the manifest, and update
 `.agent-docs/manifest.json` last. It creates backups for touched existing files
 under `.agent-docs/backups/<timestamp>/` and writes
 `.agent-docs/backups/<timestamp>/audit.json` with the touched paths, operation
-kinds, and backup paths. Project-owned Markdown and generated views are
-report-only in this slice.
+kinds, and backup paths. Project-owned Markdown is report-only. Generated views
+are report-only unless `--generated-views` is explicitly combined with
+`--write --tooling-only`; that mode regenerates manifest-tracked generated views
+through supported local generators, initially `scripts/docs-meta update`.
 
 Exit codes:
 

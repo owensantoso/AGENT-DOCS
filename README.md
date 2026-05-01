@@ -186,6 +186,7 @@ The narrow write path is explicit:
 
 ```bash
 agent-docs upgrade --write --tooling-only /path/to/project
+agent-docs upgrade --write --tooling-only --generated-views /path/to/project
 ```
 
 Tooling-only write mode may restore missing manifest-owned tooling, update
@@ -194,7 +195,10 @@ missing executable bit when content still matches the manifest, and update the
 manifest last. It creates backups under `.agent-docs/backups/<timestamp>/` for
 touched existing files plus `.agent-docs/backups/<timestamp>/audit.json` for the
 write batch. `agent-docs upgrade --write` without `--tooling-only` is refused,
-and project-owned Markdown remains report-only.
+and project-owned Markdown remains report-only. Generated views remain
+report-only unless `--generated-views` is also provided; that opt-in mode
+regenerates only manifest-tracked generated views through supported local
+generators, initially `scripts/docs-meta update`.
 
 Exit codes are `0` for healthy/current, `1` for warnings or actionable drift,
 and `2` for invalid usage, refused, unknown, or incompatible shapes.
