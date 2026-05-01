@@ -79,6 +79,31 @@ IDEA -> SPEC -> PLAN -> IMPL -> Issues / PRs
 - GitHub issues track approved work. They should link to specs, plans, and implementation briefs rather than replace them.
 - PRs deliver one reviewable change and link back to the relevant issue/docs.
 
+Specs and plans are versioned truth, not timeless truth. When a newer artifact
+changes the meaning of an older one, record that relationship instead of letting
+the docs silently disagree.
+
+Full supersession:
+
+- set the older doc's `status` to `superseded`
+- add `superseded_by: [SPEC-0000]` or the relevant replacement doc
+- add `supersedes: [SPEC-0000]` to the newer doc when applicable
+- write one short note near the top of the older doc explaining why it was
+  superseded
+
+Partial supersession:
+
+- keep the older doc active if most of it still applies
+- add a short "Partial Supersession" or "Revision Notes" section naming the
+  specific requirements, sections, or assumptions replaced by the newer doc
+- link both directions in frontmatter where the schema supports it, or in the
+  revision note when only prose is available
+- when partial supersession becomes hard to reason about, split the still-valid
+  requirement into a fresh spec or mark the old spec fully superseded
+
+Prefer small, explicit revision notes over editing history until the old artifact
+looks like it always knew the future.
+
 ## ID and filename conventions
 
 Use independent IDs for specs and plans. Do not force plan numbers to match spec numbers.
@@ -286,6 +311,16 @@ Create one when:
 - resumability across sessions or worktrees would help
 
 Do not create implementation briefs for every tiny task by default.
+
+Implementation briefs are optional. A parent plan can be directly executable
+when the scope is small, the file ownership is obvious, the verification path is
+simple, and there is no need to delegate or resume multiple independent slices.
+In that case, keep the plan's implementation tasks and validation sections clear
+enough for execution and skip separate `IMPL-*` files.
+
+Add implementation briefs later if the work grows, needs subagents, develops
+tricky ordering or verification, or starts accumulating enough local checklist
+detail that the parent plan becomes noisy.
 
 ## Recommended structure
 

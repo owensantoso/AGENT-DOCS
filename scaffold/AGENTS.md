@@ -4,17 +4,20 @@ Short index. Read the file for your task.
 
 ## Start here
 
-1. `<current state path>` - what is built today. Read first, always.
-2. `<onboarding path>` - product/user-flow or system walkthrough.
-3. `<roadmap path>` - ordered roadmap and rationale.
-4. `<architecture path>` - system overview, boundaries, data flow, and decision provenance.
-5. `<approved spec path>` - current approved product or technical spec.
-6. `<planning guide path>` - how parent plans differ from implementation briefs.
-7. `docs/product/plans/` - plan guide and examples for new plans and briefs.
-8. `<session logs guide path>` - timestamped session receipts and commit-trailer convention.
-9. `<surface codebase map path>` - current module map and entry points.
-10. `<seams guide path>` - canonical versus compatibility seam guidance.
-11. `<testing guide path>` - verification commands, limits, and manual-check references.
+1. `./run` or `<project command guide>` - one-stop command menu when the repo has one.
+   - Prefer `./run check` for the fast handoff baseline.
+   - Prefer `./run agent-check` before meaningful closeout or commit when the repo provides it.
+2. `<current state path>` - what is built today. Read first, always.
+3. `<onboarding path>` - product/user-flow or system walkthrough.
+4. `<roadmap path>` - ordered roadmap and rationale.
+5. `<architecture path>` - system overview, boundaries, data flow, and decision provenance.
+6. `<approved spec path>` - current approved product or technical spec.
+7. `<planning guide path>` - how parent plans differ from implementation briefs.
+8. `docs/product/plans/` - plan guide and examples for new plans and briefs.
+9. `<session logs guide path>` - timestamped session receipts and commit-trailer convention.
+10. `<surface codebase map path>` - current module map and entry points.
+11. `<seams guide path>` - canonical versus compatibility seam guidance.
+12. `<testing guide path>` - verification commands, limits, and manual-check references.
 
 ## By task
 
@@ -63,6 +66,8 @@ If the repo includes `skills/structured-docs-workflow/SKILL.md`, read it before 
 - Cite todo-backed work in session logs, commit trailers, PRs, and issues with `Todo: TODO-####` or equivalent references.
 - Keep source-code TODO comments local; promote them to structured Markdown `TODO-*` items when they need ownership, delegation, review, or cross-session tracking.
 - When completing durable todo-backed work, update the source checkbox line and run the repo's todo checks before closeout.
+- If the repo has `./run agent-check`, run it before staging or committing meaningful changes. It should be the local agent mini-CI: generated docs refresh/checks, relevant repo-health advisory queues, `git diff --check`, and the repo's practical test baseline. Advisory queues may report existing debt without failing the hard gate; mention relevant findings in the handoff.
+- If the repo only has `./run check`, run that as the fast handoff baseline and add surface-specific checks from the testing guide.
 - When the human asks for a substantial explanation of repo-relevant product behavior, architecture, system flow, source-of-truth ownership, or a concept that future agents are likely to revisit, create or update the relevant `EXPL-*` in the same turn without waiting for a second prompt. Answer in chat too, but do not leave the reusable explanation trapped in chat. For tiny one-off clarifications, chat-only is fine.
 - When creating or updating an `EXPL-*`, lead the closeout with the explainer path before summarizing the explanation, so the human can see the durable artifact exists.
 - Do not write that the human understands something unless they confirmed it. Use agent-inferred wording when unsure.

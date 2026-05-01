@@ -30,6 +30,9 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 
 ## Strongly recommended setup
 
+- Create or adapt a root `./run` command as the project command menu.
+- Make `./run check` the fast handoff baseline for generated docs checks, diff hygiene, and the practical test baseline.
+- Add `./run agent-check` when the repo needs a fuller agent closeout/pre-commit sweep. It should refresh/check generated docs, print repo-health advisory queues, run `git diff --check`, and run the practical test baseline.
 - Create a reusable implementer handoff prompt.
 - Create at least one surface-level `AGENTS.md`, placed at the root of the surface it governs, such as `apps/web/AGENTS.md`, `packages/api/AGENTS.md`, or `docs/AGENTS.md`.
 - Create a codebase map for the main app or service surface.
@@ -57,6 +60,7 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 - Update plan and brief checklists together when both exist.
 - Update session logs at closeout for meaningful work.
 - Use commit trailers for meaningful commits.
+- Run `./run check` for ordinary handoff and `./run agent-check` before meaningful closeout/commit when those commands exist.
 - Use `scripts/docs-meta move ... --dry-run` before moving or renaming docs when the repo has `docs-meta`.
 - Run `scripts/docs-meta check-links` after docs layout changes.
 - Run `scripts/docs-meta check-todos` when the repo uses structured `TODO-*` items for durable work.

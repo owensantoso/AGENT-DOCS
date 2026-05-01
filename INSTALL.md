@@ -194,6 +194,12 @@ Then report:
 - what the next safest work item is
 
 Do not implement from an implementation brief alone. Read its parent plan first. If docs-meta is installed, use scripts/docs-meta check and scripts/docs-meta check-links before closeout.
+
+If the repo has a root ./run command, prefer it for verification:
+- ./run check for the fast handoff baseline.
+- ./run agent-check before meaningful closeout or commit when available.
+
+If those commands do not exist, recommend adding them or document the closest equivalent in docs/repo-health/testing-guide.md.
 ```
 
 ## Verification
@@ -207,6 +213,8 @@ tests/docs-meta-smoke.sh
 In the target repo, run whichever of these exist:
 
 ```bash
+./run check
+./run agent-check
 scripts/docs-meta update
 scripts/docs-meta check
 scripts/docs-meta check-links

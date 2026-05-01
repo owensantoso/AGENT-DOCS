@@ -74,6 +74,11 @@ Read these in order when you need the full workflow:
 - Read the parent `PLAN-*` before acting on an `IMPL-*`.
 - Parent plans own intent, boundaries, dependencies, and non-goals.
 - Implementation briefs own task-level order, ownership, and verification detail.
+- Implementation briefs are optional; skip them when the parent plan is small,
+  directly executable, and has simple ownership and verification.
+- Treat specs and plans as versioned truth. When a newer doc fully or partially
+  supersedes an older one, mark or note that relationship explicitly instead of
+  leaving silent contradictions.
 - Generated views such as `TODOS.md`, `SPECS.md`, `LEARNINGS.md`, and `ROADMAP-VIEW.md` are dashboards, not the source of truth.
 
 ## Structured Todos
@@ -117,6 +122,22 @@ scripts/docs-meta update
 scripts/docs-meta check
 scripts/docs-meta check-links
 ```
+
+## Verification Wrappers
+
+When the target repo has a root project command, prefer it over memorizing many separate commands:
+
+```bash
+./run check
+./run agent-check
+```
+
+Expected convention:
+
+- `./run check` is the fast handoff baseline.
+- `./run agent-check` is the fuller closeout/pre-commit sweep.
+- Advisory repo-health queues may report existing debt without failing the hard gate; mention relevant findings in the handoff.
+- Destructive checks, database resets, device installs, and manual UI checks stay explicit unless the command name makes the behavior obvious.
 
 ## Guardrails
 
