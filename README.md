@@ -14,7 +14,9 @@ From the repo you want to document, install or update the CLI and preview the re
 curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile small --dry-run
 ```
 
-The curl installer installs `agent-docs-init` and previews by default. Write mode requires explicit intent:
+The curl installer installs `agent-docs` and the compatibility command
+`agent-docs-init`, then previews by default. Write mode requires explicit
+intent:
 
 ```bash
 agent-docs-init --profile small --write
@@ -43,6 +45,13 @@ agent-docs-init --profile small --write
 agent-docs-init /path/to/project --profile growing --dry-run
 agent-docs-init /path/to/project --profile full --dry-run
 agent-docs-init /path/to/project --profile full --write
+```
+
+You can also use the new command namespace for init:
+
+```bash
+agent-docs init --profile small --dry-run
+agent-docs init --profile small --write
 ```
 
 ## Why This Exists
@@ -123,7 +132,8 @@ Supported platforms and prerequisites:
 - macOS or Linux shell with Bash.
 - Git for installer clone/update paths.
 - Python 3.10 or newer.
-- Symlink support for the installed `agent-docs-init` command.
+- Symlink support for the installed `agent-docs` and `agent-docs-init`
+  commands.
 - A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_DOCS_BIN_DIR`.
 
 Use the installed command when you want the CLI to explain profiles, show the structure preview, and copy the selected scaffold. If you omit the target path, it uses the current directory in non-interactive mode and asks about the current directory in interactive mode:
@@ -133,6 +143,15 @@ agent-docs-init
 ```
 
 The installer is idempotent around existing project files: it may create missing docs inside an existing `docs/` folder, but it lists exact file conflicts and refuses to overwrite those files in write mode unless `--force` is explicitly provided.
+
+Explicit write installs create `.agent-docs/manifest.json`. Manifest schema
+version 1 records the AGENT-DOCS source repo/ref/commit when available, the
+selected profile, optional components such as `docs-meta`, installed file
+records, and timestamps. Only reusable AGENT-DOCS tooling such as
+`scripts/docs-meta` and `tests/docs-meta-smoke.sh` is checksummed as
+`agent-docs-owned`; starter Markdown is recorded as
+`project-owned-after-install` so future update tooling does not treat target
+repo truth as automatically replaceable.
 
 Non-interactive examples:
 
@@ -333,7 +352,8 @@ The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. Copy 
 | [scaffold/docs/research/](scaffold/docs/research/) | `RSCH-*` convention and research notes |
 | [scaffold/docs/operations/](scaffold/docs/operations/) | release and operational checklists |
 | [scaffold/docs/marketing/](scaffold/docs/marketing/) | launch and campaign planning |
-| [scripts/agent-docs-init](scripts/agent-docs-init) | interactive selected scaffold installer |
+| [scripts/agent-docs](scripts/agent-docs) | command namespace for AGENT-DOCS workflows |
+| [scripts/agent-docs-init](scripts/agent-docs-init) | compatibility selected scaffold installer |
 | [scripts/docs-meta](scripts/docs-meta) | deterministic docs metadata CLI |
 
 ## Docs Meta

@@ -3,12 +3,12 @@ type: plan
 id: PLAN-0005
 title: Agent Docs Doctor Manifest Upgrade
 domain: repo-health
-status: draft
+status: in_progress
 created_at: "2026-05-02 02:40:23 JST +0900"
-updated_at: "2026-05-02 02:40:23 JST +0900"
+updated_at: "2026-05-02 03:23:56 JST +0900"
 planned_execution_start:
 planned_execution_end:
-actual_execution_start:
+actual_execution_start: "2026-05-02 03:00:00 JST +0900"
 actual_execution_end:
 owner: codex
 sequence:
@@ -29,11 +29,12 @@ related_concepts:
 related_adrs: []
 related_sessions:
   - session-logs/2026-05-02-plan-0004-public-readiness.md
+  - session-logs/2026-05-02-plan-0005-slice-a-manifest-foundation.md
 related_issues: []
 related_prs: []
 repo_state:
-  based_on_commit: aeb7558fc9a6b5b5bfd11e2cd738b2d181a22b4d
-  last_reviewed_commit: aeb7558fc9a6b5b5bfd11e2cd738b2d181a22b4d
+  based_on_commit: 54f6245d3df665e86525441e153cf4f30ae6edd7
+  last_reviewed_commit: 54f6245d3df665e86525441e153cf4f30ae6edd7
 ---
 
 # PLAN-0005 - Agent Docs Doctor Manifest Upgrade
@@ -47,9 +48,9 @@ then make drift visible without writing, then preview upgrade categories, and
 only then allow writes for manifest-recognized AGENT-DOCS-owned tooling,
 generated views, and non-conflicting additions.
 
-**Tech Stack:** Bash installer, Python `agent-docs-init` or future `agent-docs`
-entry point, JSON manifest files, Markdown scaffold, `docs-meta`, smoke tests,
-and release-check/CI coverage.
+**Tech Stack:** Bash installer, Python `agent-docs` and `agent-docs-init` entry
+points, JSON manifest files, Markdown scaffold, `docs-meta`, smoke tests, and
+release-check/CI coverage.
 
 **Source Spec:** [SPEC-0003 - AGENT-DOCS Versioning And Safe Upgrade](../agent-docs-versioning-and-upgrade/SPEC-0003-agent-docs-versioning-and-upgrade.md)
 
@@ -79,6 +80,12 @@ and release-check/CI coverage.
 - Markdown docs in target repos are project-owned by default after install.
 - The manifest records AGENT-DOCS-owned assets; it is not a source of truth for
   target-repo product, architecture, or planning knowledge.
+- Slice A command shape: `agent-docs` is the future namespace, with
+  `agent-docs init ...` delegating to the compatible `agent-docs-init` command.
+- Manifest schema version 1 records source metadata, selected profile, optional
+  components, installed file records, generated-view records, and timestamps.
+  Only reusable AGENT-DOCS tooling receives checksums as `agent-docs-owned`;
+  starter docs/templates are listed as `project-owned-after-install`.
 - `doctor` must be read-only and useful before upgrade write mode is built.
 - Dry-run output should classify every candidate as safe automatic update, safe
   addition, generated refresh, manual review, refused, or unknown.
@@ -123,6 +130,7 @@ README.md
 INSTALL.md
 CHANGELOG.md
 scripts/agent-docs-init
+scripts/agent-docs
 scripts/README.md
 scripts/release-check
 tests/agent-docs-init-smoke.sh
@@ -249,8 +257,8 @@ lands.
 
 ## Completion Criteria
 
-- [ ] Manifest schema is documented and versioned.
-- [ ] Fresh installs can write a manifest for AGENT-DOCS-owned assets.
+- [x] Manifest schema is documented and versioned.
+- [x] Fresh installs can write a manifest for AGENT-DOCS-owned assets.
 - [ ] Existing installs have a deliberate baseline path or remain manual-review.
 - [ ] `doctor` is read-only and classifies install state deterministically.
 - [ ] Upgrade dry-run reports safe, manual-review, refused, and unknown work.

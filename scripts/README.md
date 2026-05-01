@@ -4,8 +4,9 @@ This folder contains two main scripts:
 
 | Script | Purpose |
 |---|---|
-| `../install.sh` | bootstrap installer that puts `agent-docs-init` on PATH |
-| `agent-docs-init` | interactive selected scaffold installer for target repos |
+| `../install.sh` | bootstrap installer that puts `agent-docs` and `agent-docs-init` on PATH |
+| `agent-docs` | command namespace for AGENT-DOCS workflows |
+| `agent-docs-init` | compatibility selected scaffold installer for target repos |
 | `docs-meta` | deterministic metadata helper once docs are installed |
 | `changelog-check` | changelog gate for reusable adopter-facing surfaces |
 | `release-check` | local release-readiness wrapper used by CI |
@@ -31,9 +32,12 @@ gh auth login
 gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile small --dry-run
 ```
 
-Then use `agent-docs-init` to install the smallest useful AGENT-DOCS shape into another repo:
+Then use `agent-docs init` or `agent-docs-init` to install the smallest useful
+AGENT-DOCS shape into another repo:
 
 ```bash
+agent-docs init --profile small --dry-run
+agent-docs init --profile small --write
 agent-docs-init
 agent-docs-init --profile small --dry-run
 agent-docs-init --profile small --docs-meta yes --write
@@ -44,7 +48,10 @@ agent-docs-init /path/to/project --profile full --dry-run
 
 If no target path is provided, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path.
 
-Repeated installs are safe: the bootstrapper updates the local source checkout, refreshes the symlink, and reports when `agent-docs-init` is already installed. Existing project files are listed in dry-run, and write mode refuses to overwrite them unless `--force` is explicitly provided.
+Repeated installs are safe: the bootstrapper updates the local source checkout,
+refreshes command symlinks, and reports when `agent-docs` and `agent-docs-init`
+are already installed. Existing project files are listed in dry-run, and write
+mode refuses to overwrite them unless `--force` is explicitly provided.
 
 Profiles:
 
@@ -56,6 +63,27 @@ Profiles:
 | `full` | long-lived repo with many agents and generated views | full scaffold, `docs-meta` |
 
 The interactive selector explains each profile and previews the tree while you move through the choices. `tiny` and `small` synthesize lighter docs, including a smaller `ARCHITECTURE.md`; `growing` and `full` copy selected files from `scaffold/`.
+
+### Installed Manifest
+
+Explicit write installs create `.agent-docs/manifest.json`.
+
+Schema version 1 contains:
+
+- `schema_version`: currently `1`
+- `installed_at` and `updated_at`: UTC timestamps
+- `source`: AGENT-DOCS repository URL, ref, commit, and local source path when available
+- `profile`: selected profile
+- `optional_components`: currently includes `docs-meta` when selected
+- `files`: installed file records
+- `generated_views`: present for future generated-view tracking, empty in this slice
+
+File records use conservative ownership. Reusable tooling such as
+`scripts/docs-meta` and `tests/docs-meta-smoke.sh` is recorded as
+`agent-docs-owned` with a SHA-256 checksum. Starter docs and templates are
+recorded as `project-owned-after-install` without checksums, because target-repo
+Markdown becomes local truth after installation and is not an automatic upgrade
+target.
 
 Supported platforms and prerequisites: Bash on macOS or Linux, Git for installer clone/update paths, Python 3.10 or newer, symlink support, and a user-local bin directory such as `~/.local/bin` on `PATH` or an explicit `AGENT_DOCS_BIN_DIR`.
 

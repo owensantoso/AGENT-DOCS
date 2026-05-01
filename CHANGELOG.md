@@ -8,6 +8,11 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 
 ### For adopters
 
+- The installer now publishes `agent-docs` as the future command namespace while
+  keeping `agent-docs-init` as the compatible init command.
+- Explicit write installs now create `.agent-docs/manifest.json` with schema
+  version 1, profile/source metadata, optional component records, conservative
+  file ownership, and checksums for AGENT-DOCS-owned tooling.
 - Public-readiness work now favors preview-first install and init flows so first
   runs show intended changes before writing files.
 - Supported platform and prerequisite guidance is clearer for macOS and Linux
@@ -29,6 +34,9 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 
 ### Tooling changes
 
+- Added `agent-docs init ...` as a thin delegator to `agent-docs-init`.
+- Added manifest assertions to init/install smoke coverage and Python compile
+  coverage for the new command entry point.
 - Added `scripts/changelog-check` for local and CI changelog enforcement.
 - Added smoke coverage for changelog-required, changelog-present, internal-only,
   and explicit-exemption cases.

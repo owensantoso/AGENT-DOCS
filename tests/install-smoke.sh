@@ -37,18 +37,53 @@ AGENT_DOCS_BIN_DIR="$bin_dir" \
   "$repo_root/install.sh" --no-run >"$tmpdir/install.out"
 
 require_file "$bin_dir/agent-docs-init"
+require_file "$bin_dir/agent-docs"
 require_contains "$tmpdir/install.out" "agent-docs-init"
+require_contains "$tmpdir/install.out" "agent-docs"
 
 AGENT_DOCS_SOURCE="$repo_root" \
 AGENT_DOCS_HOME="$home_dir" \
 AGENT_DOCS_BIN_DIR="$bin_dir" \
   "$repo_root/install.sh" --no-run >"$tmpdir/install-again.out"
 require_contains "$tmpdir/install-again.out" "already installed"
+require_contains "$tmpdir/install-again.out" "agent-docs already installed"
+
+relative_source_bin="$tmpdir/relative-source-bin"
+(cd "$repo_root/.." && AGENT_DOCS_SOURCE="$(basename "$repo_root")" \
+  AGENT_DOCS_HOME="$home_dir" \
+  AGENT_DOCS_BIN_DIR="$relative_source_bin" \
+    "$repo_root/install.sh" --no-run >"$tmpdir/relative-source.out")
+relative_init_target="$(readlink "$relative_source_bin/agent-docs-init")"
+case "$relative_init_target" in
+  /*) ;;
+  *)
+    echo "Expected relative AGENT_DOCS_SOURCE to install an absolute symlink, got $relative_init_target" >&2
+    exit 1
+    ;;
+esac
+require_file "$relative_init_target"
 
 target="$tmpdir/project"
 "$bin_dir/agent-docs-init" "$target" --profile tiny --write >"$tmpdir/init.out"
 require_file "$target/AGENTS.md"
 require_file "$target/docs/CURRENT_STATE.md"
+require_file "$target/.agent-docs/manifest.json"
+
+shim_target="$tmpdir/shim-project"
+"$bin_dir/agent-docs" init "$shim_target" --profile tiny --write >"$tmpdir/shim-init.out"
+require_file "$shim_target/AGENTS.md"
+require_file "$shim_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/shim-init.out" "Profile: tiny"
+
+missing_sibling="$tmpdir/missing-sibling"
+mkdir -p "$missing_sibling"
+cp "$repo_root/scripts/agent-docs" "$missing_sibling/agent-docs"
+chmod +x "$missing_sibling/agent-docs"
+if "$missing_sibling/agent-docs" init "$tmpdir/missing-sibling-target" --profile tiny --dry-run >"$tmpdir/missing-sibling.out" 2>&1; then
+  echo "Expected agent-docs init to fail when agent-docs-init sibling is missing" >&2
+  exit 1
+fi
+require_contains "$tmpdir/missing-sibling.out" "Could not find executable agent-docs-init"
 
 run_target="$tmpdir/run-project"
 resolved_run_target="$(mkdir -p "$run_target" && cd "$run_target" && pwd -P)"
@@ -164,6 +199,20 @@ if AGENT_DOCS_SOURCE="$repo_root" \
 fi
 require_contains "$conflict_bin/agent-docs-init" "existing command"
 require_contains "$tmpdir/conflict-bin.out" "Refusing to replace existing command"
+
+agent_docs_conflict_bin="$tmpdir/agent-docs-conflict-bin"
+mkdir -p "$agent_docs_conflict_bin"
+echo "existing command" >"$agent_docs_conflict_bin/agent-docs"
+if AGENT_DOCS_SOURCE="$repo_root" \
+  AGENT_DOCS_HOME="$home_dir" \
+  AGENT_DOCS_BIN_DIR="$agent_docs_conflict_bin" \
+  "$repo_root/install.sh" --no-run >"$tmpdir/agent-docs-conflict-bin.out" 2>&1; then
+  echo "Expected install to refuse replacing existing agent-docs command" >&2
+  exit 1
+fi
+require_contains "$agent_docs_conflict_bin/agent-docs" "existing command"
+require_absent "$agent_docs_conflict_bin/agent-docs-init"
+require_contains "$tmpdir/agent-docs-conflict-bin.out" "Refusing to replace existing command"
 
 mismatch_home="$tmpdir/mismatch-home"
 mkdir -p "$mismatch_home"

@@ -23,11 +23,20 @@ From the target repo root, install or update the CLI and preview the recommended
 curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile small --dry-run
 ```
 
-The curl installer installs `agent-docs-init` and previews by default. Write mode requires explicit intent:
+The curl installer installs `agent-docs` and the compatibility command
+`agent-docs-init`, then previews by default. Write mode requires explicit
+intent:
 
 ```bash
 agent-docs-init --profile small --dry-run
 agent-docs-init --profile small --write
+```
+
+The equivalent namespace form is:
+
+```bash
+agent-docs init --profile small --dry-run
+agent-docs init --profile small --write
 ```
 
 If you omit the target path, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path. The standalone `agent-docs-init` command also defaults to dry-run unless you pass `--write`.
@@ -45,14 +54,26 @@ gh auth login
 gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile small --dry-run
 ```
 
-Repeated installs update `~/.agent-docs`, refresh the `agent-docs-init` symlink, and report when the command is already installed. Existing target files are listed during dry-run; write mode refuses to overwrite them unless you pass `--force`. An existing `docs/` folder is fine when the selected profile only needs to create missing files inside it.
+Repeated installs update `~/.agent-docs`, refresh the `agent-docs` and
+`agent-docs-init` symlinks, and report when the commands are already installed.
+Existing target files are listed during dry-run; write mode refuses to overwrite
+them unless you pass `--force`. An existing `docs/` folder is fine when the
+selected profile only needs to create missing files inside it.
 
 Supported platforms and prerequisites:
 
 - macOS or Linux shell with Bash.
 - Git for installer clone/update paths.
 - Python 3.10 or newer.
-- Symlink support for the installed `agent-docs-init` command.
+- Symlink support for the installed `agent-docs` and `agent-docs-init`
+  commands.
+
+Write mode also creates `.agent-docs/manifest.json` with schema version 1. The
+manifest records source metadata when Git can provide it, the selected profile,
+optional components such as `docs-meta`, installed files, and timestamps. It
+checksums AGENT-DOCS-owned reusable tooling only; starter Markdown is recorded as
+`project-owned-after-install` because target repos are expected to customize
+those docs.
 - A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_DOCS_BIN_DIR`.
 
 Manual full-scaffold install:

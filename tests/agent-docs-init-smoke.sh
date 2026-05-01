@@ -55,7 +55,33 @@ require_contains "$tmpdir/tiny-write.out" "Created"
 require_file "$tiny_target/AGENTS.md"
 require_file "$tiny_target/docs/CURRENT_STATE.md"
 require_file "$tiny_target/docs/ARCHITECTURE.md"
+require_file "$tiny_target/.agent-docs/manifest.json"
 require_contains "$tiny_target/AGENTS.md" "Tiny Project"
+python3 - "$tiny_target/.agent-docs/manifest.json" <<'PY'
+import json
+import sys
+
+manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+if manifest.get("schema_version") != 1:
+    raise SystemExit("Expected manifest schema_version 1")
+if manifest.get("profile") != "tiny":
+    raise SystemExit("Expected tiny profile in manifest")
+if manifest.get("optional_components") != []:
+    raise SystemExit("Expected no optional components for tiny profile")
+paths = {record["path"]: record for record in manifest.get("files", [])}
+for path in ("AGENTS.md", "docs/CURRENT_STATE.md", "docs/ARCHITECTURE.md"):
+    record = paths.get(path)
+    if not record:
+        raise SystemExit(f"Expected manifest record for {path}")
+    if record.get("ownership") != "project-owned-after-install":
+        raise SystemExit(f"Expected {path} to become project-owned after install")
+    if "checksum_sha256" in record:
+        raise SystemExit(f"Expected no checksum for project-owned starter doc {path}")
+if manifest.get("generated_views") != []:
+    raise SystemExit("Expected generated_views to be present and empty")
+if "installed_at" not in manifest or "updated_at" not in manifest:
+    raise SystemExit("Expected install timestamps in manifest")
+PY
 
 echo "# existing" >"$tiny_target/AGENTS.md"
 if "$installer" "$tiny_target" --profile tiny --write >"$tmpdir/overwrite.out" 2>&1; then
@@ -63,6 +89,20 @@ if "$installer" "$tiny_target" --profile tiny --write >"$tmpdir/overwrite.out" 2
   exit 1
 fi
 require_contains "$tmpdir/overwrite.out" "Refusing to overwrite"
+
+manifest_conflict_target="$tmpdir/manifest-conflict-app"
+mkdir -p "$manifest_conflict_target/.agent-docs"
+echo "{}" >"$manifest_conflict_target/.agent-docs/manifest.json"
+if "$installer" "$manifest_conflict_target" --profile tiny --write >"$tmpdir/manifest-conflict.out" 2>&1; then
+  echo "Expected installer to refuse overwriting an existing manifest" >&2
+  exit 1
+fi
+require_contains "$tmpdir/manifest-conflict.out" ".agent-docs/manifest.json"
+if "$installer" "$manifest_conflict_target" --profile tiny --write --force >"$tmpdir/manifest-force-conflict.out" 2>&1; then
+  echo "Expected installer to refuse overwriting an existing manifest even with --force" >&2
+  exit 1
+fi
+require_contains "$tmpdir/manifest-force-conflict.out" "Refusing to overwrite existing manifest"
 
 symlink_target="$tmpdir/symlink-app"
 outside_target="$tmpdir/outside"
@@ -79,9 +119,38 @@ meta_target="$tmpdir/meta-app"
 "$installer" "$meta_target" --profile small --docs-meta yes --write >"$tmpdir/meta-write.out"
 require_file "$meta_target/scripts/docs-meta"
 require_file "$meta_target/tests/docs-meta-smoke.sh"
+require_file "$meta_target/.agent-docs/manifest.json"
 require_contains "$tmpdir/meta-write.out" "scripts/docs-meta"
+python3 - "$meta_target/.agent-docs/manifest.json" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+manifest_path = pathlib.Path(sys.argv[1])
+target = manifest_path.parents[1]
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+if manifest.get("optional_components") != ["docs-meta"]:
+    raise SystemExit("Expected docs-meta optional component")
+records = {record["path"]: record for record in manifest.get("files", [])}
+for path in ("scripts/docs-meta", "tests/docs-meta-smoke.sh"):
+    record = records.get(path)
+    if not record:
+        raise SystemExit(f"Expected manifest record for {path}")
+    if record.get("ownership") != "agent-docs-owned":
+        raise SystemExit(f"Expected {path} to be AGENT-DOCS-owned")
+    expected = hashlib.sha256((target / path).read_bytes()).hexdigest()
+    if record.get("checksum_sha256") != expected:
+        raise SystemExit(f"Expected checksum for {path}")
+for path in ("AGENTS.md", "docs/CURRENT_STATE.md"):
+    if records[path].get("ownership") != "project-owned-after-install":
+        raise SystemExit(f"Expected {path} to be project-owned after install")
+    if "checksum_sha256" in records[path]:
+        raise SystemExit(f"Expected no checksum for {path}")
+PY
 
 "$installer" "$tmpdir/meta-preview-app" --profile small --docs-meta yes --dry-run >"$tmpdir/meta-preview.out"
+require_absent "$tmpdir/meta-preview-app/.agent-docs/manifest.json"
 python3 - "$tmpdir/meta-preview.out" <<'PY'
 import sys
 

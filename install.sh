@@ -144,34 +144,58 @@ if [[ -z "$source_dir" ]]; then
   fi
   source_dir="$agent_docs_home"
 fi
+source_dir="$(cd "$source_dir" && pwd -P)"
 
 init_script="$source_dir/scripts/agent-docs-init"
+command_script="$source_dir/scripts/agent-docs"
 if [[ ! -f "$init_script" ]]; then
   echo "Could not find scripts/agent-docs-init in $source_dir" >&2
   exit 1
 fi
 
+preflight_command() {
+  local name="$1"
+  local source_path="$2"
+  local installed_path="$bin_dir/$name"
+
+  if [[ ( -e "$installed_path" || -L "$installed_path" ) ]] &&
+    ! [[ -L "$installed_path" && "$(readlink "$installed_path")" == "$source_path" ]]; then
+    echo "Refusing to replace existing command: $installed_path" >&2
+    echo "Move it aside, remove it manually, or set AGENT_DOCS_BIN_DIR to another path." >&2
+    exit 1
+  fi
+}
+
+install_command() {
+  local name="$1"
+  local source_path="$2"
+  local installed_path="$bin_dir/$name"
+  local already_installed
+
+  if [[ -L "$installed_path" && "$(readlink "$installed_path")" == "$source_path" ]]; then
+    already_installed=true
+  else
+    already_installed=false
+  fi
+
+  ln -sfn "$source_path" "$installed_path"
+  chmod +x "$source_path"
+
+  if [[ "$already_installed" == true ]]; then
+    echo "$name already installed -> $installed_path"
+  else
+    echo "Installed $name -> $installed_path"
+  fi
+}
+
 mkdir -p "$bin_dir"
-installed_bin="$bin_dir/agent-docs-init"
-if [[ -L "$installed_bin" && "$(readlink "$installed_bin")" == "$init_script" ]]; then
-  already_installed=true
-else
-  already_installed=false
+preflight_command "agent-docs-init" "$init_script"
+if [[ -f "$command_script" ]]; then
+  preflight_command "agent-docs" "$command_script"
 fi
-
-if [[ ( -e "$installed_bin" || -L "$installed_bin" ) && "$already_installed" != true ]]; then
-  echo "Refusing to replace existing command: $installed_bin" >&2
-  echo "Move it aside, remove it manually, or set AGENT_DOCS_BIN_DIR to another path." >&2
-  exit 1
-fi
-
-ln -sfn "$init_script" "$installed_bin"
-chmod +x "$init_script"
-
-if [[ "$already_installed" == true ]]; then
-  echo "agent-docs-init already installed -> $installed_bin"
-else
-  echo "Installed agent-docs-init -> $installed_bin"
+install_command "agent-docs-init" "$init_script"
+if [[ -f "$command_script" ]]; then
+  install_command "agent-docs" "$command_script"
 fi
 
 case ":$PATH:" in

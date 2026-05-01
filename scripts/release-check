@@ -30,7 +30,7 @@ run tests/agent-docs-init-smoke.sh
 run tests/docs-meta-smoke.sh
 run tests/changelog-check-smoke.sh
 pycache_dir="$(mktemp -d)"
-run env PYTHONPYCACHEPREFIX="$pycache_dir" python3 -m py_compile scripts/agent-docs-init scripts/docs-meta
+run env PYTHONPYCACHEPREFIX="$pycache_dir" python3 -m py_compile scripts/agent-docs scripts/agent-docs-init scripts/docs-meta
 rm -rf "$pycache_dir"
 run scripts/changelog-check
 
