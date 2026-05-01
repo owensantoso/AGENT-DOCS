@@ -7,13 +7,15 @@ This folder contains two main scripts:
 | `../install.sh` | bootstrap installer that puts `agent-docs-init` on PATH |
 | `agent-docs-init` | interactive selected scaffold installer for target repos |
 | `docs-meta` | deterministic metadata helper once docs are installed |
+| `changelog-check` | changelog gate for reusable adopter-facing surfaces |
+| `release-check` | local release-readiness wrapper used by CI |
 
 ## Agent Docs Init
 
-From the repo you want to document, install or update the command and immediately run the init flow:
+From the repo you want to document, install or update the command and preview the recommended small profile:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile small --dry-run
 ```
 
 Use `--no-run` when you only want to install or update the command:
@@ -22,7 +24,12 @@ Use `--no-run` when you only want to install or update the command:
 curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
 ```
 
-For private forks, authenticate with GitHub CLI, add an `Authorization` header to the raw request, and set `AGENT_DOCS_REPO_URL` so the installer clones that fork.
+For private forks, authenticate with GitHub CLI and pipe the raw installer through `gh api` so the token stays out of shell history and process listings:
+
+```bash
+gh auth login
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile small --dry-run
+```
 
 Then use `agent-docs-init` to install the smallest useful AGENT-DOCS shape into another repo:
 
@@ -31,6 +38,8 @@ agent-docs-init
 agent-docs-init --profile small --dry-run
 agent-docs-init --profile small --docs-meta yes --write
 agent-docs-init /path/to/project --profile small --dry-run
+agent-docs-init /path/to/project --profile growing --dry-run
+agent-docs-init /path/to/project --profile full --dry-run
 ```
 
 If no target path is provided, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path.
@@ -47,6 +56,8 @@ Profiles:
 | `full` | long-lived repo with many agents and generated views | full scaffold, `docs-meta` |
 
 The interactive selector explains each profile and previews the tree while you move through the choices. `tiny` and `small` synthesize lighter docs, including a smaller `ARCHITECTURE.md`; `growing` and `full` copy selected files from `scaffold/`.
+
+Supported platforms and prerequisites: Bash on macOS or Linux, Git for installer clone/update paths, Python 3.10 or newer, symlink support, and a user-local bin directory such as `~/.local/bin` on `PATH` or an explicit `AGENT_DOCS_BIN_DIR`.
 
 ## Docs Meta
 
@@ -103,6 +114,29 @@ docs/HEALTH.md
 ```
 
 Those generated files should be treated as caches. If they disagree with the source docs, regenerate them instead of editing them by hand.
+
+## Release Check
+
+Run the same public-readiness checks used by CI:
+
+```bash
+scripts/release-check
+```
+
+The wrapper runs the installer/init/docs-meta smoke tests, compiles the Python
+entry points, validates the adopter-facing changelog gate, checks structured
+plan metadata and repo-root links, and finishes with `git diff --check`.
+
+Run the changelog gate directly when changing reusable AGENT-DOCS surfaces:
+
+```bash
+scripts/changelog-check
+```
+
+The gate requires `CHANGELOG.md` when adopter-facing files such as installer,
+scaffold, skill, reusable guide, or public command docs change. Use the explicit
+marker `Change-Record: not-needed` in commit or PR text only when the path
+changed without changing adopter behavior.
 
 ## Commands
 

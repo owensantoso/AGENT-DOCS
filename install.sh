@@ -71,6 +71,14 @@ PY
   fi
 }
 
+require_git() {
+  if ! command -v git >/dev/null 2>&1 || ! git --version >/dev/null 2>&1; then
+    echo "agent-docs-init installer requires git, but git was not found." >&2
+    echo "Install git or set AGENT_DOCS_SOURCE to a local AGENT-DOCS checkout." >&2
+    exit 1
+  fi
+}
+
 run_args_include_mode() {
   local arg
   if [[ "${#run_args[@]}" -eq 0 ]]; then
@@ -111,10 +119,11 @@ done
 require_python
 
 if [[ "$run_after_install" == true ]] && ! run_args_include_mode; then
-  run_args+=("--write")
+  run_args+=("--dry-run")
 fi
 
 if [[ -z "$source_dir" ]]; then
+  require_git
   if [[ -d "$agent_docs_home/.git" ]]; then
     origin_url="$(git -C "$agent_docs_home" config --get remote.origin.url || true)"
     if [[ -z "$origin_url" ]] || ! repo_url_matches "$repo_url" "$origin_url"; then

@@ -6,24 +6,35 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 
 ## Copy steps
 
-- Set `AGENT_DOCS=/path/to/AGENT-DOCS` in the target repo shell.
-- Copy `scaffold/AGENTS.md` to the target repo root, merging if one already exists.
-- Copy `scaffold/docs/` into the target repo's `docs/` folder.
+- Preview first: `agent-docs-init --profile small --dry-run`, `agent-docs-init --profile growing --dry-run`, or `agent-docs-init --profile full --dry-run`.
+- Write only after reviewing the preview: `agent-docs-init --profile small --write`.
+- For manual full-scaffold setup, set `AGENT_DOCS=/path/to/AGENT-DOCS` in the target repo shell.
+- For manual full-scaffold setup, copy `scaffold/AGENTS.md` to the target repo root, merging if one already exists.
+- For manual full-scaffold setup, copy `scaffold/docs/` into the target repo's `docs/` folder.
 - Optionally copy `scripts/docs-meta` and `tests/docs-meta-smoke.sh`.
 - Optionally copy `scaffold/agent-instructions/` into a repo-health or team instructions folder.
 - Do not copy `scaffold/README.md` over the target repo's root README.
 - Delete or rewrite example `0000` files before treating the docs as target-repo truth.
 - Search for unreplaced placeholders such as `<path>`, `<command>`, or `<repo name>` before handoff.
 
-## Minimum setup
+## Small-profile setup
 
 - Create a root `AGENTS.md`.
 - Create `docs/README.md`.
+- Create `docs/CURRENT_STATE.md`.
+- Create `docs/ARCHITECTURE.md`.
+- Create `docs/ROADMAP.md`.
+- Create `docs/plans/`.
+- Create `docs/decisions/`.
+- Create `docs/session-logs/`.
+
+## Growing/full-profile setup
+
 - Create `docs/orientation/CURRENT_STATE.md`.
-- Create `docs/orientation/ONBOARDING.md`.
+- Create `docs/orientation/ONBOARDING.md` when the repo needs a non-code walkthrough.
 - Create `docs/orientation/ROADMAP.md`.
 - Create `docs/orientation/ARCHITECTURE.md`.
-- Create `docs/product/specs/`.
+- Create `docs/product/specs/` when product specs are useful.
 - Create `docs/product/plans/`.
 - Create `docs/repo-health/session-logs/`.
 - Create `docs/decisions/adr/`.

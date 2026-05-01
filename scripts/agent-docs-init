@@ -422,12 +422,18 @@ def tree_lines(entries: list[str], stylize: bool = False) -> list[str]:
         for part in parts:
             node = node.setdefault(part, {})
 
+    unicode_output = (sys.stdout.encoding or "").lower() not in {"ascii", "ansi_x3.4-1968", "us-ascii"}
+    tee = "├── " if unicode_output else "|-- "
+    elbow = "└── " if unicode_output else "`-- "
+    pipe = "│   " if unicode_output else "|   "
+    space = "    "
+
     def walk(node: dict[str, dict], prefix: str = "", path: tuple[str, ...] = ()) -> list[str]:
         lines: list[str] = []
         items = list(node.items())
         for index, (name, children) in enumerate(items):
             last = index == len(items) - 1
-            branch = "└── " if last else "├── "
+            branch = elbow if last else tee
             child_path = path + (name,)
             suffix = "/" if children or child_path in explicit_dirs else ""
             label = f"{name}{suffix}"
@@ -437,7 +443,7 @@ def tree_lines(entries: list[str], stylize: bool = False) -> list[str]:
                 label = terminal_style(label, "2")
             lines.append(f"{prefix}{branch}{label}")
             if children:
-                extension = "    " if last else "│   "
+                extension = space if last else pipe
                 lines.extend(walk(children, prefix + extension, child_path))
         return lines
 
@@ -477,14 +483,14 @@ def split_detail_columns(left_heading: str, left: list[str], right: list[str], w
     if width < 72:
         lines = [left_heading, *left, "", "Template/doc types", *right]
         if len(lines) > height:
-            return lines[: max(0, height - 1)] + [f"… {len(lines) - max(0, height - 1)} more lines"]
+            return lines[: max(0, height - 1)] + [f"... {len(lines) - max(0, height - 1)} more lines"]
         return lines
 
     def cap_column(lines: list[str], label: str) -> list[str]:
         if len(lines) <= height:
             return lines
         shown_count = max(0, height - 1)
-        return lines[:shown_count] + [f"… {len(lines) - shown_count} more {label}"]
+        return lines[:shown_count] + [f"... {len(lines) - shown_count} more {label}"]
 
     gap = " " * DETAIL_GAP
     left_width = min(DETAIL_LEFT_WIDTH, max(30, width - len(gap) - 24))

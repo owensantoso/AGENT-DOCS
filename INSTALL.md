@@ -17,18 +17,20 @@ Do not copy the whole `scaffold/` folder into a target repo root. It contains it
 
 ## Minimum Install
 
-From the target repo root, install or update the CLI and immediately run the init flow:
+From the target repo root, install or update the CLI and preview the recommended small profile:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile small --dry-run
 ```
 
-The curl installer installs `agent-docs-init` and runs it once in write mode by default. Use `bash -s -- --dry-run` to preview instead. If you omit the target path, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path. The standalone `agent-docs-init` command defaults to dry-run unless you pass `--write`.
+The curl installer installs `agent-docs-init` and previews by default. Write mode requires explicit intent:
 
 ```bash
 agent-docs-init --profile small --dry-run
-agent-docs-init --profile full --write
+agent-docs-init --profile small --write
 ```
+
+If you omit the target path, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path. The standalone `agent-docs-init` command also defaults to dry-run unless you pass `--write`.
 
 Install or update the CLI without running init:
 
@@ -36,15 +38,22 @@ Install or update the CLI without running init:
 curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
 ```
 
-If you are installing from a private fork, authenticate with GitHub CLI and use an authenticated raw request:
+If you are installing from a private fork, authenticate with GitHub CLI and let `gh` handle the token instead of placing a bearer token in shell history or process listings:
 
 ```bash
 gh auth login
-gh auth setup-git
-curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/OWNER/AGENT-DOCS/main/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile small --dry-run
 ```
 
 Repeated installs update `~/.agent-docs`, refresh the `agent-docs-init` symlink, and report when the command is already installed. Existing target files are listed during dry-run; write mode refuses to overwrite them unless you pass `--force`. An existing `docs/` folder is fine when the selected profile only needs to create missing files inside it.
+
+Supported platforms and prerequisites:
+
+- macOS or Linux shell with Bash.
+- Git for installer clone/update paths.
+- Python 3.10 or newer.
+- Symlink support for the installed `agent-docs-init` command.
+- A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_DOCS_BIN_DIR`.
 
 Manual full-scaffold install:
 
@@ -64,7 +73,7 @@ rsync -av "$AGENT_DOCS/scaffold/docs/" ./docs/
 
 If the target repo already has `AGENTS.md` or `docs/`, merge carefully instead of overwriting. Keep existing product, architecture, and operations docs unless you intentionally replace them.
 
-After copying, edit at least these files before asking another agent to use the repo:
+After a full-scaffold install, edit at least these files before asking another agent to use the repo:
 
 - `AGENTS.md`
 - `docs/README.md`
@@ -76,6 +85,17 @@ After copying, edit at least these files before asking another agent to use the 
 - `docs/repo-health/testing-guide.md`
 
 Remove example files that do not apply, or keep them only if they are clearly marked as examples.
+
+For a small-profile install, the first files are flatter:
+
+- `AGENTS.md`
+- `docs/README.md`
+- `docs/CURRENT_STATE.md`
+- `docs/ARCHITECTURE.md`
+- `docs/ROADMAP.md`
+- `docs/plans/`
+- `docs/decisions/`
+- `docs/session-logs/`
 
 ## Optional Metadata CLI
 
@@ -141,6 +161,7 @@ Keep:
 
 - `AGENTS.md` as the first agent entry point
 - `docs/README.md` as the docs map
+- For small-profile repos, `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md`
 - `docs/orientation/CURRENT_STATE.md` as the short truth page
 - `docs/orientation/ONBOARDING.md` for the non-code walkthrough
 - `docs/orientation/ROADMAP.md` for sequence and rationale
@@ -173,7 +194,28 @@ Before handing off the target repo, make these true:
 
 ## Paste This Prompt To Another Agent
 
-Use this prompt in the target repo after copying the scaffold:
+Use the small-profile prompt when the target repo has flat docs:
+
+```text
+You are in a repo that uses the AGENT-DOCS workflow.
+
+Start by reading:
+1. AGENTS.md
+2. docs/README.md
+3. docs/CURRENT_STATE.md
+4. docs/ARCHITECTURE.md
+5. docs/ROADMAP.md
+
+Then report:
+- whether the docs are enough to understand the repo without chat history
+- which placeholders or stale example files remain
+- which verification commands are supported today
+- what the next safest work item is
+
+Do not implement from an implementation brief alone. Read its parent plan first.
+```
+
+Use this growing/full-profile prompt when the target repo has `docs/orientation/` and repo-health docs:
 
 ```text
 You are in a repo that uses the AGENT-DOCS workflow.

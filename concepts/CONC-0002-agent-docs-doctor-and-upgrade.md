@@ -6,7 +6,7 @@ domain: repo-health
 status: draft
 concept_type: tooling
 created_at: "2026-04-27 22:19:21 JST +0900"
-updated_at: "2026-05-02 01:35:10 JST +0900"
+updated_at: "2026-05-02 02:40:23 JST +0900"
 owner:
 source:
   type: conversation
@@ -18,7 +18,8 @@ areas:
   - repo-health
 related_specs:
   - SPEC-0003
-related_plans: []
+related_plans:
+  - PLAN-0005
 related_briefs: []
 related_adrs: []
 related_ideas: []
@@ -193,6 +194,7 @@ This does not need to be a full migration framework at first. The important part
 ## Related Docs
 
 - [SPEC-0003 - AGENT-DOCS Versioning And Safe Upgrade](../plans/agent-docs-versioning-and-upgrade/SPEC-0003-agent-docs-versioning-and-upgrade.md)
+- [PLAN-0005 - Agent Docs Doctor Manifest Upgrade](../plans/agent-docs-doctor-manifest-upgrade/PLAN-0005-agent-docs-doctor-manifest-upgrade.md)
 - [Docs Meta README](../scripts/README.md)
 - [AGENT-DOCS Install Guide](../INSTALL.md)
 - [CONC-0001 - Read-Only SQLite Docs Index](CONC-0001-read-only-sqlite-docs-index.md)

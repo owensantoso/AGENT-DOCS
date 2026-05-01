@@ -8,13 +8,19 @@ This is a **scalable workflow**, not a requirement to install every folder and d
 
 ## Quick Start
 
-From the repo you want to document, install or update the CLI and immediately run the init flow:
+From the repo you want to document, install or update the CLI and preview the recommended small profile:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile small --dry-run
 ```
 
-The curl installer installs `agent-docs-init` and runs it once in write mode by default. Use `bash -s -- --dry-run` to preview instead. The interactive CLI asks where to install, explains the project-size profiles, and previews the tree. Use `small` when unsure. Existing target files are listed first, and write mode refuses to overwrite them unless you pass `--force`.
+The curl installer installs `agent-docs-init` and previews by default. Write mode requires explicit intent:
+
+```bash
+agent-docs-init --profile small --write
+```
+
+If you run the installer from an interactive terminal without a profile, the CLI asks where to install, explains the project-size profiles, and previews the tree. Use `small` when unsure. Existing target files are listed first, and write mode refuses to overwrite them unless you pass `--force`.
 
 Install or update the CLI without running init:
 
@@ -22,12 +28,11 @@ Install or update the CLI without running init:
 curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
 ```
 
-If you are installing from a private fork, authenticate with GitHub CLI and use an authenticated raw request:
+If you are installing from a private fork, authenticate with GitHub CLI and let `gh` handle the token instead of placing a bearer token in shell history or process listings:
 
 ```bash
 gh auth login
-gh auth setup-git
-curl -H "Authorization: Bearer $(gh auth token)" -fsSL https://raw.githubusercontent.com/OWNER/AGENT-DOCS/main/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile small --dry-run
 ```
 
 Non-interactive examples:
@@ -35,6 +40,8 @@ Non-interactive examples:
 ```bash
 agent-docs-init --profile small --dry-run
 agent-docs-init --profile small --write
+agent-docs-init /path/to/project --profile growing --dry-run
+agent-docs-init /path/to/project --profile full --dry-run
 agent-docs-init /path/to/project --profile full --write
 ```
 
@@ -58,6 +65,8 @@ The point is not the folder tree. The point is making repo memory resumable: sou
 | Need | Go To |
 |---|---|
 | Install this workflow in another repo | [INSTALL.md](INSTALL.md) |
+| Contribute a focused improvement | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Report a security issue | [SECURITY.md](SECURITY.md) |
 | Understand the whole workflow in one pass | [guides/workflow-overview.md](guides/workflow-overview.md) |
 | Decide which document type owns what | [guides/doc-types-and-responsibilities.md](guides/doc-types-and-responsibilities.md) |
 | Run a scoped audit | [guides/audits/README.md](guides/audits/README.md) |
@@ -109,6 +118,14 @@ For a full AGENT-DOCS-style repo, use [scaffold/](scaffold/) as the source tree 
 
 ## Install
 
+Supported platforms and prerequisites:
+
+- macOS or Linux shell with Bash.
+- Git for installer clone/update paths.
+- Python 3.10 or newer.
+- Symlink support for the installed `agent-docs-init` command.
+- A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_DOCS_BIN_DIR`.
+
 Use the installed command when you want the CLI to explain profiles, show the structure preview, and copy the selected scaffold. If you omit the target path, it uses the current directory in non-interactive mode and asks about the current directory in interactive mode:
 
 ```bash
@@ -123,13 +140,15 @@ Non-interactive examples:
 agent-docs-init --profile small --dry-run
 agent-docs-init --profile small --write
 agent-docs-init /path/to/project --profile small --dry-run
+agent-docs-init /path/to/project --profile growing --dry-run
 agent-docs-init /path/to/project --profile small --docs-meta yes --write
+agent-docs-init /path/to/project --profile full --dry-run
 agent-docs-init /path/to/project --profile full --write
 ```
 
 If you have cloned this repo and want to run the script directly during development, use `scripts/agent-docs-init` from the repo root.
 
-`tiny` and `small` synthesize smaller files, including a simpler `ARCHITECTURE.md`. `growing` and `full` copy selected files from the full scaffold. This keeps small-project docs lighter without duplicating the whole scaffold tree.
+`tiny` and `small` synthesize smaller flat files such as `docs/CURRENT_STATE.md` and `docs/ARCHITECTURE.md`. `growing` and `full` copy selected files from the full scaffold, where current-state and architecture docs live under `docs/orientation/`. This keeps small-project docs lighter without duplicating the whole scaffold tree.
 
 Manual install still works if you want the full scaffold plus deterministic metadata tooling:
 
@@ -147,6 +166,26 @@ chmod +x ./scripts/docs-meta ./tests/docs-meta-smoke.sh
 Then adapt placeholders, delete irrelevant examples, and make `AGENTS.md` plus the current-state doc truthful for that repo.
 
 Reusable global and surface-level agent instructions live under [scaffold/agent-instructions/](scaffold/agent-instructions/). These are reusable `AGENTS.md` templates, not Codex `SKILL.md` skills. Repo-local skills live under [skills/](skills/), while [scaffold/skills/](scaffold/skills/) contains copies intended for target repos.
+
+## Publication And Source Archives
+
+Before public release, run:
+
+```bash
+scripts/release-check
+```
+
+Prefer GitHub tagged source archives or `git archive` for source distribution.
+Those archives are built from tracked files and avoid copying local caches,
+ignored generated artifacts, editor files, or secrets from a developer machine:
+
+```bash
+git archive --format=tar.gz --prefix=AGENT-DOCS/ HEAD > agent-docs-source.tar.gz
+```
+
+Do not create release archives by zipping a dirty working tree. If a manual
+archive is unavoidable, first check for caches and sensitive files and exclude
+anything ignored or machine-local.
 
 ## Workflow
 

@@ -6,7 +6,7 @@ spec_type: repo-health
 domain: repo-health
 status: draft
 created_at: "2026-05-02 01:35:10 JST +0900"
-updated_at: "2026-05-02 01:35:10 JST +0900"
+updated_at: "2026-05-02 02:40:23 JST +0900"
 owner: codex
 source:
   type: conversation
@@ -16,13 +16,15 @@ areas:
   - agent-docs-init
   - docs-meta
   - repo-health
-related_plans: []
+related_plans:
+  - PLAN-0005
 related_briefs: []
 related_adrs: []
 related_ideas: []
 related_concepts:
   - CONC-0002
-related_sessions: []
+related_sessions:
+  - session-logs/2026-05-02-plan-0004-public-readiness.md
 supersedes: []
 superseded_by: []
 repo_state:
@@ -314,5 +316,6 @@ only the boring safe part should happen.
 - `CONC-0002` captured the original doctor/upgrade direction. This spec narrows
   the requirements around changelog, manifest, CI enforcement, and safe update
   boundaries.
-- A follow-up parent plan should sequence this as changelog/CI first, manifest
-  second, read-only doctor third, dry-run upgrade fourth, and write mode last.
+- [PLAN-0005 - Agent Docs Doctor Manifest Upgrade](../agent-docs-doctor-manifest-upgrade/PLAN-0005-agent-docs-doctor-manifest-upgrade.md)
+  sequences manifest, read-only doctor, dry-run upgrade, and tooling-only write
+  mode after PLAN-0004 public-readiness hardening.

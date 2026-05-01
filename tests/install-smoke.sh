@@ -66,9 +66,17 @@ AGENT_DOCS_SOURCE="$repo_root" \
 AGENT_DOCS_HOME="$home_dir" \
 AGENT_DOCS_BIN_DIR="$bin_dir" \
   "$repo_root/install.sh" -- "$run_write_target" --profile tiny >"$tmpdir/run-write.out"
-require_contains "$tmpdir/run-write.out" "Mode: write"
-require_file "$run_write_target/AGENTS.md"
-require_file "$run_write_target/docs/CURRENT_STATE.md"
+require_contains "$tmpdir/run-write.out" "Mode: dry-run"
+require_absent "$run_write_target/AGENTS.md"
+
+explicit_write_target="$tmpdir/explicit-write-project"
+AGENT_DOCS_SOURCE="$repo_root" \
+AGENT_DOCS_HOME="$home_dir" \
+AGENT_DOCS_BIN_DIR="$bin_dir" \
+  "$repo_root/install.sh" -- "$explicit_write_target" --profile tiny --write >"$tmpdir/explicit-write.out"
+require_contains "$tmpdir/explicit-write.out" "Mode: write"
+require_file "$explicit_write_target/AGENTS.md"
+require_file "$explicit_write_target/docs/CURRENT_STATE.md"
 
 macos_bash_source="$tmpdir/macos-bash-source"
 macos_bash_bin="$tmpdir/macos-bash-bin"
@@ -83,7 +91,23 @@ AGENT_DOCS_SOURCE="$macos_bash_source" \
 AGENT_DOCS_HOME="$tmpdir/macos-bash-home" \
 AGENT_DOCS_BIN_DIR="$macos_bash_bin" \
   /bin/bash "$repo_root/install.sh" >"$tmpdir/macos-bash-install.out"
-require_contains "$tmpdir/macos-bash-install.out" "fake init args=--write"
+require_contains "$tmpdir/macos-bash-install.out" "fake init args=--dry-run"
+
+fake_no_git="$tmpdir/fake-no-git"
+mkdir -p "$fake_no_git"
+cat >"$fake_no_git/git" <<'SH'
+#!/usr/bin/env bash
+exit 127
+SH
+chmod +x "$fake_no_git/git"
+if PATH="$fake_no_git:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" \
+  AGENT_DOCS_HOME="$tmpdir/no-git-home" \
+  AGENT_DOCS_BIN_DIR="$tmpdir/no-git-bin" \
+  "$repo_root/install.sh" --no-run >"$tmpdir/no-git.out" 2>&1; then
+  echo "Expected install to fail when git is unavailable" >&2
+  exit 1
+fi
+require_contains "$tmpdir/no-git.out" "requires git, but git was not found"
 
 fakebin="$tmpdir/fakebin"
 fake_home="$tmpdir/private-home"

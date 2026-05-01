@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+run() {
+  echo "+ $*" >&2
+  "$@"
+}
+
+root_doc_count="$(
+  find "$repo_root" \
+    -path "$repo_root/.git" -prune -o \
+    -path "$repo_root/scripts/__pycache__" -prune -o \
+    -name '*.md' -print |
+  wc -l |
+  tr -d ' '
+)"
+
+if [[ "$root_doc_count" -eq 0 ]]; then
+  echo "ERROR: release check found no Markdown docs under repo root" >&2
+  exit 1
+fi
+
+echo "Checking $root_doc_count Markdown docs under repo root"
+
+run tests/install-smoke.sh
+run tests/agent-docs-init-smoke.sh
+run tests/docs-meta-smoke.sh
+run tests/changelog-check-smoke.sh
+pycache_dir="$(mktemp -d)"
+run env PYTHONPYCACHEPREFIX="$pycache_dir" python3 -m py_compile scripts/agent-docs-init scripts/docs-meta
+rm -rf "$pycache_dir"
+run scripts/changelog-check
+
+# `plans/` is AGENT-DOCS' strict structured-doc root today. The whole repo root
+# is still link-scanned below so this command cannot silently pass on empty docs.
+run scripts/docs-meta --root plans check
+run scripts/docs-meta --root plans check-links
+
+root_links_json="$(mktemp)"
+trap 'rm -f "$root_links_json"' EXIT
+run scripts/docs-meta --root . check-links --json >"$root_links_json" || true
+
+python3 - "$root_links_json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    refs = json.load(handle)
+
+waived = []
+blocking = []
+for ref in refs:
+    status = ref.get("status", "")
+    if status == "directory-no-index":
+        waived.append(ref)
+    else:
+        blocking.append(ref)
+
+if waived:
+    print(f"Waived {len(waived)} directory links without README/index targets.")
+
+if blocking:
+    print("ERROR: broken repo-root links found:", file=sys.stderr)
+    for ref in blocking:
+        print(
+            f"{ref.get('status')}\t{ref.get('kind')}\t"
+            f"{ref.get('source')}:{ref.get('line')}\t{ref.get('target')}",
+            file=sys.stderr,
+        )
+    raise SystemExit(1)
+PY
+
+run git diff --check
+
+artifact_report="$(
+  find . \
+    -path ./.git -prune -o \
+    \( -name '__pycache__' -o -name '*.pyc' -o -name '.env*' -o -name '*.pem' -o -name '*.key' -o -name '*.p8' \) \
+    -print
+)"
+if [[ -n "$artifact_report" ]]; then
+  echo "ERROR: release-blocking local artifacts found:" >&2
+  printf '%s\n' "$artifact_report" >&2
+  exit 1
+fi
+
+echo "release check passed"

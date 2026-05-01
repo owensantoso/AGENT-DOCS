@@ -17,7 +17,8 @@ areas:
   - repo-health
 related_specs:
   - SPEC-0003
-related_sessions: []
+related_sessions:
+  - session-logs/2026-05-02-plan-0004-public-readiness.md
 repo_state:
   based_on_commit: 7b540a5b90f7f318f80d5e0e2dc66ae90afea269
   last_reviewed_commit: 7b540a5b90f7f318f80d5e0e2dc66ae90afea269

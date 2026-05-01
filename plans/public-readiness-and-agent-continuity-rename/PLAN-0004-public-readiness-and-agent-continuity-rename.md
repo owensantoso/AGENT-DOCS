@@ -3,9 +3,9 @@ type: plan
 id: PLAN-0004
 title: Public Readiness And Agent Continuity Rename
 domain: repo-health
-status: draft
+status: in_progress
 created_at: "2026-05-02 02:13:08 JST +0900"
-updated_at: "2026-05-02 02:13:08 JST +0900"
+updated_at: "2026-05-02 02:40:23 JST +0900"
 planned_execution_start:
 planned_execution_end:
 actual_execution_start:
@@ -27,7 +27,8 @@ related_specs:
 related_concepts:
   - CONC-0002
 related_adrs: []
-related_sessions: []
+related_sessions:
+  - session-logs/2026-05-02-plan-0004-public-readiness.md
 related_issues: []
 related_prs: []
 repo_state:
@@ -286,6 +287,11 @@ Verification:
 - README and install links still work
 - smoke tests still pass
 
+Status:
+
+- Completed for this lightweight pass with root community files, concise issue
+  and PR templates, changelog notes, and tracked-source archive guidance.
+
 ### Task 5: Rename Decision And Branding Pass
 
 **Goal:** Decide whether to keep `AGENT-DOCS`, rename to `agent-docs`, or rename
@@ -303,6 +309,11 @@ Verification:
 - new install path works from a tagged release
 - smoke tests pass under the new command names or aliases
 
+Status:
+
+- Deferred until after hardening. No repo, file, command, or public install URL
+  rename is part of this pass.
+
 ### Task 6: Doctor / Upgrade Follow-Up Plan
 
 **Goal:** Prepare the future safe updater after public-readiness basics land.
@@ -314,6 +325,10 @@ Verification:
 Verification:
 
 - follow-up plan reviewed and linked from SPEC-0003
+
+Status:
+
+- Completed by [PLAN-0005 - Agent Docs Doctor Manifest Upgrade](../agent-docs-doctor-manifest-upgrade/PLAN-0005-agent-docs-doctor-manifest-upgrade.md).
 
 ## Implementation Briefs Needed
 
@@ -353,18 +368,19 @@ gh run list --limit 5
 ## Completion Criteria
 
 - [ ] Working tree is clean before publication.
-- [ ] Public quick start is preview-first or explicitly non-mutating.
-- [ ] Installer prerequisites are documented and preflighted.
-- [ ] Small-profile docs no longer point users at full-profile-only paths.
-- [ ] ASCII/C locale dry-run does not crash.
-- [ ] CI runs install, init, docs-meta smoke tests, Python compile, and diff
+- [x] Public quick start is preview-first or explicitly non-mutating.
+- [x] Installer prerequisites are documented and preflighted.
+- [x] Small-profile docs no longer point users at full-profile-only paths.
+- [x] ASCII/C locale dry-run does not crash.
+- [x] CI runs install, init, docs-meta smoke tests, Python compile, and diff
       hygiene.
-- [ ] AGENT-DOCS release checks scan meaningful repo roots.
-- [ ] Repo-local Markdown links pass, or any root-level link-check limitations
+- [x] AGENT-DOCS release checks scan meaningful repo roots.
+- [x] Repo-local Markdown links pass, or any root-level link-check limitations
       are explicitly documented and waived.
-- [ ] Changelog/versioning gate exists for adopter-facing changes.
-- [ ] Community files exist.
-- [ ] Release artifacts exclude ignored cache files and other local generated
+- [x] Changelog/versioning gate exists for adopter-facing changes.
+- [x] Community files exist.
+- [x] Release artifacts exclude ignored cache files and other local generated
       artifacts.
-- [ ] Rename decision is made after hardening, not before.
-- [ ] Follow-up doctor/upgrade plan exists if SPEC-0003 remains in scope.
+- [x] Rename decision is deferred until after hardening; no rename has been
+      performed in this pass.
+- [x] Follow-up doctor/upgrade plan exists if SPEC-0003 remains in scope.

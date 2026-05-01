@@ -37,6 +37,10 @@ require_contains "$tmpdir/small-dry-run.out" "docs/ROADMAP.md"
 require_contains "$tmpdir/small-dry-run.out" "Would create"
 require_absent "$small_target/AGENTS.md"
 
+LC_ALL=C PYTHONUTF8=0 "$installer" "$tmpdir/ascii-app" --profile small --dry-run >"$tmpdir/ascii-dry-run.out"
+require_contains "$tmpdir/ascii-dry-run.out" "Profile: small"
+require_contains "$tmpdir/ascii-dry-run.out" "Would create: docs/CURRENT_STATE.md"
+
 mkdir -p "$small_target/docs"
 echo "# existing docs" >"$small_target/docs/README.md"
 "$installer" "$small_target" --profile small --dry-run >"$tmpdir/small-existing-dry-run.out"
@@ -299,7 +303,7 @@ if len(screen_lines) > 16:
     raise SystemExit(f"Expected small terminal screen to fit in 16 lines, got {len(screen_lines)}")
 if "\x1b[1;7m> full" not in screen:
     raise SystemExit("Expected full profile selection to remain visible in small terminal")
-if "… " not in screen:
+if "... " not in screen:
     raise SystemExit("Expected oversized selected profile details to be summarized in a small terminal")
 if "Template/doc types" not in screen:
     raise SystemExit("Expected template column to stay visible in a small terminal")
