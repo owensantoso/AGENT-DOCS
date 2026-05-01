@@ -3,13 +3,13 @@ type: plan
 id: PLAN-0005
 title: Agent Docs Doctor Manifest Upgrade
 domain: repo-health
-status: in_progress
+status: completed
 created_at: "2026-05-02 02:40:23 JST +0900"
-updated_at: "2026-05-02 05:29:15 JST +0900"
+updated_at: "2026-05-02 06:10:40 JST +0900"
 planned_execution_start:
 planned_execution_end:
 actual_execution_start: "2026-05-02 03:00:00 JST +0900"
-actual_execution_end:
+actual_execution_end: "2026-05-02 06:10:40 JST +0900"
 owner: codex
 sequence:
   roadmap:
@@ -33,16 +33,17 @@ related_sessions:
   - session-logs/2026-05-02-plan-0005-slice-b-doctor-upgrade-dry-run.md
   - session-logs/2026-05-02-plan-0005-post-review-upgrade-semantics.md
   - session-logs/2026-05-02-plan-0005-slice-c-tooling-only-write-mode.md
+  - session-logs/2026-05-02-plan-0005-closeout.md
 related_issues: []
 related_prs: []
 repo_state:
   based_on_commit: 54f6245d3df665e86525441e153cf4f30ae6edd7
-  last_reviewed_commit: b9508ee1512d2b558a5d745fffe392da273b71ef
+  last_reviewed_commit: fab90098867cf1f860ea3de2ca34b5d11ec5e27d
 ---
 
 # PLAN-0005 - Agent Docs Doctor Manifest Upgrade
 
-**Goal:** Implement the safe update path from SPEC-0003: installed manifests,
+**Goal:** Implemented the safe update path from SPEC-0003: installed manifests,
 read-only `doctor`, dry-run upgrade reporting, and a narrow tooling-only write
 mode.
 

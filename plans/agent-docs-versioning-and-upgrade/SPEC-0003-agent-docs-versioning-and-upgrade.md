@@ -6,7 +6,7 @@ spec_type: repo-health
 domain: repo-health
 status: draft
 created_at: "2026-05-02 01:35:10 JST +0900"
-updated_at: "2026-05-02 04:56:46 JST +0900"
+updated_at: "2026-05-02 06:10:40 JST +0900"
 owner: codex
 source:
   type: conversation
@@ -26,6 +26,7 @@ related_concepts:
 related_sessions:
   - session-logs/2026-05-02-plan-0004-public-readiness.md
   - session-logs/2026-05-02-plan-0005-post-review-upgrade-semantics.md
+  - session-logs/2026-05-02-plan-0005-closeout.md
 supersedes: []
 superseded_by: []
 repo_state:
