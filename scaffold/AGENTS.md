@@ -63,7 +63,8 @@ If the repo includes `skills/structured-docs-workflow/SKILL.md`, read it before 
 - Cite todo-backed work in session logs, commit trailers, PRs, and issues with `Todo: TODO-####` or equivalent references.
 - Keep source-code TODO comments local; promote them to structured Markdown `TODO-*` items when they need ownership, delegation, review, or cross-session tracking.
 - When completing durable todo-backed work, update the source checkbox line and run the repo's todo checks before closeout.
-- When the human asks for an explanation, answer in chat first. Create or update a `CONC-*`, `EXPL-*`, `LRN-*`, or `QST-*` only when it will reduce future confusion.
+- When the human asks for a substantial explanation of repo-relevant product behavior, architecture, system flow, source-of-truth ownership, or a concept that future agents are likely to revisit, create or update the relevant `EXPL-*` in the same turn without waiting for a second prompt. Answer in chat too, but do not leave the reusable explanation trapped in chat. For tiny one-off clarifications, chat-only is fine.
+- When creating or updating an `EXPL-*`, lead the closeout with the explainer path before summarizing the explanation, so the human can see the durable artifact exists.
 - Do not write that the human understands something unless they confirmed it. Use agent-inferred wording when unsure.
 - When feedback reveals a missed rule, wrong assumption, ambiguous docs, or workflow failure, use `reflect-and-improve` and update the smallest durable source that would prevent a repeat.
 
