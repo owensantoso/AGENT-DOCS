@@ -357,7 +357,7 @@ run_meta review --stale-days 1 >$tmpdir/docs-meta-review-due.out
 require_contains $tmpdir/docs-meta-review-due.out "due-review"
 require_contains $tmpdir/docs-meta-review-due.out "FINDING-003"
 require_contains $tmpdir/docs-meta-review-due.out "FINDING-007"
-first_review_line="$(grep -v '^$' $tmpdir/docs-meta-review.out | head -n 1)"
+first_review_line="$(awk 'NF { print; exit }' "$tmpdir/docs-meta-review.out")"
 if [[ "$first_review_line" != "Invalid audit finding rows" ]]; then
   echo "Expected review output to group invalid findings first, got: $first_review_line" >&2
   exit 1

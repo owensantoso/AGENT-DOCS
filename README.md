@@ -161,7 +161,7 @@ agent-docs upgrade --dry-run /path/to/project
 ```
 
 `doctor` reports manifest health, missing owned tooling, checksum drift, safe
-automatic additions or updates, generated-view refreshes, project-owned manual
+automatic additions, candidate tooling updates, generated-view refreshes, project-owned manual
 review items, and refused or unknown shapes. `upgrade --dry-run` uses the same
 read-only classifier and previews categories only; `upgrade --write` is not
 implemented yet. Exit codes are `0` for healthy/current, `1` for warnings or

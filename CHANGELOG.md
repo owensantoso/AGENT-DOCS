@@ -14,8 +14,9 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
   version 1, profile/source metadata, optional component records, conservative
   file ownership, and checksums for AGENT-DOCS-owned tooling.
 - Added read-only `agent-docs doctor [target]` and `agent-docs upgrade
-  --dry-run [target]` reports for manifest health, drift, safe additions or
-  updates, generated-view refreshes, manual-review items, and refused shapes.
+  --dry-run [target]` reports for manifest health, drift, safe additions,
+  candidate tooling updates, generated-view refreshes, manual-review items,
+  and refused shapes.
 - Public-readiness work now favors preview-first install and init flows so first
   runs show intended changes before writing files.
 - Supported platform and prerequisite guidance is clearer for macOS and Linux

@@ -65,6 +65,52 @@ require_exit 0 "$tmpdir/healthy-upgrade.out" "$agent_docs" upgrade --dry-run "$h
 require_contains "$tmpdir/healthy-upgrade.out" "AGENT-DOCS upgrade dry-run"
 require_contains "$tmpdir/healthy-upgrade.out" "Status: healthy/current"
 
+missing_project_owned_target="$tmpdir/missing-project-owned"
+"$installer" "$missing_project_owned_target" --profile small --docs-meta yes --write >"$tmpdir/missing-project-owned-install.out"
+rm "$missing_project_owned_target/AGENTS.md"
+require_exit 1 "$tmpdir/missing-project-owned-doctor.out" "$agent_docs" doctor "$missing_project_owned_target"
+require_contains "$tmpdir/missing-project-owned-doctor.out" "missing project-owned manifest records"
+require_contains "$tmpdir/missing-project-owned-doctor.out" "AGENTS.md"
+
+directory_project_owned_target="$tmpdir/directory-project-owned"
+"$installer" "$directory_project_owned_target" --profile small --docs-meta yes --write >"$tmpdir/directory-project-owned-install.out"
+rm "$directory_project_owned_target/AGENTS.md"
+mkdir "$directory_project_owned_target/AGENTS.md"
+require_exit 2 "$tmpdir/directory-project-owned-doctor.out" "$agent_docs" doctor "$directory_project_owned_target"
+require_contains "$tmpdir/directory-project-owned-doctor.out" "project-owned path is not a regular file"
+require_contains "$tmpdir/directory-project-owned-doctor.out" "AGENTS.md"
+
+dot_manifest_path_target="$tmpdir/dot-manifest-path"
+"$installer" "$dot_manifest_path_target" --profile small --docs-meta yes --write >"$tmpdir/dot-manifest-path-install.out"
+python3 - "$dot_manifest_path_target" <<'PY'
+import json
+import pathlib
+import sys
+
+manifest_path = pathlib.Path(sys.argv[1]) / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["files"].append({
+    "path": ".",
+    "ownership": "project-owned-after-install",
+})
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 2 "$tmpdir/dot-manifest-path-doctor.out" "$agent_docs" doctor "$dot_manifest_path_target"
+require_contains "$tmpdir/dot-manifest-path-doctor.out" "manifest path must be a non-empty relative path inside the target repo"
+
+missing_target="$tmpdir/does-not-exist"
+require_exit 2 "$tmpdir/missing-target-doctor.out" "$agent_docs" doctor "$missing_target"
+require_contains "$tmpdir/missing-target-doctor.out" "target path does not exist"
+require_exit 2 "$tmpdir/missing-target-upgrade.out" "$agent_docs" upgrade --dry-run "$missing_target"
+require_contains "$tmpdir/missing-target-upgrade.out" "target path does not exist"
+
+file_target="$tmpdir/file-target"
+printf 'not a directory\n' >"$file_target"
+require_exit 2 "$tmpdir/file-target-doctor.out" "$agent_docs" doctor "$file_target"
+require_contains "$tmpdir/file-target-doctor.out" "target path is not a directory"
+require_exit 2 "$tmpdir/file-target-upgrade.out" "$agent_docs" upgrade --dry-run "$file_target"
+require_contains "$tmpdir/file-target-upgrade.out" "target path is not a directory"
+
 legacy_target="$tmpdir/legacy"
 mkdir -p "$legacy_target/docs"
 echo "# Legacy" >"$legacy_target/AGENTS.md"
@@ -95,6 +141,37 @@ printf 'null\n' >"$null_manifest_target/.agent-docs/manifest.json"
 require_exit 2 "$tmpdir/null-manifest-doctor.out" "$agent_docs" doctor "$null_manifest_target"
 require_contains "$tmpdir/null-manifest-doctor.out" "manifest root must be a JSON object"
 
+bad_optional_shape_target="$tmpdir/bad-optional-shape"
+"$installer" "$bad_optional_shape_target" --profile small --docs-meta yes --write >"$tmpdir/bad-optional-shape-install.out"
+python3 - "$bad_optional_shape_target" <<'PY'
+import json
+import pathlib
+import sys
+
+manifest_path = pathlib.Path(sys.argv[1]) / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["optional_components"] = {"docs-meta": True}
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 2 "$tmpdir/bad-optional-shape-doctor.out" "$agent_docs" doctor "$bad_optional_shape_target"
+require_contains "$tmpdir/bad-optional-shape-doctor.out" "manifest optional_components field is not a list"
+
+unknown_optional_target="$tmpdir/unknown-optional"
+"$installer" "$unknown_optional_target" --profile small --docs-meta yes --write >"$tmpdir/unknown-optional-install.out"
+python3 - "$unknown_optional_target" <<'PY'
+import json
+import pathlib
+import sys
+
+manifest_path = pathlib.Path(sys.argv[1]) / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["optional_components"] = ["docs-meta", "future-tooling"]
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 2 "$tmpdir/unknown-optional-doctor.out" "$agent_docs" doctor "$unknown_optional_target"
+require_contains "$tmpdir/unknown-optional-doctor.out" "unknown optional component"
+require_contains "$tmpdir/unknown-optional-doctor.out" "future-tooling"
+
 symlink_manifest_dir_target="$tmpdir/symlink-manifest-dir"
 mkdir -p "$symlink_manifest_dir_target" "$tmpdir/outside-agent-docs-dir"
 printf '{"schema_version": 1, "profile": "small", "optional_components": [], "files": [], "generated_views": []}\n' >"$tmpdir/outside-agent-docs-dir/manifest.json"
@@ -120,6 +197,14 @@ require_exit 1 "$tmpdir/missing-tool-doctor.out" "$agent_docs" doctor "$missing_
 require_contains "$tmpdir/missing-tool-doctor.out" "missing AGENT-DOCS-owned tooling"
 require_contains "$tmpdir/missing-tool-doctor.out" "scripts/docs-meta"
 require_contains "$tmpdir/missing-tool-doctor.out" "safe automatic additions"
+
+missing_executable_target="$tmpdir/missing-executable"
+"$installer" "$missing_executable_target" --profile small --docs-meta yes --write >"$tmpdir/missing-executable-install.out"
+chmod -x "$missing_executable_target/scripts/docs-meta"
+require_exit 1 "$tmpdir/missing-executable-doctor.out" "$agent_docs" doctor "$missing_executable_target"
+require_contains "$tmpdir/missing-executable-doctor.out" "checksum drift/local modification"
+require_contains "$tmpdir/missing-executable-doctor.out" "scripts/docs-meta"
+require_contains "$tmpdir/missing-executable-doctor.out" "missing executable bit"
 
 drift_target="$tmpdir/drift"
 "$installer" "$drift_target" --profile small --docs-meta yes --write >"$tmpdir/drift-install.out"
@@ -229,6 +314,21 @@ if grep -Fq -- "checksum drift/local modification" "$tmpdir/invalid-owned-checks
   exit 1
 fi
 
+duplicate_file_record_target="$tmpdir/duplicate-file-record"
+"$installer" "$duplicate_file_record_target" --profile small --docs-meta yes --write >"$tmpdir/duplicate-file-record-install.out"
+python3 - "$duplicate_file_record_target" <<'PY'
+import json
+import pathlib
+import sys
+
+manifest_path = pathlib.Path(sys.argv[1]) / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["files"].append(dict(manifest["files"][0]))
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 2 "$tmpdir/duplicate-file-record-doctor.out" "$agent_docs" doctor "$duplicate_file_record_target"
+require_contains "$tmpdir/duplicate-file-record-doctor.out" "duplicate manifest file record"
+
 invalid_generated_checksum_target="$tmpdir/invalid-generated-checksum"
 "$installer" "$invalid_generated_checksum_target" --profile small --docs-meta yes --write >"$tmpdir/invalid-generated-checksum-install.out"
 python3 - "$invalid_generated_checksum_target" <<'PY'
@@ -255,6 +355,89 @@ if grep -Fq -- "generated view refreshes" "$tmpdir/invalid-generated-checksum-do
   echo "Expected malformed generated checksum to be refused, not refresh" >&2
   exit 1
 fi
+
+missing_generated_checksum_target="$tmpdir/missing-generated-checksum"
+"$installer" "$missing_generated_checksum_target" --profile small --docs-meta yes --write >"$tmpdir/missing-generated-checksum-install.out"
+python3 - "$missing_generated_checksum_target" <<'PY'
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+manifest_path = target / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["generated_views"] = [{
+    "path": "docs/TODOS.md",
+    "generator": "scripts/docs-meta update",
+}]
+(target / "docs/TODOS.md").write_text("# Todos\n", encoding="utf-8")
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 2 "$tmpdir/missing-generated-checksum-doctor.out" "$agent_docs" doctor "$missing_generated_checksum_target"
+require_contains "$tmpdir/missing-generated-checksum-doctor.out" "generated view checksum_sha256 must be present"
+
+directory_owned_target="$tmpdir/directory-owned"
+"$installer" "$directory_owned_target" --profile small --docs-meta yes --write >"$tmpdir/directory-owned-install.out"
+rm "$directory_owned_target/scripts/docs-meta"
+mkdir "$directory_owned_target/scripts/docs-meta"
+require_exit 2 "$tmpdir/directory-owned-doctor.out" "$agent_docs" doctor "$directory_owned_target"
+require_contains "$tmpdir/directory-owned-doctor.out" "owned path is not a regular file"
+require_contains "$tmpdir/directory-owned-doctor.out" "scripts/docs-meta"
+
+directory_generated_target="$tmpdir/directory-generated"
+"$installer" "$directory_generated_target" --profile small --docs-meta yes --write >"$tmpdir/directory-generated-install.out"
+python3 - "$directory_generated_target" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+manifest_path = target / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["generated_views"] = [{
+    "path": "docs/TODOS.md",
+    "generator": "scripts/docs-meta update",
+    "checksum_sha256": hashlib.sha256(b"# Todos\n").hexdigest(),
+}]
+todos = target / "docs/TODOS.md"
+if todos.exists():
+    todos.unlink()
+todos.mkdir()
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 2 "$tmpdir/directory-generated-doctor.out" "$agent_docs" doctor "$directory_generated_target"
+require_contains "$tmpdir/directory-generated-doctor.out" "generated view path is not a regular file"
+require_contains "$tmpdir/directory-generated-doctor.out" "docs/TODOS.md"
+
+control_output_target="$tmpdir/control-output"
+"$installer" "$control_output_target" --profile small --docs-meta yes --write >"$tmpdir/control-output-install.out"
+python3 - "$control_output_target" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+manifest_path = target / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["source"]["commit"] = "\u001b[31mcommit\u001b[0m"
+manifest["optional_components"] = ["docs-meta\u001b]8;;https://example.invalid\u0007bad"]
+manifest["generated_views"] = [{
+    "path": "docs/TODOS.md",
+    "generator": "scripts/docs-meta update \u001b[31mred\u001b[0m",
+    "checksum_sha256": hashlib.sha256(b"base").hexdigest(),
+}]
+(target / "docs/TODOS.md").write_text("changed\n", encoding="utf-8")
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 2 "$tmpdir/control-output-doctor.out" "$agent_docs" doctor "$control_output_target"
+if LC_ALL=C grep "$(printf '\033')" "$tmpdir/control-output-doctor.out" >/dev/null; then
+  echo "Expected manifest-derived output to escape raw ESC characters" >&2
+  cat "$tmpdir/control-output-doctor.out" >&2
+  exit 1
+fi
+require_contains "$tmpdir/control-output-doctor.out" "\\x1b"
 
 mixed_target="$tmpdir/mixed"
 "$installer" "$mixed_target" --profile small --docs-meta yes --write >"$tmpdir/mixed-install.out"
@@ -304,7 +487,7 @@ manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", 
 (target / "docs/TODOS.md").write_text("changed generated view\n", encoding="utf-8")
 PY
 require_exit 2 "$tmpdir/mixed-upgrade.out" "$agent_docs" upgrade --dry-run "$mixed_target"
-require_contains "$tmpdir/mixed-upgrade.out" "safe automatic updates available"
+require_contains "$tmpdir/mixed-upgrade.out" "candidate tooling updates available"
 require_contains "$tmpdir/mixed-upgrade.out" "scripts/docs-meta"
 require_contains "$tmpdir/mixed-upgrade.out" "checksum drift/local modification"
 require_contains "$tmpdir/mixed-upgrade.out" "tests/docs-meta-smoke.sh"

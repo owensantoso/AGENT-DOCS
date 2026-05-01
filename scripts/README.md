@@ -97,7 +97,7 @@ agent-docs upgrade --dry-run /path/to/project
 Both commands classify the target with the schema version 1 manifest. Reports
 include exact paths and reasons for healthy/current files, missing legacy
 manifests, missing AGENT-DOCS-owned tooling, checksum drift, safe automatic
-updates or additions, generated-view refreshes, project-owned manual-review
+additions, candidate tooling updates, generated-view refreshes, project-owned manual-review
 items, and refused or unknown shapes. Legacy installs without a manifest remain
 manual-review in this slice. `agent-docs upgrade --write` is intentionally not
 implemented yet and exits `2`.
