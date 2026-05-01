@@ -85,6 +85,27 @@ Starter docs and templates are recorded as `project-owned-after-install` without
 checksums, because target-repo Markdown becomes local truth after installation
 and is not an automatic upgrade target.
 
+### Legacy Manifest Baseline
+
+Legacy installs without `.agent-docs/manifest.json` can intentionally create a
+baseline manifest only after a preview:
+
+```bash
+agent-docs baseline --dry-run /path/to/project --profile small --docs-meta yes
+agent-docs baseline --write /path/to/project --profile small --docs-meta yes
+```
+
+`--dry-run` is the default. `--profile` is required and uses the same profile
+keys as init. `--docs-meta` accepts `auto`, `yes`, or `no`.
+
+Baseline write mode creates only `.agent-docs/manifest.json` and writes it last.
+It records selected AGENT-DOCS-owned tooling only when the target file exists,
+is a regular file inside the target, does not traverse symlinks, and matches the
+current upstream checksum and exact expected mode. Starter/project docs are
+recorded as `project-owned-after-install` when present, without checksums.
+Existing manifests, missing or drifted owned tooling, wrong modes, symlinked
+paths, non-directory parent conflicts, and non-regular files are refused.
+
 ### Doctor And Upgrade Dry Run
 
 Inspect a manifest-backed target without writing files:

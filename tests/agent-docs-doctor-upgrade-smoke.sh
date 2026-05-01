@@ -127,6 +127,144 @@ require_contains "$tmpdir/legacy-doctor.out" "missing manifest/legacy/manual rev
 require_contains "$tmpdir/legacy-doctor.out" ".agent-docs/manifest.json"
 require_contains "$tmpdir/legacy-doctor.out" "agent-docs init $legacy_target_resolved --profile small --dry-run"
 
+baseline_preview_target="$tmpdir/baseline-preview"
+"$installer" "$baseline_preview_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-preview-install.out"
+rm "$baseline_preview_target/.agent-docs/manifest.json"
+snapshot_tree "$baseline_preview_target" "$tmpdir/baseline-preview-before.sha"
+require_exit 0 "$tmpdir/baseline-preview.out" "$agent_docs" baseline --dry-run "$baseline_preview_target" --profile small --docs-meta yes
+snapshot_tree "$baseline_preview_target" "$tmpdir/baseline-preview-after.sha"
+cmp "$tmpdir/baseline-preview-before.sha" "$tmpdir/baseline-preview-after.sha"
+require_absent "$baseline_preview_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-preview.out" "AGENT-DOCS baseline dry-run"
+require_contains "$tmpdir/baseline-preview.out" "baseline owned tooling"
+require_contains "$tmpdir/baseline-preview.out" "project-owned after install"
+require_contains "$tmpdir/baseline-preview.out" "Dry run only. Re-run with --write to create .agent-docs/manifest.json."
+
+baseline_write_target="$tmpdir/baseline-write"
+"$installer" "$baseline_write_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-write-install.out"
+rm "$baseline_write_target/.agent-docs/manifest.json"
+printf '# Local Agents\n\nLocal truth.\n' >"$baseline_write_target/AGENTS.md"
+project_owned_before="$(shasum -a 256 "$baseline_write_target/AGENTS.md")"
+require_exit 0 "$tmpdir/baseline-write.out" "$agent_docs" baseline --write "$baseline_write_target" --profile small --docs-meta yes
+project_owned_after="$(shasum -a 256 "$baseline_write_target/AGENTS.md")"
+test "$project_owned_before" = "$project_owned_after"
+require_file "$baseline_write_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-write.out" "AGENT-DOCS baseline write"
+require_contains "$tmpdir/baseline-write.out" "Created: .agent-docs/manifest.json"
+python3 - "$baseline_write_target" "$repo_root/scripts/docs-meta" "$repo_root/tests/docs-meta-smoke.sh" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+upstream_docs_meta = pathlib.Path(sys.argv[2])
+upstream_smoke = pathlib.Path(sys.argv[3])
+manifest = json.loads((target / ".agent-docs/manifest.json").read_text(encoding="utf-8"))
+assert manifest["profile"] == "small"
+assert manifest["optional_components"] == ["docs-meta"]
+records = {record["path"]: record for record in manifest["files"]}
+owned_docs_meta = records["scripts/docs-meta"]
+assert owned_docs_meta["ownership"] == "agent-docs-owned"
+assert owned_docs_meta["checksum_sha256"] == hashlib.sha256(upstream_docs_meta.read_bytes()).hexdigest()
+assert owned_docs_meta["mode"] == "755"
+assert owned_docs_meta["source"]["type"] == "agent-docs-action"
+assert owned_docs_meta["source"]["path"] == "scripts/docs-meta"
+owned_smoke = records["tests/docs-meta-smoke.sh"]
+assert owned_smoke["checksum_sha256"] == hashlib.sha256(upstream_smoke.read_bytes()).hexdigest()
+assert owned_smoke["mode"] == "755"
+project_owned = records["AGENTS.md"]
+assert project_owned["ownership"] == "project-owned-after-install"
+assert "checksum_sha256" not in project_owned
+assert "mode" not in project_owned
+PY
+require_exit 0 "$tmpdir/baseline-write-doctor.out" "$agent_docs" doctor "$baseline_write_target"
+require_contains "$tmpdir/baseline-write-doctor.out" "healthy/current"
+require_contains "$tmpdir/baseline-write-doctor.out" "project-owned/manual-review items"
+require_exit 2 "$tmpdir/baseline-write-second.out" "$agent_docs" baseline --write "$baseline_write_target" --profile small --docs-meta yes
+require_contains "$tmpdir/baseline-write-second.out" "Refusing to baseline target with existing manifest"
+
+require_exit 2 "$tmpdir/baseline-existing-manifest.out" "$agent_docs" baseline --write "$healthy_target" --profile small --docs-meta yes
+require_contains "$tmpdir/baseline-existing-manifest.out" "Refusing to baseline target with existing manifest"
+
+baseline_missing_tool_target="$tmpdir/baseline-missing-tool"
+"$installer" "$baseline_missing_tool_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-missing-tool-install.out"
+rm "$baseline_missing_tool_target/.agent-docs/manifest.json"
+rm "$baseline_missing_tool_target/scripts/docs-meta"
+require_exit 2 "$tmpdir/baseline-missing-tool.out" "$agent_docs" baseline --write "$baseline_missing_tool_target" --profile small --docs-meta yes
+require_absent "$baseline_missing_tool_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-missing-tool.out" "missing owned tooling"
+require_contains "$tmpdir/baseline-missing-tool.out" "Refusing to write baseline manifest"
+
+baseline_unselected_owned_target="$tmpdir/baseline-unselected-owned"
+"$installer" "$baseline_unselected_owned_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-unselected-owned-install.out"
+rm "$baseline_unselected_owned_target/.agent-docs/manifest.json"
+require_exit 2 "$tmpdir/baseline-unselected-owned.out" "$agent_docs" baseline --write "$baseline_unselected_owned_target" --profile small --docs-meta no
+require_absent "$baseline_unselected_owned_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-unselected-owned.out" "known AGENT-DOCS-owned path exists but is not selected by profile/options"
+require_contains "$tmpdir/baseline-unselected-owned.out" "Refusing to write baseline manifest"
+
+baseline_unselected_parent_target="$tmpdir/baseline-unselected-parent"
+mkdir -p "$baseline_unselected_parent_target"
+printf 'not a directory\n' >"$baseline_unselected_parent_target/scripts"
+require_exit 2 "$tmpdir/baseline-unselected-parent.out" "$agent_docs" baseline --write "$baseline_unselected_parent_target" --profile small --docs-meta no
+require_absent "$baseline_unselected_parent_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-unselected-parent.out" "known AGENT-DOCS-owned path is not selected and has non-directory parent"
+require_contains "$tmpdir/baseline-unselected-parent.out" "Refusing to write baseline manifest"
+
+baseline_empty_target="$tmpdir/baseline-empty"
+mkdir -p "$baseline_empty_target"
+require_exit 2 "$tmpdir/baseline-empty.out" "$agent_docs" baseline --write "$baseline_empty_target" --profile small --docs-meta no
+require_absent "$baseline_empty_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-empty.out" "no selected AGENT-DOCS files found"
+require_contains "$tmpdir/baseline-empty.out" "Refusing to write baseline manifest"
+
+baseline_drift_target="$tmpdir/baseline-drift"
+"$installer" "$baseline_drift_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-drift-install.out"
+rm "$baseline_drift_target/.agent-docs/manifest.json"
+printf '\n# local drift\n' >>"$baseline_drift_target/tests/docs-meta-smoke.sh"
+require_exit 2 "$tmpdir/baseline-drift.out" "$agent_docs" baseline --write "$baseline_drift_target" --profile small --docs-meta yes
+require_absent "$baseline_drift_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-drift.out" "checksum differs from upstream action"
+require_contains "$tmpdir/baseline-drift.out" "Refusing to write baseline manifest"
+
+baseline_wrong_mode_target="$tmpdir/baseline-wrong-mode"
+"$installer" "$baseline_wrong_mode_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-wrong-mode-install.out"
+rm "$baseline_wrong_mode_target/.agent-docs/manifest.json"
+chmod 644 "$baseline_wrong_mode_target/scripts/docs-meta"
+require_exit 2 "$tmpdir/baseline-wrong-mode.out" "$agent_docs" baseline --write "$baseline_wrong_mode_target" --profile small --docs-meta yes
+require_absent "$baseline_wrong_mode_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-wrong-mode.out" "mode 644 differs from expected mode 755"
+require_contains "$tmpdir/baseline-wrong-mode.out" "Refusing to write baseline manifest"
+
+baseline_symlink_target="$tmpdir/baseline-symlink"
+"$installer" "$baseline_symlink_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-symlink-install.out"
+rm "$baseline_symlink_target/.agent-docs/manifest.json"
+outside_baseline="$tmpdir/baseline-outside-docs-meta"
+printf 'outside stays put\n' >"$outside_baseline"
+outside_baseline_before="$(shasum -a 256 "$outside_baseline")"
+rm "$baseline_symlink_target/scripts/docs-meta"
+ln -s "$outside_baseline" "$baseline_symlink_target/scripts/docs-meta"
+require_exit 2 "$tmpdir/baseline-symlink.out" "$agent_docs" baseline --write "$baseline_symlink_target" --profile small --docs-meta yes
+outside_baseline_after="$(shasum -a 256 "$outside_baseline")"
+test "$outside_baseline_before" = "$outside_baseline_after"
+require_absent "$baseline_symlink_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-symlink.out" "existing symlink inside target"
+require_contains "$tmpdir/baseline-symlink.out" "Refusing to write baseline manifest"
+
+baseline_hardlink_target="$tmpdir/baseline-hardlink"
+"$installer" "$baseline_hardlink_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-hardlink-install.out"
+rm "$baseline_hardlink_target/.agent-docs/manifest.json"
+outside_hardlink="$tmpdir/baseline-hardlink-docs-meta"
+rm "$baseline_hardlink_target/scripts/docs-meta"
+cp "$repo_root/scripts/docs-meta" "$outside_hardlink"
+chmod 755 "$outside_hardlink"
+ln "$outside_hardlink" "$baseline_hardlink_target/scripts/docs-meta"
+require_exit 2 "$tmpdir/baseline-hardlink.out" "$agent_docs" baseline --write "$baseline_hardlink_target" --profile small --docs-meta yes
+require_absent "$baseline_hardlink_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-hardlink.out" "owned path has multiple hardlinks"
+require_contains "$tmpdir/baseline-hardlink.out" "Refusing to write baseline manifest"
+
 list_manifest_target="$tmpdir/list-manifest"
 mkdir -p "$list_manifest_target/.agent-docs"
 printf '[]\n' >"$list_manifest_target/.agent-docs/manifest.json"

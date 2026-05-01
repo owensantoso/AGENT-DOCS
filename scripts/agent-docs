@@ -68,6 +68,7 @@ WARNING_CATEGORIES = {
     "missing project-owned manifest records",
 }
 REFUSED_CATEGORIES = {"refused/unknown/incompatible shapes"}
+BASELINE_REFUSED_CATEGORIES = {"manual-review/refused"}
 
 
 def print_help() -> None:
@@ -78,6 +79,7 @@ Commands:
   init      Install an AGENT-DOCS scaffold profile into a target repository.
   doctor    Read-only install and drift report.
   upgrade   Safe upgrade preview, or --write --tooling-only for owned tooling.
+  baseline  Preview or create a manifest for a conservative legacy install.
 
 Exit codes:
   0 healthy/current
@@ -212,6 +214,11 @@ def source_metadata_for_action(action) -> dict:
         "type": "agent-docs-action",
         "path": action.relpath.as_posix(),
     }
+
+
+def optional_components_for_docs_meta(profile, docs_meta: str) -> list[str]:
+    include_docs_meta = profile.docs_meta_default if docs_meta == "auto" else docs_meta == "yes"
+    return ["docs-meta"] if include_docs_meta else []
 
 
 def update_owned_record(record: dict, action) -> None:
@@ -691,6 +698,296 @@ def print_report(command: str, report: Report) -> None:
         print("- Fix refused/unknown/incompatible manifest records before retrying.")
 
 
+def baseline_exit_code(report: Report) -> int:
+    if report.has_any(BASELINE_REFUSED_CATEGORIES):
+        return 2
+    return 0
+
+
+def baseline_status_label(report: Report) -> str:
+    if baseline_exit_code(report) == 0:
+        return "healthy/current"
+    return "incompatible/refused/invalid usage"
+
+
+def print_baseline_report(command: str, report: Report) -> None:
+    print(f"AGENT-DOCS baseline {command}")
+    print(f"Target: {report.target}")
+    print(f"Status: {baseline_status_label(report)}")
+    if report.profile:
+        print(f"Profile: {sanitize_text(report.profile)}")
+    if report.optional_components:
+        print(f"Optional components: {sanitize_text(', '.join(report.optional_components))}")
+    print("")
+
+    for category in [
+        "baseline owned tooling",
+        "project-owned after install",
+        "manual-review/refused",
+    ]:
+        findings = report.categories.get(category, [])
+        if not findings:
+            continue
+        print(f"{category}:")
+        for finding in findings:
+            print(f"- {finding.path}: {finding.reason}")
+        print("")
+
+
+def baseline_record_for_action(action, ownership: str) -> dict:
+    record = {
+        "path": action.relpath.as_posix(),
+        "ownership": ownership,
+    }
+    if ownership == "agent-docs-owned":
+        update_owned_record(record, action)
+    return record
+
+
+def path_inside_target(target: Path, relpath: Path) -> bool:
+    try:
+        target_resolved = target.resolve()
+        destination_resolved = (target / relpath).resolve(strict=False)
+        destination_resolved.relative_to(target_resolved)
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def build_baseline(target_arg: Path, profile_key: str, docs_meta: str) -> tuple[Report, dict | None]:
+    init_module = load_init_module()
+    profile = init_module.PROFILES[profile_key]
+    optional_components = optional_components_for_docs_meta(profile, docs_meta)
+    include_docs_meta = "docs-meta" in optional_components
+    raw_target = target_arg.expanduser()
+    target = raw_target.resolve() if raw_target.exists() else raw_target.absolute()
+    report = Report(target=target, profile=profile.key, optional_components=optional_components)
+
+    if not raw_target.exists():
+        report.add("manual-review/refused", target, "target path does not exist")
+        return report, None
+    if raw_target.is_symlink():
+        report.add("manual-review/refused", ".", "target path is a symlink")
+        return report, None
+    if not raw_target.is_dir():
+        report.add("manual-review/refused", target, "target path is not a directory")
+        return report, None
+
+    manifest_symlink = existing_symlink_in_target_path(target, MANIFEST_PATH)
+    if manifest_symlink is not None:
+        report.add(
+            "manual-review/refused",
+            MANIFEST_PATH,
+            f"manifest path would traverse existing symlink inside target: {manifest_symlink}",
+        )
+    manifest_parent_conflict = existing_non_directory_parent_in_target_path(target, MANIFEST_PATH)
+    if manifest_parent_conflict is not None:
+        report.add(
+            "manual-review/refused",
+            MANIFEST_PATH,
+            f"manifest path parent is not a directory: {manifest_parent_conflict}",
+        )
+    if (target / MANIFEST_PATH).exists():
+        report.add(
+            "manual-review/refused",
+            MANIFEST_PATH,
+            "Refusing to baseline target with existing manifest; use agent-docs doctor or upgrade instead",
+        )
+
+    records: list[dict] = []
+    seen_paths: set[str] = set()
+    actions = init_module.profile_actions(profile, include_docs_meta)
+    selected_owned_paths = {
+        action.relpath
+        for action in actions
+        if init_module.action_ownership(action) == "agent-docs-owned"
+    }
+    for action in actions:
+        relpath = safe_manifest_relpath(action.relpath.as_posix())
+        if relpath is None:
+            report.add(
+                "manual-review/refused",
+                action.relpath,
+                "upstream action path is not a safe relative path inside the target",
+            )
+            continue
+        rel = relpath.as_posix()
+        if rel in seen_paths:
+            report.add("manual-review/refused", relpath, "duplicate upstream action path")
+            continue
+        seen_paths.add(rel)
+
+        ownership = init_module.action_ownership(action)
+        destination = target / relpath
+        symlink_relpath = existing_symlink_in_target_path(target, relpath)
+        if symlink_relpath is not None:
+            report.add(
+                "manual-review/refused",
+                relpath,
+                f"path would traverse existing symlink inside target: {symlink_relpath}",
+            )
+            continue
+        non_directory_parent = existing_non_directory_parent_in_target_path(target, relpath)
+        if non_directory_parent is not None:
+            report.add(
+                "manual-review/refused",
+                relpath,
+                f"path parent is not a directory: {non_directory_parent}",
+            )
+            continue
+        if not path_inside_target(target, relpath):
+            report.add("manual-review/refused", relpath, "path would resolve outside target")
+            continue
+
+        if ownership == "agent-docs-owned":
+            if not destination.exists():
+                report.add(
+                    "manual-review/refused",
+                    relpath,
+                    "missing owned tooling; baseline requires the current upstream file to be present",
+                )
+                continue
+            if not destination.is_file():
+                report.add("manual-review/refused", relpath, "owned path is not a regular file")
+                continue
+            try:
+                link_count = destination.stat().st_nlink
+            except OSError as error:
+                report.add("manual-review/refused", relpath, f"owned stat failed: {error}")
+                continue
+            if link_count > 1:
+                report.add(
+                    "manual-review/refused",
+                    relpath,
+                    f"owned path has multiple hardlinks ({link_count}); baseline requires an unshared file",
+                )
+                continue
+            current_checksum, checksum_error = safe_checksum(destination)
+            if checksum_error is not None or current_checksum is None:
+                report.add("manual-review/refused", relpath, f"owned {checksum_error}")
+                continue
+            upstream_checksum = action_checksum(action)
+            if current_checksum != upstream_checksum:
+                report.add(
+                    "manual-review/refused",
+                    relpath,
+                    "checksum differs from upstream action; baseline refuses locally modified owned tooling",
+                )
+                continue
+            expected_mode = action_mode(action)
+            current_mode = file_mode(destination)
+            if current_mode != expected_mode:
+                report.add(
+                    "manual-review/refused",
+                    relpath,
+                    f"mode {current_mode} differs from expected mode {expected_mode}",
+                )
+                continue
+            records.append(baseline_record_for_action(action, ownership))
+            report.add("baseline owned tooling", relpath, "known AGENT-DOCS-owned file matches upstream checksum and mode")
+            continue
+
+        if destination.exists():
+            if not destination.is_file():
+                report.add("manual-review/refused", relpath, "project-owned path is not a regular file")
+                continue
+            records.append(baseline_record_for_action(action, ownership))
+            report.add("project-owned after install", relpath, "present starter/project file will be recorded without checksum")
+
+    for relpath in sorted(init_module.AGENT_DOCS_OWNED_PATHS):
+        if relpath in selected_owned_paths:
+            continue
+        symlink_relpath = existing_symlink_in_target_path(target, relpath)
+        if symlink_relpath is not None:
+            report.add(
+                "manual-review/refused",
+                relpath,
+                f"known AGENT-DOCS-owned path is not selected and would traverse existing symlink inside target: {symlink_relpath}",
+            )
+            continue
+        non_directory_parent = existing_non_directory_parent_in_target_path(target, relpath)
+        if non_directory_parent is not None:
+            report.add(
+                "manual-review/refused",
+                relpath,
+                f"known AGENT-DOCS-owned path is not selected and has non-directory parent: {non_directory_parent}",
+            )
+            continue
+        if (target / relpath).exists():
+            report.add(
+                "manual-review/refused",
+                relpath,
+                "known AGENT-DOCS-owned path exists but is not selected by profile/options",
+            )
+
+    if not records:
+        report.add(
+            "manual-review/refused",
+            ".",
+            "no selected AGENT-DOCS files found; baseline refuses empty or unrelated targets",
+        )
+
+    if baseline_exit_code(report) != 0:
+        return report, None
+
+    timestamp = utc_timestamp()
+    manifest = {
+        "schema_version": 1,
+        "installed_at": timestamp,
+        "updated_at": timestamp,
+        "source": current_source_metadata(init_module),
+        "profile": profile.key,
+        "optional_components": optional_components,
+        "files": records,
+        "generated_views": [],
+    }
+    return report, manifest
+
+
+def baseline(args: list[str]) -> int:
+    init_module = load_init_module()
+    parser = argparse.ArgumentParser(
+        prog="agent-docs baseline",
+        description="Preview or create a manifest for a conservative legacy AGENT-DOCS install.",
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="Preview without writing. This is the default.")
+    mode.add_argument("--write", action="store_true", help="Create .agent-docs/manifest.json after safety checks pass.")
+    parser.add_argument("target", nargs="?", type=Path, default=Path.cwd(), help="Target repository root. Defaults to the current directory.")
+    parser.add_argument("--profile", required=True, choices=sorted(init_module.PROFILES), help="Installed scaffold profile to baseline.")
+    parser.add_argument(
+        "--docs-meta",
+        choices=["auto", "yes", "no"],
+        default="auto",
+        help="Whether docs-meta tooling should be part of the selected profile. Default: profile-specific.",
+    )
+    parsed = parser.parse_args(args)
+
+    report, manifest = build_baseline(parsed.target, parsed.profile, parsed.docs_meta)
+    print_baseline_report("write" if parsed.write else "dry-run", report)
+    if baseline_exit_code(report) != 0:
+        if parsed.write:
+            print("Refusing to write baseline manifest: manual-review/refused items are present.", file=sys.stderr)
+        return baseline_exit_code(report)
+    if not parsed.write:
+        print(f"Dry run only. Re-run with --write to create {MANIFEST_PATH}.")
+        return 0
+    if manifest is None:
+        print("Refusing to write baseline manifest: manifest data is unavailable.", file=sys.stderr)
+        return 2
+    manifest_path = report.target / MANIFEST_PATH
+    if manifest_path.exists() or existing_symlink_in_target_path(report.target, MANIFEST_PATH) is not None:
+        print("Refusing to write baseline manifest: manifest path became unsafe or already exists.", file=sys.stderr)
+        return 2
+    try:
+        atomic_write_json(manifest_path, manifest)
+    except OSError as error:
+        print(f"Refusing to write baseline manifest: {error}", file=sys.stderr)
+        return 2
+    print(f"Created: {MANIFEST_PATH}")
+    return 0
+
+
 def doctor(args: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="agent-docs doctor", description="Read-only install and drift report.")
     parser.add_argument("target", nargs="?", type=Path, default=Path.cwd(), help="Target repository root. Defaults to the current directory.")
@@ -937,6 +1234,8 @@ def main(argv: list[str]) -> int:
         return doctor(args)
     if command == "upgrade":
         return upgrade(args)
+    if command == "baseline":
+        return baseline(args)
     print(f"Unknown command: {command}", file=sys.stderr)
     print("Run `agent-docs --help` for usage.", file=sys.stderr)
     return 2

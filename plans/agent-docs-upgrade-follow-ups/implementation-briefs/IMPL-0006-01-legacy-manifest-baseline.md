@@ -3,9 +3,9 @@ type: implementation-brief
 id: IMPL-0006-01
 title: Legacy Manifest Baseline
 domain: repo-health
-status: ready
+status: completed
 created_at: "2026-05-02 06:24:06 JST +0900"
-updated_at: "2026-05-02 06:24:06 JST +0900"
+updated_at: "2026-05-02 07:02:56 JST +0900"
 parent_plan: PLAN-0006
 task_refs:
   - task-1
@@ -22,6 +22,7 @@ related_specs:
 related_adrs: []
 related_sessions:
   - session-logs/2026-05-02-plan-0006-briefing.md
+  - session-logs/2026-05-02-impl-0006-01-legacy-manifest-baseline.md
 related_issues: []
 related_prs: []
 linked_paths:
@@ -167,8 +168,8 @@ git diff --check
 
 ## Done Checklist
 
-- [ ] Baseline preview and write behavior implemented.
-- [ ] Refusal and path-safety smoke fixtures pass.
-- [ ] Project-owned Markdown remains unmodified and unchecksummed.
-- [ ] Docs and session log updated.
-- [ ] Full verification passes.
+- [x] Baseline preview and write behavior implemented.
+- [x] Refusal and path-safety smoke fixtures pass.
+- [x] Project-owned Markdown remains unmodified and unchecksummed.
+- [x] Docs and session log updated.
+- [x] Full verification passes.

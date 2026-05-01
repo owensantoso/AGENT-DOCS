@@ -23,6 +23,10 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
   updates. Bare `agent-docs upgrade` remains a read-only preview, and
   `--write` without `--tooling-only` is refused. Successful tooling-only writes
   return the post-write classification, so fully repaired targets exit `0`.
+- Added `agent-docs baseline --dry-run|--write [target] --profile <profile>
+  --docs-meta auto|yes|no` so legacy installs without `.agent-docs/manifest.json`
+  can preview and create a conservative manifest for matching AGENT-DOCS-owned
+  tooling while keeping project Markdown unmodified and unchecksummed.
 - Public-readiness work now favors preview-first install and init flows so first
   runs show intended changes before writing files.
 - Supported platform and prerequisite guidance is clearer for macOS and Linux
@@ -57,6 +61,10 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
   project-owned Markdown non-mutation.
 - Hardened tooling-only write mode to refuse unsafe backup paths, non-directory
   parent path conflicts, and exact-mode drift before writing.
+- Added smoke coverage for legacy manifest baseline preview/write behavior,
+  existing-manifest refusal, empty-target refusal, missing/drifted/wrong-mode
+  owned tooling refusal, symlink and hardlink refusal, and project-owned Markdown
+  non-mutation.
 - Added `scripts/changelog-check` for local and CI changelog enforcement.
 - Added smoke coverage for changelog-required, changelog-present, internal-only,
   and explicit-exemption cases.

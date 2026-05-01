@@ -3,12 +3,12 @@ type: plan
 id: PLAN-0006
 title: Generated View And Legacy Manifest Upgrade Follow-ups
 domain: repo-health
-status: ready
+status: in_progress
 created_at: "2026-05-02 06:10:23 JST +0900"
-updated_at: "2026-05-02 06:24:06 JST +0900"
+updated_at: "2026-05-02 07:02:56 JST +0900"
 planned_execution_start:
 planned_execution_end:
-actual_execution_start:
+actual_execution_start: "2026-05-02 06:36:33 JST +0900"
 actual_execution_end:
 owner: codex
 sequence:
@@ -30,6 +30,7 @@ related_adrs: []
 related_sessions:
   - session-logs/2026-05-02-plan-0005-closeout.md
   - session-logs/2026-05-02-plan-0006-briefing.md
+  - session-logs/2026-05-02-impl-0006-01-legacy-manifest-baseline.md
 related_issues: []
 related_prs: []
 repo_state:
@@ -43,9 +44,9 @@ repo_state:
 deferred: deliberate manifest baselining for legacy installs first, then safe
 generated-view write mode after the generator-specific safety model is proven.
 
-**Status:** Ready for the first implementation slice only. Legacy manifest
-baseline work is scoped by `IMPL-0006-01`; generated-view writes remain a later
-task until a separate brief is created.
+**Status:** In progress. Legacy manifest baseline work from `IMPL-0006-01` is
+implemented; generated-view writes remain a later task until a separate brief is
+created.
 
 **Source Spec:** [SPEC-0003 - AGENT-DOCS Versioning And Safe Upgrade](../agent-docs-versioning-and-upgrade/SPEC-0003-agent-docs-versioning-and-upgrade.md)
 
@@ -146,7 +147,7 @@ separate targeted smoke tests for generated-view writes before shipping Task 2.
 
 ## Completion Criteria
 
-- [ ] Legacy baseline creation is explicit, previewable, and refuses ambiguous
+- [x] Legacy baseline creation is explicit, previewable, and refuses ambiguous
   installs.
 - [ ] Generated-view write semantics are specified and tested before mutation is
   enabled.

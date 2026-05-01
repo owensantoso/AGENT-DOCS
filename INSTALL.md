@@ -76,6 +76,21 @@ checksums AGENT-DOCS-owned reusable tooling and records expected file modes;
 starter Markdown is recorded as `project-owned-after-install` because target
 repos are expected to customize those docs.
 
+For legacy installs that were created before manifests existed, use the
+preview-first baseline command instead of rerunning init over local docs:
+
+```bash
+agent-docs baseline --dry-run /path/to/project --profile small --docs-meta yes
+agent-docs baseline --write /path/to/project --profile small --docs-meta yes
+```
+
+`--dry-run` is the default. `--profile` is required, and `--docs-meta` accepts
+`auto`, `yes`, or `no`. Write mode creates only `.agent-docs/manifest.json` and
+refuses if a manifest already exists, AGENT-DOCS-owned tooling is missing,
+checksums or exact modes do not match upstream, paths traverse symlinks, or any
+candidate is not a regular file inside the target. Project Markdown is recorded
+without checksums when present and is never modified.
+
 Use the read-only inspection commands before considering upgrade write mode:
 
 ```bash

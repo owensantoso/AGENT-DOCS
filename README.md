@@ -153,6 +153,21 @@ expected file mode as `agent-docs-owned`; starter Markdown is recorded as
 `project-owned-after-install` so future update tooling does not treat target
 repo truth as automatically replaceable.
 
+Legacy installs that predate `.agent-docs/manifest.json` can be inspected with
+a preview-first baseline command:
+
+```bash
+agent-docs baseline --dry-run /path/to/project --profile small --docs-meta yes
+agent-docs baseline --write /path/to/project --profile small --docs-meta yes
+```
+
+`--dry-run` is the default. Baseline write mode creates only
+`.agent-docs/manifest.json`, writes it last, and refuses existing manifests,
+unknown profiles, unsafe paths, missing/drifted AGENT-DOCS-owned tooling,
+wrong file modes, symlinked paths, and non-regular files. Starter Markdown is
+recorded as `project-owned-after-install` when present, without checksums, and
+is not modified.
+
 After a manifest-backed install, inspect the target without writing files:
 
 ```bash
