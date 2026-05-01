@@ -5,7 +5,7 @@ title: Agent Docs Doctor Manifest Upgrade
 domain: repo-health
 status: in_progress
 created_at: "2026-05-02 02:40:23 JST +0900"
-updated_at: "2026-05-02 03:56:31 JST +0900"
+updated_at: "2026-05-02 04:56:46 JST +0900"
 planned_execution_start:
 planned_execution_end:
 actual_execution_start: "2026-05-02 03:00:00 JST +0900"
@@ -31,6 +31,7 @@ related_sessions:
   - session-logs/2026-05-02-plan-0004-public-readiness.md
   - session-logs/2026-05-02-plan-0005-slice-a-manifest-foundation.md
   - session-logs/2026-05-02-plan-0005-slice-b-doctor-upgrade-dry-run.md
+  - session-logs/2026-05-02-plan-0005-post-review-upgrade-semantics.md
 related_issues: []
 related_prs: []
 repo_state:
@@ -88,15 +89,25 @@ release-check/CI coverage.
   Only reusable AGENT-DOCS tooling receives checksums as `agent-docs-owned`;
   starter docs/templates are listed as `project-owned-after-install`.
 - `doctor` must be read-only and useful before upgrade write mode is built.
-- Dry-run output should classify every candidate as safe automatic update, safe
-  addition, generated refresh, manual review, refused, or unknown.
+- Bare `agent-docs upgrade` should default to read-only preview/report behavior,
+  equivalent to dry-run, rather than writing files.
+- Dry-run output should classify every candidate as candidate tooling update,
+  safe addition, generated refresh, manual/adaptive review, refused, or unknown.
+- Project-owned docs are local truth after install. Upgrade reports may explain
+  upstream guidance, changelog notes, and suggested agent review prompts for
+  those files, but normal upgrade must not rewrite them.
 - Write mode starts as `--tooling-only`; no broad `--force` semantics.
+- Destructive project-doc replacement, if ever supported, belongs in a separate
+  future recovery/reset command with explicit paths, mandatory backups, typed
+  confirmation, and audit records.
 
 ## Design Rules
 
 - Preview before mutation.
 - Refuse ambiguous ownership.
 - Never overwrite project-owned Markdown by default.
+- Treat schema, frontmatter, parser, path, and template changes in project-owned
+  docs as adaptive/manual review unless the migration is proven deterministic.
 - Never write through symlinked target paths or outside the target repo root.
 - Prefer exact paths, reasons, and next commands over clever summarization.
 - Keep legacy installs manual-review until a baseline manifest is intentionally
@@ -201,7 +212,7 @@ Verification:
 
 **Goal:** Show what upgrade would do by safety category.
 
-- Report safe automatic updates, safe additions, generated refreshes,
+- Report candidate tooling updates, safe additions, generated refreshes,
   manual-review items, refused items, and unknown items.
 - Include paths and reasons for every candidate.
 - Keep output pasteable for issues and session logs.
@@ -220,13 +231,20 @@ is trusted.
   base.
 - Add missing non-conflicting AGENT-DOCS-owned files.
 - Regenerate generated views through the installed generator.
+- Create a backup plan for touched files before writing.
+- Write files through temp paths or another safe replacement path where
+  practical.
 - Update `.agent-docs/manifest.json`.
+- Keep project-owned Markdown report-only; include guidance for manual/adaptive
+  update rather than overwriting it.
 
 Verification:
 
 - Write-mode tests prove project-owned Markdown is not modified.
 - Symlink and outside-root write attempts are refused.
 - Manifest checksums update only after successful writes.
+- Backups are created before touched files are replaced.
+- `agent-docs upgrade` without flags remains read-only.
 
 ### Task 6: Document And Gate The Workflow
 

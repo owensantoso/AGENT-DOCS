@@ -6,7 +6,7 @@ spec_type: repo-health
 domain: repo-health
 status: draft
 created_at: "2026-05-02 01:35:10 JST +0900"
-updated_at: "2026-05-02 02:40:23 JST +0900"
+updated_at: "2026-05-02 04:56:46 JST +0900"
 owner: codex
 source:
   type: conversation
@@ -25,6 +25,7 @@ related_concepts:
   - CONC-0002
 related_sessions:
   - session-logs/2026-05-02-plan-0004-public-readiness.md
+  - session-logs/2026-05-02-plan-0005-post-review-upgrade-semantics.md
 supersedes: []
 superseded_by: []
 repo_state:
@@ -194,15 +195,29 @@ After `doctor` is useful, AGENT-DOCS may add:
 agent-docs upgrade --dry-run
 ```
 
+Bare `agent-docs upgrade` should behave as a read-only preview/report, equivalent
+to dry-run. The default upgrade path should gather evidence and explain upgrade
+work; it must not mutate files.
+
 Dry-run output should be categorized:
 
-- safe automatic updates;
+- candidate tooling updates;
 - safe automatic additions;
 - generated view refreshes;
 - report-only manual review items;
 - refused or incompatible items.
 
-Dry-run should show file paths and reasons. It should not write files.
+Dry-run should show file paths, reasons, installed source metadata, current
+AGENT-DOCS source metadata when available, and adopter-facing changelog or
+migration notes for the relevant source range when those notes can be found. It
+should not write files.
+
+Project-owned docs should get an adaptive-review explanation, not a mechanical
+merge promise. For example, if local `AGENTS.md` differs from the installed base
+and upstream scaffold guidance also changed, the report should say which
+upstream guidance changed and ask a human or agent to adapt relevant concepts
+while preserving local repo-specific instructions. It should not claim that the
+file can be deterministically upgraded.
 
 ### Safe Write Mode
 
@@ -229,6 +244,39 @@ Write mode must not:
 - write outside the target repo root;
 - pretend unknown legacy installs are safe.
 
+Normal write mode should be limited to deterministic work. Before any write, the
+tool should produce or reuse a write plan, verify current checksums and file
+modes still match the manifest, create backups for touched files, write the
+manifest last, and refuse the entire operation for incompatible manifest shapes,
+symlinked paths, outside-root paths, unknown ownership, unsupported optional
+components, or local drift in AGENT-DOCS-owned files.
+
+Backups should be structured so a future rollback command can exist, even if
+rollback is not implemented in the first write slice.
+
+### Project-Owned Replacement Escape Hatch
+
+Replacing project-owned Markdown is not part of normal upgrade behavior. If
+AGENT-DOCS ever supports it, it should be a separate, intentionally scary
+recovery/reset command rather than `upgrade --force`.
+
+Recommended future shape:
+
+```bash
+agent-docs replace-project-docs --dry-run /path/to/project --paths AGENTS.md
+agent-docs replace-project-docs --write /path/to/project \
+  --paths AGENTS.md \
+  --backup-dir .agent-docs/backups/<timestamp> \
+  --i-understand-this-replaces-project-owned-docs \
+  --confirm-replace-project-owned-docs "REPLACE PROJECT-OWNED DOCS"
+```
+
+That future command should require exact paths, a prior dry-run or frozen replace
+plan for non-interactive use, mandatory backups, checksum revalidation at write
+time, refusal of broad roots such as `.` or `docs/` by default, refusal of
+symlinks and outside-root paths, and an audit record. It should remain hidden
+from the normal quick-start workflow.
+
 ### Three-Way Update Rule
 
 For AGENT-DOCS-owned text files, the update model should be conservative:
@@ -241,6 +289,36 @@ For AGENT-DOCS-owned text files, the update model should be conservative:
 
 Project-owned Markdown should remain report-only even when a three-way merge
 looks possible.
+
+### Schema And Compatibility Changes
+
+AGENT-DOCS cannot guarantee that every future docs schema, frontmatter, path, or
+parser change can be retroactively applied to existing project-owned docs. The
+upgrade workflow should distinguish deterministic detection from deterministic
+repair.
+
+Usually deterministic:
+
+- updating manifest-clean AGENT-DOCS-owned tooling;
+- adding missing non-conflicting AGENT-DOCS-owned files;
+- regenerating manifest-tracked generated views through known generators;
+- adding new generated views where the component/profile owns them.
+
+Usually manual/adaptive:
+
+- renaming frontmatter keys in source docs;
+- adding required fields whose values are project-specific, such as `areas`;
+- moving or renaming project-owned docs and repairing local links;
+- changing status vocabularies, TODO syntax, doc-type names, or parser
+  strictness;
+- adopting new `AGENTS.md` or `CURRENT_STATE.md` guidance into customized local
+  docs;
+- changing install profile meanings after a target repo has already adopted a
+  profile.
+
+For these manual/adaptive cases, upgrade reports should include examples,
+affected paths or counts, relevant changelog notes, and suggested agent review
+prompts. They should not auto-rewrite source-of-truth Markdown.
 
 ### Legacy Installs
 
@@ -260,7 +338,7 @@ and get a boring, pasteable report:
 
 - installed profile;
 - upstream commit checked;
-- safe tooling updates available;
+- candidate tooling updates available;
 - generated views stale;
 - project-owned docs needing review;
 - migration notes to read;
