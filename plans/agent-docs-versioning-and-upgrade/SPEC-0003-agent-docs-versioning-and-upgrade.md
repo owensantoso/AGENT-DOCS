@@ -27,6 +27,7 @@ related_sessions:
   - session-logs/2026-05-02-plan-0004-public-readiness.md
   - session-logs/2026-05-02-plan-0005-post-review-upgrade-semantics.md
   - session-logs/2026-05-02-plan-0005-closeout.md
+  - session-logs/2026-05-02-plan-0006-briefing.md
 supersedes: []
 superseded_by: []
 repo_state:
