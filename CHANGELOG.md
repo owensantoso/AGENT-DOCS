@@ -32,3 +32,4 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 - Added `scripts/changelog-check` for local and CI changelog enforcement.
 - Added smoke coverage for changelog-required, changelog-present, internal-only,
   and explicit-exemption cases.
+- Made `scripts/changelog-check` compatible with clean trees on macOS Bash 3.2.

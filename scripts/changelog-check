@@ -128,23 +128,21 @@ message_text() {
   fi
 }
 
-changed=()
-while IFS= read -r path; do
-  changed+=("$path")
-done < <(changed_paths | LC_ALL=C sort -u)
-
 changelog_changed=false
-adopter_paths=()
-for path in "${changed[@]}"; do
+adopter_paths_text=""
+adopter_path_count=0
+while IFS= read -r path; do
+  [[ -z "$path" ]] && continue
   if [[ "$path" == "CHANGELOG.md" ]]; then
     changelog_changed=true
   fi
   if is_adopter_facing_path "$path"; then
-    adopter_paths+=("$path")
+    adopter_paths_text+="${path}"$'\n'
+    adopter_path_count=$((adopter_path_count + 1))
   fi
-done
+done < <(changed_paths | LC_ALL=C sort -u)
 
-if [[ "${#adopter_paths[@]}" -eq 0 ]]; then
+if [[ "$adopter_path_count" -eq 0 ]]; then
   echo "No adopter-facing changes require a changelog entry."
   exit 0
 fi
@@ -164,7 +162,7 @@ fi
   echo "ERROR: adopter-facing AGENT-DOCS surfaces changed without CHANGELOG.md."
   echo
   echo "Changed adopter-facing paths:"
-  printf '  - %s\n' "${adopter_paths[@]}"
+  printf '%s' "$adopter_paths_text" | sed 's/^/  - /'
   echo
   echo "Add an adopter-facing entry to CHANGELOG.md, or include this marker in"
   echo "commit/PR text when no change record is needed:"
