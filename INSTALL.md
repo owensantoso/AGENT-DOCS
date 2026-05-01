@@ -67,6 +67,7 @@ Supported platforms and prerequisites:
 - Python 3.10 or newer.
 - Symlink support for the installed `agent-docs` and `agent-docs-init`
   commands.
+- A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_DOCS_BIN_DIR`.
 
 Write mode also creates `.agent-docs/manifest.json` with schema version 1. The
 manifest records source metadata when Git can provide it, the selected profile,
@@ -74,7 +75,20 @@ optional components such as `docs-meta`, installed files, and timestamps. It
 checksums AGENT-DOCS-owned reusable tooling only; starter Markdown is recorded as
 `project-owned-after-install` because target repos are expected to customize
 those docs.
-- A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_DOCS_BIN_DIR`.
+
+Use the read-only inspection commands before considering any future upgrade
+write mode:
+
+```bash
+agent-docs doctor /path/to/project
+agent-docs upgrade --dry-run /path/to/project
+```
+
+Legacy installs without `.agent-docs/manifest.json` are reported as
+manual-review. `upgrade --dry-run` does not write files and `upgrade --write` is
+intentionally refused in the current release. Exit codes are `0` for
+healthy/current, `1` for warnings or actionable drift, and `2` for invalid
+usage, refused, unknown, or incompatible shapes.
 
 Manual full-scaffold install:
 

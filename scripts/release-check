@@ -27,6 +27,7 @@ echo "Checking $root_doc_count Markdown docs under repo root"
 
 run tests/install-smoke.sh
 run tests/agent-docs-init-smoke.sh
+run tests/agent-docs-doctor-upgrade-smoke.sh
 run tests/docs-meta-smoke.sh
 run tests/changelog-check-smoke.sh
 pycache_dir="$(mktemp -d)"

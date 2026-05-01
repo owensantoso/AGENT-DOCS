@@ -5,7 +5,7 @@ title: Agent Docs Doctor Manifest Upgrade
 domain: repo-health
 status: in_progress
 created_at: "2026-05-02 02:40:23 JST +0900"
-updated_at: "2026-05-02 03:23:56 JST +0900"
+updated_at: "2026-05-02 03:56:31 JST +0900"
 planned_execution_start:
 planned_execution_end:
 actual_execution_start: "2026-05-02 03:00:00 JST +0900"
@@ -30,11 +30,12 @@ related_adrs: []
 related_sessions:
   - session-logs/2026-05-02-plan-0004-public-readiness.md
   - session-logs/2026-05-02-plan-0005-slice-a-manifest-foundation.md
+  - session-logs/2026-05-02-plan-0005-slice-b-doctor-upgrade-dry-run.md
 related_issues: []
 related_prs: []
 repo_state:
   based_on_commit: 54f6245d3df665e86525441e153cf4f30ae6edd7
-  last_reviewed_commit: 54f6245d3df665e86525441e153cf4f30ae6edd7
+  last_reviewed_commit: b9508ee1512d2b558a5d745fffe392da273b71ef
 ---
 
 # PLAN-0005 - Agent Docs Doctor Manifest Upgrade
@@ -259,9 +260,9 @@ lands.
 
 - [x] Manifest schema is documented and versioned.
 - [x] Fresh installs can write a manifest for AGENT-DOCS-owned assets.
-- [ ] Existing installs have a deliberate baseline path or remain manual-review.
-- [ ] `doctor` is read-only and classifies install state deterministically.
-- [ ] Upgrade dry-run reports safe, manual-review, refused, and unknown work.
+- [x] Existing installs have a deliberate baseline path or remain manual-review.
+- [x] `doctor` is read-only and classifies install state deterministically.
+- [x] Upgrade dry-run reports safe, manual-review, refused, and unknown work.
 - [ ] Tooling-only write mode updates only manifest-recognized safe files.
-- [ ] Project-owned Markdown is never overwritten by default.
-- [ ] Release-check and CI cover the shipped command path.
+- [x] Project-owned Markdown is never overwritten by default.
+- [x] Release-check and CI cover the shipped command path.

@@ -153,6 +153,21 @@ records, and timestamps. Only reusable AGENT-DOCS tooling such as
 `project-owned-after-install` so future update tooling does not treat target
 repo truth as automatically replaceable.
 
+After a manifest-backed install, inspect the target without writing files:
+
+```bash
+agent-docs doctor /path/to/project
+agent-docs upgrade --dry-run /path/to/project
+```
+
+`doctor` reports manifest health, missing owned tooling, checksum drift, safe
+automatic additions or updates, generated-view refreshes, project-owned manual
+review items, and refused or unknown shapes. `upgrade --dry-run` uses the same
+read-only classifier and previews categories only; `upgrade --write` is not
+implemented yet. Exit codes are `0` for healthy/current, `1` for warnings or
+actionable drift, and `2` for invalid usage, refused, unknown, or incompatible
+shapes.
+
 Non-interactive examples:
 
 ```bash

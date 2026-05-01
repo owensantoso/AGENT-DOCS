@@ -3,12 +3,55 @@
 
 from __future__ import annotations
 
+import argparse
+import hashlib
+import importlib.util
+import importlib.machinery
+import json
+import re
 import subprocess
 import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+MANIFEST_PATH = Path(".agent-docs/manifest.json")
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+
+
+@dataclass
+class Finding:
+    path: str
+    reason: str
+
+
+@dataclass
+class Report:
+    target: Path
+    profile: str | None = None
+    optional_components: list[str] = field(default_factory=list)
+    source_commit: str | None = None
+    installed_at: str | None = None
+    updated_at: str | None = None
+    categories: dict[str, list[Finding]] = field(default_factory=dict)
+
+    def add(self, category: str, path: str | Path, reason: str) -> None:
+        self.categories.setdefault(category, []).append(Finding(Path(path).as_posix(), reason))
+
+    def has_any(self, categories: set[str]) -> bool:
+        return any(self.categories.get(category) for category in categories)
+
+
+WARNING_CATEGORIES = {
+    "missing manifest/legacy/manual review",
+    "missing AGENT-DOCS-owned tooling",
+    "checksum drift/local modification",
+    "safe automatic updates available",
+    "safe automatic additions",
+    "generated view refreshes",
+}
+REFUSED_CATEGORIES = {"refused/unknown/incompatible shapes"}
 
 
 def print_help() -> None:
@@ -17,12 +60,389 @@ def print_help() -> None:
 
 Commands:
   init      Install an AGENT-DOCS scaffold profile into a target repository.
-
-Future commands:
   doctor    Read-only install and drift report.
-  upgrade   Safe upgrade preview and tooling-only writes.
+  upgrade   Safe upgrade preview. This slice supports --dry-run only.
+
+Exit codes:
+  0 healthy/current
+  1 warnings or actionable drift
+  2 invalid usage, refused, unknown, or incompatible shapes
 """
     )
+
+
+def load_init_module():
+    init_path = SCRIPT_DIR / "agent-docs-init"
+    loader = importlib.machinery.SourceFileLoader("agent_docs_init", str(init_path))
+    spec = importlib.util.spec_from_loader("agent_docs_init", loader)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Could not load {init_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    previous_dont_write_bytecode = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = previous_dont_write_bytecode
+    return module
+
+
+def checksum(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def action_checksum(action) -> str:
+    if action.source:
+        data = action.source.read_bytes()
+    else:
+        data = (action.content or "").encode("utf-8")
+    return hashlib.sha256(data).hexdigest()
+
+
+def safe_manifest_relpath(value: object) -> Path | None:
+    if not isinstance(value, str) or not value:
+        return None
+    relpath = Path(value)
+    if relpath.is_absolute() or ".." in relpath.parts:
+        return None
+    return relpath
+
+
+def target_path(target: Path, relpath: Path) -> Path:
+    return target / relpath
+
+
+def existing_symlink_in_target_path(target: Path, relpath: Path) -> Path | None:
+    current = target
+    for index, part in enumerate(relpath.parts):
+        current = current / part
+        if current.is_symlink():
+            return Path(*relpath.parts[: index + 1])
+    return None
+
+
+def valid_sha256(value: object) -> bool:
+    return isinstance(value, str) and SHA256_PATTERN.fullmatch(value) is not None
+
+
+def read_manifest(report: Report) -> dict | None:
+    manifest_path = report.target / MANIFEST_PATH
+    symlink_relpath = existing_symlink_in_target_path(report.target, MANIFEST_PATH)
+    if symlink_relpath is not None:
+        report.add(
+            "refused/unknown/incompatible shapes",
+            MANIFEST_PATH,
+            f"path would traverse existing symlink inside target: {symlink_relpath}",
+        )
+        return None
+    if not manifest_path.exists():
+        report.add(
+            "missing manifest/legacy/manual review",
+            MANIFEST_PATH,
+            "manifest is missing; legacy installs remain manual-review until a deliberate baseline path exists",
+        )
+        if (report.target / "AGENTS.md").exists() or (report.target / "docs").exists():
+            report.add(
+                "project-owned/manual-review items",
+                ".",
+                "target has AGENT-DOCS-shaped files but no manifest to prove ownership",
+            )
+        return None
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        report.add("refused/unknown/incompatible shapes", MANIFEST_PATH, f"manifest is not valid JSON: {error}")
+        return None
+    if not isinstance(manifest, dict):
+        report.add(
+            "refused/unknown/incompatible shapes",
+            MANIFEST_PATH,
+            "manifest root must be a JSON object",
+        )
+        return None
+    if manifest.get("schema_version") != 1:
+        report.add(
+            "refused/unknown/incompatible shapes",
+            MANIFEST_PATH,
+            f"unsupported manifest schema_version {manifest.get('schema_version')!r}; expected 1",
+        )
+        return None
+    return manifest
+
+
+def classify_target(target: Path) -> Report:
+    report = Report(target=target.resolve())
+    manifest = read_manifest(report)
+    if manifest is None:
+        return report
+
+    report.profile = manifest.get("profile") if isinstance(manifest.get("profile"), str) else None
+    optional_components = manifest.get("optional_components", [])
+    if isinstance(optional_components, list):
+        report.optional_components = [item for item in optional_components if isinstance(item, str)]
+    source = manifest.get("source", {})
+    if isinstance(source, dict):
+        report.source_commit = source.get("commit") if isinstance(source.get("commit"), str) else None
+    report.installed_at = manifest.get("installed_at") if isinstance(manifest.get("installed_at"), str) else None
+    report.updated_at = manifest.get("updated_at") if isinstance(manifest.get("updated_at"), str) else None
+
+    init_module = load_init_module()
+    upstream_actions = {}
+    if report.profile in init_module.PROFILES:
+        profile = init_module.PROFILES[report.profile]
+        include_docs_meta = "docs-meta" in report.optional_components
+        upstream_actions = {
+            action.relpath.as_posix(): action
+            for action in init_module.profile_actions(profile, include_docs_meta)
+            if init_module.action_ownership(action) == "agent-docs-owned"
+        }
+    else:
+        report.add(
+            "refused/unknown/incompatible shapes",
+            "profile",
+            f"unknown profile {report.profile!r}; cannot compare against upstream actions",
+        )
+
+    seen_paths: set[str] = set()
+    files = manifest.get("files", [])
+    if not isinstance(files, list):
+        report.add("refused/unknown/incompatible shapes", "files", "manifest files field is not a list")
+        files = []
+
+    for index, record in enumerate(files):
+        if not isinstance(record, dict):
+            report.add("refused/unknown/incompatible shapes", f"files[{index}]", "manifest file record is not an object")
+            continue
+        relpath = safe_manifest_relpath(record.get("path"))
+        if relpath is None:
+            report.add(
+                "refused/unknown/incompatible shapes",
+                str(record.get("path")),
+                "manifest path must be a non-empty relative path inside the target repo",
+            )
+            continue
+        rel = relpath.as_posix()
+        seen_paths.add(rel)
+        ownership = record.get("ownership")
+        destination = target_path(report.target, relpath)
+        symlink_relpath = existing_symlink_in_target_path(report.target, relpath)
+        if symlink_relpath is not None:
+            report.add(
+                "refused/unknown/incompatible shapes",
+                relpath,
+                f"path would traverse existing symlink inside target: {symlink_relpath}",
+            )
+            continue
+
+        if ownership == "agent-docs-owned":
+            manifest_checksum = record.get("checksum_sha256")
+            if not valid_sha256(manifest_checksum):
+                report.add(
+                    "refused/unknown/incompatible shapes",
+                    relpath,
+                    "agent-docs-owned checksum_sha256 must be 64 lowercase hex characters",
+                )
+                continue
+            upstream_action = upstream_actions.get(rel)
+            if upstream_action is None:
+                report.add(
+                    "refused/unknown/incompatible shapes",
+                    relpath,
+                    "agent-docs-owned file is not known in this AGENT-DOCS version",
+                )
+                continue
+            if not destination.exists():
+                report.add("missing AGENT-DOCS-owned tooling", relpath, "manifest records this owned file, but it is missing")
+                report.add("safe automatic additions", relpath, "missing owned tooling can be restored from AGENT-DOCS upstream")
+                continue
+            current_checksum = checksum(destination)
+            if current_checksum != manifest_checksum:
+                report.add(
+                    "checksum drift/local modification",
+                    relpath,
+                    "current checksum differs from manifest; requires manual review before any automatic update",
+                )
+                continue
+            if action_checksum(upstream_action) != manifest_checksum:
+                report.add(
+                    "safe automatic updates available",
+                    relpath,
+                    "current file matches manifest base and AGENT-DOCS upstream has different content",
+                )
+            else:
+                report.add("healthy/current", relpath, "owned file exists and matches manifest checksum")
+        elif ownership == "project-owned-after-install":
+            if destination.exists():
+                report.add(
+                    "project-owned/manual-review items",
+                    relpath,
+                    "project-owned after install; doctor and dry-run will not overwrite it",
+                )
+            else:
+                report.add(
+                    "project-owned/manual-review items",
+                    relpath,
+                    "project-owned manifest record is missing; recreate or remove intentionally after review",
+                )
+        else:
+            report.add("refused/unknown/incompatible shapes", relpath, f"unknown ownership {ownership!r}")
+
+    for rel, upstream_action in sorted(upstream_actions.items()):
+        if rel in seen_paths:
+            continue
+        destination = report.target / upstream_action.relpath
+        symlink_relpath = existing_symlink_in_target_path(report.target, upstream_action.relpath)
+        if symlink_relpath is not None:
+            report.add(
+                "refused/unknown/incompatible shapes",
+                upstream_action.relpath,
+                f"path would traverse existing symlink inside target: {symlink_relpath}",
+            )
+            continue
+        if destination.exists():
+            report.add(
+                "refused/unknown/incompatible shapes",
+                upstream_action.relpath,
+                "AGENT-DOCS-owned upstream file exists but is absent from the manifest",
+            )
+        else:
+            report.add(
+                "safe automatic additions",
+                upstream_action.relpath,
+                "AGENT-DOCS-owned upstream file is missing and has no target path conflict",
+            )
+
+    generated_views = manifest.get("generated_views", [])
+    if not isinstance(generated_views, list):
+        report.add("refused/unknown/incompatible shapes", "generated_views", "manifest generated_views field is not a list")
+        generated_views = []
+    for index, record in enumerate(generated_views):
+        if not isinstance(record, dict):
+            report.add("refused/unknown/incompatible shapes", f"generated_views[{index}]", "generated view record is not an object")
+            continue
+        relpath = safe_manifest_relpath(record.get("path"))
+        if relpath is None:
+            report.add(
+                "refused/unknown/incompatible shapes",
+                str(record.get("path")),
+                "generated view path must be a non-empty relative path inside the target repo",
+            )
+            continue
+        symlink_relpath = existing_symlink_in_target_path(report.target, relpath)
+        if symlink_relpath is not None:
+            report.add(
+                "refused/unknown/incompatible shapes",
+                relpath,
+                f"path would traverse existing symlink inside target: {symlink_relpath}",
+            )
+            continue
+        destination = report.target / relpath
+        view_checksum = record.get("checksum_sha256")
+        generator = record.get("generator", "unknown generator")
+        if view_checksum is not None and not valid_sha256(view_checksum):
+            report.add(
+                "refused/unknown/incompatible shapes",
+                relpath,
+                "generated view checksum_sha256 must be 64 lowercase hex characters",
+            )
+            continue
+        if not destination.exists():
+            report.add("generated view refreshes", relpath, f"generated view is missing; refresh with {generator}")
+        elif isinstance(view_checksum, str) and view_checksum and checksum(destination) != view_checksum:
+            report.add("generated view refreshes", relpath, f"generated view checksum differs; refresh with {generator}")
+
+    return report
+
+
+def report_exit_code(report: Report) -> int:
+    if report.has_any(REFUSED_CATEGORIES):
+        return 2
+    if report.has_any(WARNING_CATEGORIES):
+        return 1
+    return 0
+
+
+def status_label(report: Report) -> str:
+    code = report_exit_code(report)
+    if code == 0:
+        return "healthy/current"
+    if code == 1:
+        return "warnings/actionable drift"
+    return "incompatible/refused/invalid usage"
+
+
+def print_report(command: str, report: Report) -> None:
+    print(f"AGENT-DOCS {command}")
+    print(f"Target: {report.target}")
+    print(f"Status: {status_label(report)}")
+    if report.profile:
+        print(f"Profile: {report.profile}")
+    if report.optional_components:
+        print(f"Optional components: {', '.join(report.optional_components)}")
+    if report.source_commit:
+        print(f"Source commit: {report.source_commit}")
+    if report.installed_at:
+        print(f"Installed at: {report.installed_at}")
+    if report.updated_at:
+        print(f"Updated at: {report.updated_at}")
+    print("")
+
+    category_order = [
+        "healthy/current",
+        "missing manifest/legacy/manual review",
+        "missing AGENT-DOCS-owned tooling",
+        "checksum drift/local modification",
+        "safe automatic updates available",
+        "safe automatic additions",
+        "generated view refreshes",
+        "project-owned/manual-review items",
+        "refused/unknown/incompatible shapes",
+    ]
+    for category in category_order:
+        findings = report.categories.get(category, [])
+        if not findings:
+            continue
+        print(f"{category}:")
+        for finding in findings:
+            print(f"- {finding.path}: {finding.reason}")
+        print("")
+
+    print("Recommended next commands:")
+    if report_exit_code(report) == 0:
+        print(f"- agent-docs doctor {report.target}")
+        print(f"- agent-docs upgrade --dry-run {report.target}")
+    elif report.categories.get("missing manifest/legacy/manual review"):
+        print(f"- agent-docs init {report.target} --profile small --dry-run")
+        print("- Review legacy files manually before creating any future baseline manifest.")
+    elif report_exit_code(report) == 1:
+        print(f"- agent-docs upgrade --dry-run {report.target}")
+        print("- Review checksum drift and project-owned/manual-review items before any future write mode.")
+    else:
+        print(f"- agent-docs doctor {report.target}")
+        print("- Fix refused/unknown/incompatible manifest records before retrying.")
+
+
+def doctor(args: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="agent-docs doctor", description="Read-only install and drift report.")
+    parser.add_argument("target", nargs="?", type=Path, default=Path.cwd(), help="Target repository root. Defaults to the current directory.")
+    parsed = parser.parse_args(args)
+    report = classify_target(parsed.target.expanduser())
+    print_report("doctor", report)
+    return report_exit_code(report)
+
+
+def upgrade(args: list[str]) -> int:
+    if "--write" in args:
+        print("Only `agent-docs upgrade --dry-run [target]` is supported in this slice.", file=sys.stderr)
+        return 2
+    parser = argparse.ArgumentParser(prog="agent-docs upgrade", description="Read-only safe upgrade preview.")
+    parser.add_argument("--dry-run", action="store_true", required=True, help="Preview changes without writing.")
+    parser.add_argument("target", nargs="?", type=Path, default=Path.cwd(), help="Target repository root. Defaults to the current directory.")
+    parsed = parser.parse_args(args)
+    report = classify_target(parsed.target.expanduser())
+    print_report("upgrade dry-run", report)
+    return report_exit_code(report)
 
 
 def main(argv: list[str]) -> int:
@@ -37,6 +457,10 @@ def main(argv: list[str]) -> int:
             print("Re-run install.sh or use scripts/agent-docs-init from an AGENT-DOCS checkout.", file=sys.stderr)
             return 1
         return subprocess.call([str(init_command), *args])
+    if command == "doctor":
+        return doctor(args)
+    if command == "upgrade":
+        return upgrade(args)
     print(f"Unknown command: {command}", file=sys.stderr)
     print("Run `agent-docs --help` for usage.", file=sys.stderr)
     return 2
