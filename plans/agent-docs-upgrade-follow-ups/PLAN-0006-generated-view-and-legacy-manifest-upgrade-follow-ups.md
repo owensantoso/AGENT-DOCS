@@ -5,7 +5,7 @@ title: Generated View And Legacy Manifest Upgrade Follow-ups
 domain: repo-health
 status: in_progress
 created_at: "2026-05-02 06:10:23 JST +0900"
-updated_at: "2026-05-02 07:02:56 JST +0900"
+updated_at: "2026-05-02 07:39:15 JST +0900"
 planned_execution_start:
 planned_execution_end:
 actual_execution_start: "2026-05-02 06:36:33 JST +0900"
@@ -31,6 +31,7 @@ related_sessions:
   - session-logs/2026-05-02-plan-0005-closeout.md
   - session-logs/2026-05-02-plan-0006-briefing.md
   - session-logs/2026-05-02-impl-0006-01-legacy-manifest-baseline.md
+  - session-logs/2026-05-02-impl-0006-02-generated-view-upgrade-writes-briefing.md
 related_issues: []
 related_prs: []
 repo_state:
@@ -45,8 +46,8 @@ deferred: deliberate manifest baselining for legacy installs first, then safe
 generated-view write mode after the generator-specific safety model is proven.
 
 **Status:** In progress. Legacy manifest baseline work from `IMPL-0006-01` is
-implemented; generated-view writes remain a later task until a separate brief is
-created.
+implemented. Generated-view writes are scoped by `IMPL-0006-02` and ready for a
+separate implementation pass.
 
 **Source Spec:** [SPEC-0003 - AGENT-DOCS Versioning And Safe Upgrade](../agent-docs-versioning-and-upgrade/SPEC-0003-agent-docs-versioning-and-upgrade.md)
 
@@ -120,7 +121,7 @@ Verification:
 
 ### Task 2: Generated-View Upgrade Writes
 
-**Brief:** not yet created.
+**Brief:** [IMPL-0006-02 - Generated View Upgrade Writes](implementation-briefs/IMPL-0006-02-generated-view-upgrade-writes.md)
 
 **Goal:** Let upgrade write mode regenerate manifest-tracked generated views
 through known generator commands after the generated-view safety model is
