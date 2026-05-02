@@ -15,7 +15,7 @@ Do not park target-repo product work here. Product, app, or service plans belong
 | [PLAN-0003 - Docs Meta Review Parser](docs-meta-review-parser/PLAN-0003-docs-meta-review-parser.md) | Parse audit findings and open loops into a deterministic `docs-meta review` attention queue. |
 | [PLAN-0004 - Public Readiness And Agent Continuity Rename](public-readiness-and-agent-continuity-rename/PLAN-0004-public-readiness-and-agent-continuity-rename.md) | Harden AGENT-DOCS for public sharing, safer install/update workflows, CI, and a possible Agent Continuity rename. |
 | [PLAN-0005 - Agent Docs Doctor Manifest Upgrade](agent-docs-doctor-manifest-upgrade/PLAN-0005-agent-docs-doctor-manifest-upgrade.md) | Completed manifest, read-only doctor, upgrade dry-run, and tooling-only write mode from SPEC-0003. |
-| [PLAN-0006 - Generated View And Legacy Manifest Upgrade Follow-ups](agent-docs-upgrade-follow-ups/PLAN-0006-generated-view-and-legacy-manifest-upgrade-follow-ups.md) | In progress: legacy manifest baselining implemented first; generated-view writes remain later. |
+| [PLAN-0006 - Generated View And Legacy Manifest Upgrade Follow-ups](agent-docs-upgrade-follow-ups/PLAN-0006-generated-view-and-legacy-manifest-upgrade-follow-ups.md) | Completed legacy manifest baselining and opt-in generated-view upgrade writes from SPEC-0003. |
 
 ## Related Concepts
 

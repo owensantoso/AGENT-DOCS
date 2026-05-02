@@ -48,7 +48,8 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 - Use `Change-Record: not-needed` in commit or PR text only when an
   adopter-facing path changed without changing adopter behavior.
 - SPEC-0003 follow-up implementation is tracked in PLAN-0005 for manifest,
-  doctor, dry-run upgrade, and tooling-only write mode.
+  doctor, dry-run upgrade, and tooling-only write mode, and PLAN-0006 for legacy
+  baseline manifests and opt-in generated-view writes.
 
 ### Tooling changes
 
