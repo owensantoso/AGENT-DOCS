@@ -3,13 +3,13 @@ type: plan
 id: PLAN-0004
 title: Public Readiness And Agent Continuity Rename
 domain: repo-health
-status: in_progress
+status: completed
 created_at: "2026-05-02 02:13:08 JST +0900"
-updated_at: "2026-05-02 02:40:23 JST +0900"
+updated_at: "2026-05-02 09:17:43 JST +0900"
 planned_execution_start:
 planned_execution_end:
-actual_execution_start:
-actual_execution_end:
+actual_execution_start: "2026-05-02 02:13:08 JST +0900"
+actual_execution_end: "2026-05-02 09:17:43 JST +0900"
 owner: codex
 sequence:
   roadmap:
@@ -29,11 +29,12 @@ related_concepts:
 related_adrs: []
 related_sessions:
   - session-logs/2026-05-02-plan-0004-public-readiness.md
+  - session-logs/2026-05-02-plan-0004-closeout.md
 related_issues: []
 related_prs: []
 repo_state:
   based_on_commit: 7b540a5b90f7f318f80d5e0e2dc66ae90afea269
-  last_reviewed_commit: 7b540a5b90f7f318f80d5e0e2dc66ae90afea269
+  last_reviewed_commit: 639228d728c5a36e179c829cb661504af53be09b
 ---
 
 # PLAN-0004 - Public Readiness And Agent Continuity Rename
@@ -52,6 +53,10 @@ Markdown scaffold, smoke tests, GitHub Actions, GitHub repository settings, and
 future changelog/manifest tooling from SPEC-0003.
 
 **Source Spec:** [SPEC-0003 - AGENT-DOCS Versioning And Safe Upgrade](../agent-docs-versioning-and-upgrade/SPEC-0003-agent-docs-versioning-and-upgrade.md)
+
+**Closeout:** Completed for the public-readiness hardening scope at commit
+`639228d`. Rename, tagged release packaging, and Homebrew distribution remain
+explicitly deferred publication work, not unfinished PLAN-0004 implementation.
 
 ---
 
@@ -367,7 +372,7 @@ gh run list --limit 5
 
 ## Completion Criteria
 
-- [ ] Working tree is clean before publication.
+- [x] Working tree is clean before publication.
 - [x] Public quick start is preview-first or explicitly non-mutating.
 - [x] Installer prerequisites are documented and preflighted.
 - [x] Small-profile docs no longer point users at full-profile-only paths.
@@ -384,3 +389,12 @@ gh run list --limit 5
 - [x] Rename decision is deferred until after hardening; no rename has been
       performed in this pass.
 - [x] Follow-up doctor/upgrade plan exists if SPEC-0003 remains in scope.
+
+## Deferred Publication Work
+
+- Decide whether to rename the repo/package to `agent-continuity`.
+- Create a tagged public release once release cadence is chosen.
+- Add Homebrew or other package-manager distribution after tagged releases are
+  reliable.
+- Update command aliases, install URLs, README, changelog, and release notes in
+  one coherent rename/publication pass if the rename proceeds.

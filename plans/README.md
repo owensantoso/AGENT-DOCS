@@ -13,9 +13,10 @@ Do not park target-repo product work here. Product, app, or service plans belong
 | [PLAN-0001 - Docs Link Graph and Safe Move Tooling](docs-meta-link-graph-and-safe-move/PLAN-0001-docs-meta-link-graph-and-safe-move.md) | Extend `docs-meta` with backlinks, broken-link checks, orphan checks, link normalization, and safe doc move previews. |
 | [PLAN-0002 - Stable Todo System](stable-todo-system/PLAN-0002-stable-todo-system.md) | Add stable Markdown-native todo IDs, lifecycle states, owner/skill metadata, generated views, and checks for agent coordination. |
 | [PLAN-0003 - Docs Meta Review Parser](docs-meta-review-parser/PLAN-0003-docs-meta-review-parser.md) | Parse audit findings and open loops into a deterministic `docs-meta review` attention queue. |
-| [PLAN-0004 - Public Readiness And Agent Continuity Rename](public-readiness-and-agent-continuity-rename/PLAN-0004-public-readiness-and-agent-continuity-rename.md) | Harden AGENT-DOCS for public sharing, safer install/update workflows, CI, and a possible Agent Continuity rename. |
+| [PLAN-0004 - Public Readiness And Agent Continuity Rename](public-readiness-and-agent-continuity-rename/PLAN-0004-public-readiness-and-agent-continuity-rename.md) | Completed public-readiness hardening; rename, tagged release packaging, and Homebrew remain deferred publication work. |
 | [PLAN-0005 - Agent Docs Doctor Manifest Upgrade](agent-docs-doctor-manifest-upgrade/PLAN-0005-agent-docs-doctor-manifest-upgrade.md) | Completed manifest, read-only doctor, upgrade dry-run, and tooling-only write mode from SPEC-0003. |
 | [PLAN-0006 - Generated View And Legacy Manifest Upgrade Follow-ups](agent-docs-upgrade-follow-ups/PLAN-0006-generated-view-and-legacy-manifest-upgrade-follow-ups.md) | Completed legacy manifest baselining and opt-in generated-view upgrade writes from SPEC-0003. |
+| [PLAN-0007 - Generated View Manifest Registration](generated-view-manifest-registration/PLAN-0007-generated-view-manifest-registration.md) | Draft follow-up to register generated views during fresh installs and legacy baselines so PLAN-0006 writes are useful without manual manifest edits. |
 
 ## Related Concepts
 

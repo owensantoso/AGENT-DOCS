@@ -3,9 +3,9 @@ type: implementation-brief
 id: IMPL-0004-03
 title: Changelog Versioning Gate
 domain: repo-health
-status: draft
+status: completed
 created_at: "2026-05-02 02:13:08 JST +0900"
-updated_at: "2026-05-02 02:13:08 JST +0900"
+updated_at: "2026-05-02 09:17:43 JST +0900"
 parent_plan: PLAN-0004
 task_refs:
   - task-3
@@ -19,9 +19,10 @@ related_specs:
   - SPEC-0003
 related_sessions:
   - session-logs/2026-05-02-plan-0004-public-readiness.md
+  - session-logs/2026-05-02-plan-0004-closeout.md
 repo_state:
   based_on_commit: 7b540a5b90f7f318f80d5e0e2dc66ae90afea269
-  last_reviewed_commit: 7b540a5b90f7f318f80d5e0e2dc66ae90afea269
+  last_reviewed_commit: 639228d728c5a36e179c829cb661504af53be09b
 ---
 
 # IMPL-0004-03 - Changelog Versioning Gate
@@ -79,3 +80,8 @@ Add fixture or scripted coverage proving:
 - The gate catches real public-surface changes without forcing changelog noise
   for tiny internal work.
 - The exemption is explicit and searchable.
+
+## Closeout
+
+Completed as part of PLAN-0004 public-readiness hardening. `scripts/changelog-check`
+is included in `scripts/release-check` and CI.
