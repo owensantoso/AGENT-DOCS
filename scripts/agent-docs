@@ -1173,7 +1173,7 @@ def known_generator_script(generator: str) -> Path:
 
 def generator_command(generator: str, target: Path) -> list[str]:
     if generator == "scripts/docs-meta update":
-        return [sys.executable, "-P", str(SCRIPT_DIR / "docs-meta"), "--root", str(target / "docs"), "update"]
+        return [sys.executable, str(SCRIPT_DIR / "docs-meta"), "--root", str(target / "docs"), "update"]
     raise ValueError(generator)
 
 
