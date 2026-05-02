@@ -8,21 +8,21 @@ This is a **scalable workflow**, not a requirement to install every folder and d
 
 ## Quick Start
 
-From the repo you want to document, install or update the CLI and preview the recommended small profile:
+From the repo you want to document, install or update the CLI and preview the recommended standard footprint:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile small --dry-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile standard --dry-run
 ```
 
-The curl installer installs `agent-docs` and the compatibility command
-`agent-docs-init`, then previews by default. Write mode requires explicit
-intent:
+The curl installer installs the primary `agent-continuity` command plus the
+compatibility commands `agent-docs` and `agent-docs-init`, then previews by
+default. Write mode requires explicit intent:
 
 ```bash
-agent-docs-init --profile small --write
+agent-continuity init --profile standard --write
 ```
 
-If you run the installer from an interactive terminal without a profile, the CLI asks where to install, explains the project-size profiles, and previews the tree. Use `small` when unsure. Existing target files are listed first, and write mode refuses to overwrite them unless you pass `--force`.
+If you run the installer from an interactive terminal without a profile, the CLI asks where to install, explains the starting-footprint profiles, and previews the tree. Use `standard` when unsure. Existing target files are listed first, and write mode refuses to overwrite them unless you pass `--force`.
 
 Install or update the CLI without running init:
 
@@ -34,24 +34,24 @@ If you are installing from a private fork, authenticate with GitHub CLI and let 
 
 ```bash
 gh auth login
-gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile small --dry-run
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile standard --dry-run
 ```
 
 Non-interactive examples:
 
 ```bash
-agent-docs-init --profile small --dry-run
-agent-docs-init --profile small --write
-agent-docs-init /path/to/project --profile growing --dry-run
-agent-docs-init /path/to/project --profile full --dry-run
-agent-docs-init /path/to/project --profile full --write
+agent-continuity init --profile standard --dry-run
+agent-continuity init --profile standard --write
+agent-continuity init /path/to/project --profile expanded --dry-run
+agent-continuity init /path/to/project --profile complete --dry-run
+agent-continuity init /path/to/project --profile complete --write
 ```
 
-You can also use the new command namespace for init:
+The old command names and profile names remain compatibility aliases:
 
 ```bash
 agent-docs init --profile small --dry-run
-agent-docs init --profile small --write
+agent-docs-init --profile growing --dry-run
 ```
 
 ## Why This Exists
@@ -87,20 +87,24 @@ The point is not the folder tree. The point is making repo memory resumable: sou
 | Explore future doctor/upgrade safety | [concepts/CONC-0002-agent-docs-doctor-and-upgrade.md](concepts/CONC-0002-agent-docs-doctor-and-upgrade.md) |
 | Explore open-loop review cadence | [concepts/CONC-0003-open-loop-review-cadence.md](concepts/CONC-0003-open-loop-review-cadence.md) |
 
-## Choose A Size
+## Choose A Starting Footprint
 
-AGENT-DOCS has one full scaffold today: [scaffold/](scaffold/). You do not need to copy all of it. For small projects, copy a subset and grow toward the full tree only when the project earns it.
+AGENT-DOCS has one full scaffold today: [scaffold/](scaffold/). You do not need to copy all of it. Profiles choose the starting local docs footprint only; they do not limit later commands, audits, templates, generated views, or upgrade tooling.
 
 | Profile | Use When | Recommended Shape |
 |---|---|---|
-| Tiny | prototype, script, single-person experiment | `AGENTS.md`, `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md` |
-| Small / MVP | real app with a few features and occasional agents | flat `docs/`, simple `plans/`, optional `ADR` and `DIAG` |
-| Growing | multiple surfaces, recurring bugs, decisions, or handoffs | topic folders, `SPEC`, `PLAN`, `IMPL`, `ADR`, `DIAG`, session logs |
-| Full | long-lived repo with many agents, plans, domains, and generated views | copy/adapt [scaffold/](scaffold/) plus `scripts/docs-meta` |
+| Core | prototype, script, single-person experiment | `AGENTS.md`, `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md` |
+| Standard | real app with a few features and occasional agents | flat `docs/`, simple `plans/`, optional `ADR` and `DIAG` |
+| Expanded | multiple surfaces, recurring bugs, decisions, or handoffs | topic folders, `SPEC`, `PLAN`, `IMPL`, `ADR`, `DIAG`, session logs |
+| Complete | long-lived repo with many agents, plans, domains, and generated views | copy/adapt [scaffold/](scaffold/) plus `scripts/docs-meta` |
+
+Compatibility aliases still work for at least one release cycle: `tiny` maps to
+`core`, `small` maps to `standard`, `growing` maps to `expanded`, and `full`
+maps to `complete`. New manifests record the canonical profile key.
 
 ### Minimal Shapes
 
-For a tiny repo:
+For a core-footprint repo:
 
 ```text
 AGENTS.md
@@ -109,7 +113,7 @@ docs/
   ARCHITECTURE.md
 ```
 
-For a small product or MVP:
+For a standard-footprint product or MVP:
 
 ```text
 AGENTS.md
@@ -132,14 +136,14 @@ Supported platforms and prerequisites:
 - macOS or Linux shell with Bash.
 - Git for installer clone/update paths.
 - Python 3.10 or newer.
-- Symlink support for the installed `agent-docs` and `agent-docs-init`
-  commands.
+- Symlink support for the installed `agent-continuity`, `agent-docs`, and
+  `agent-docs-init` commands.
 - A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_DOCS_BIN_DIR`.
 
 Use the installed command when you want the CLI to explain profiles, show the structure preview, and copy the selected scaffold. If you omit the target path, it uses the current directory in non-interactive mode and asks about the current directory in interactive mode:
 
 ```bash
-agent-docs-init
+agent-continuity init
 ```
 
 The installer is idempotent around existing project files: it may create missing docs inside an existing `docs/` folder, but it lists exact file conflicts and refuses to overwrite those files in write mode unless `--force` is explicitly provided.
@@ -157,10 +161,10 @@ Legacy installs that predate `.agent-docs/manifest.json` can be inspected with
 a preview-first baseline command:
 
 ```bash
-agent-docs baseline --dry-run /path/to/project --profile small --docs-meta yes
-agent-docs baseline --write /path/to/project --profile small --docs-meta yes
-agent-docs baseline --dry-run --generated-views /path/to/project --profile small --docs-meta yes
-agent-docs baseline --write --generated-views /path/to/project --profile small --docs-meta yes
+agent-continuity baseline --dry-run /path/to/project --profile standard --docs-meta yes
+agent-continuity baseline --write /path/to/project --profile standard --docs-meta yes
+agent-continuity baseline --dry-run --generated-views /path/to/project --profile standard --docs-meta yes
+agent-continuity baseline --write --generated-views /path/to/project --profile standard --docs-meta yes
 ```
 
 `--dry-run` is the default. Baseline write mode creates only
@@ -175,22 +179,22 @@ markers. It does not run generators or overwrite files.
 After a manifest-backed install, inspect the target without writing files:
 
 ```bash
-agent-docs doctor /path/to/project
-agent-docs upgrade /path/to/project
-agent-docs upgrade --dry-run /path/to/project
+agent-continuity doctor /path/to/project
+agent-continuity upgrade /path/to/project
+agent-continuity upgrade --dry-run /path/to/project
 ```
 
 `doctor` reports manifest health, missing owned tooling, checksum drift, safe
 automatic additions, candidate tooling updates, generated-view refreshes, project-owned manual
-review items, and refused or unknown shapes. Bare `agent-docs upgrade` and
-`agent-docs upgrade --dry-run` use the same read-only classifier and preview
+review items, and refused or unknown shapes. Bare `agent-continuity upgrade` and
+`agent-continuity upgrade --dry-run` use the same read-only classifier and preview
 categories only.
 
 The narrow write path is explicit:
 
 ```bash
-agent-docs upgrade --write --tooling-only /path/to/project
-agent-docs upgrade --write --tooling-only --generated-views /path/to/project
+agent-continuity upgrade --write --tooling-only /path/to/project
+agent-continuity upgrade --write --tooling-only --generated-views /path/to/project
 ```
 
 Tooling-only write mode may restore missing manifest-owned tooling, update
@@ -198,7 +202,7 @@ manifest-clean AGENT-DOCS-owned tooling to the current upstream action, repair a
 missing executable bit when content still matches the manifest, and update the
 manifest last. It creates backups under `.agent-docs/backups/<timestamp>/` for
 touched existing files plus `.agent-docs/backups/<timestamp>/audit.json` for the
-write batch. `agent-docs upgrade --write` without `--tooling-only` is refused,
+write batch. `agent-continuity upgrade --write` without `--tooling-only` is refused,
 and project-owned Markdown remains report-only. Generated views remain
 report-only unless `--generated-views` is also provided; that opt-in mode
 regenerates only manifest-tracked generated views through supported local
@@ -212,18 +216,18 @@ that is fully repaired by the write exits `0`.
 Non-interactive examples:
 
 ```bash
-agent-docs-init --profile small --dry-run
-agent-docs-init --profile small --write
-agent-docs-init /path/to/project --profile small --dry-run
-agent-docs-init /path/to/project --profile growing --dry-run
-agent-docs-init /path/to/project --profile small --docs-meta yes --write
-agent-docs-init /path/to/project --profile full --dry-run
-agent-docs-init /path/to/project --profile full --write
+agent-continuity init --profile standard --dry-run
+agent-continuity init --profile standard --write
+agent-continuity init /path/to/project --profile standard --dry-run
+agent-continuity init /path/to/project --profile expanded --dry-run
+agent-continuity init /path/to/project --profile standard --docs-meta yes --write
+agent-continuity init /path/to/project --profile complete --dry-run
+agent-continuity init /path/to/project --profile complete --write
 ```
 
 If you have cloned this repo and want to run the script directly during development, use `scripts/agent-docs-init` from the repo root.
 
-`tiny` and `small` synthesize smaller flat files such as `docs/CURRENT_STATE.md` and `docs/ARCHITECTURE.md`. `growing` and `full` copy selected files from the full scaffold, where current-state and architecture docs live under `docs/orientation/`. This keeps small-project docs lighter without duplicating the whole scaffold tree.
+`core` and `standard` synthesize smaller flat files such as `docs/CURRENT_STATE.md` and `docs/ARCHITECTURE.md`. `expanded` and `complete` copy selected files from the full scaffold, where current-state and architecture docs live under `docs/orientation/`. This keeps smaller project docs lighter without duplicating the whole scaffold tree.
 
 Manual install still works if you want the full scaffold plus deterministic metadata tooling:
 
@@ -398,7 +402,7 @@ The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. Copy 
 |---|---|
 | [scaffold/AGENTS.md](scaffold/AGENTS.md) | root agent index and repo rules |
 | [scaffold/agent-instructions/](scaffold/agent-instructions/) | reusable global and surface `AGENTS.md` templates |
-| [guides/audits/](guides/audits/) | reusable repo-agnostic audit-kind guides, copied into growing/full-profile repos under `docs/repo-health/audits/guides/` |
+| [guides/audits/](guides/audits/) | reusable repo-agnostic audit-kind guides, copied into expanded/complete-footprint repos under `docs/repo-health/audits/guides/` |
 | [scaffold/docs/README.md](scaffold/docs/README.md) | target repo docs map and doc-type workflow diagram |
 | [scaffold/docs/orientation/](scaffold/docs/orientation/) | current state, onboarding, roadmap, architecture |
 | [scaffold/docs/architecture/](scaffold/docs/architecture/) | architecture hub and `AREA-*` example |

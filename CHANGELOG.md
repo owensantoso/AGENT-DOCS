@@ -8,30 +8,36 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 
 ### For adopters
 
-- The installer now publishes `agent-docs` as the future command namespace while
-  keeping `agent-docs-init` as the compatible init command.
+- The primary installed command is now `agent-continuity`. Existing
+  `agent-docs` and `agent-docs-init` commands remain compatibility commands.
+- Public install profiles are now `core`, `standard`, `expanded`, and
+  `complete`, with `standard` as the recommended default. The old `tiny`,
+  `small`, `growing`, and `full` names remain compatibility aliases and new
+  manifests record canonical profile keys.
+- The installer still publishes `agent-docs` and `agent-docs-init` as
+  compatibility commands for existing adopters.
 - Explicit write installs now create `.agent-docs/manifest.json` with schema
   version 1, profile/source metadata, optional component records, conservative
   file ownership, and checksums for AGENT-DOCS-owned tooling.
-- Added read-only `agent-docs doctor [target]` and `agent-docs upgrade
+- Added read-only `agent-continuity doctor [target]` and `agent-continuity upgrade
   --dry-run [target]` reports for manifest health, drift, safe additions,
   candidate tooling updates, generated-view refreshes, manual-review items,
   and refused shapes.
-- Added `agent-docs upgrade --write --tooling-only [target]` for deterministic
+- Added `agent-continuity upgrade --write --tooling-only [target]` for deterministic
   AGENT-DOCS-owned tooling updates, missing owned-file restores, executable-bit
   repairs, backups under `.agent-docs/backups/<timestamp>/`, and manifest-last
-  updates. Bare `agent-docs upgrade` remains a read-only preview, and
+  updates. Bare `agent-continuity upgrade` remains a read-only preview, and
   `--write` without `--tooling-only` is refused. Successful tooling-only writes
   return the post-write classification, so fully repaired targets exit `0`.
-- Added explicit generated-view upgrade writes with `agent-docs upgrade --write
+- Added explicit generated-view upgrade writes with `agent-continuity upgrade --write
   --tooling-only --generated-views [target]`. The first supported generator is
   `scripts/docs-meta update`, and only manifest-tracked generated views are
   refreshed.
 - Fresh installs that include `docs-meta` now generate and register recognized
   docs-meta generated views in `.agent-docs/manifest.json`. Legacy baseline
-  installs can opt in with `agent-docs baseline --generated-views`, which
+  installs can opt in with `agent-continuity baseline --generated-views`, which
   records existing recognized generated views without running generators.
-- Added `agent-docs baseline --dry-run|--write [target] --profile <profile>
+- Added `agent-continuity baseline --dry-run|--write [target] --profile <profile>
   --docs-meta auto|yes|no` so legacy installs without `.agent-docs/manifest.json`
   can preview and create a conservative manifest for matching AGENT-DOCS-owned
   tooling while keeping project Markdown unmodified and unchecksummed.
@@ -57,7 +63,8 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 
 ### Tooling changes
 
-- Added `agent-docs init ...` as a thin delegator to `agent-docs-init`.
+- Added `agent-continuity init ...` and `agent-docs init ...` as thin
+  delegators to `agent-docs-init`.
 - Added exit-code semantics for doctor/dry-run reports: `0` healthy/current,
   `1` warnings or actionable drift, and `2` invalid usage, refused, unknown, or
   incompatible shapes.

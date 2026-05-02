@@ -17,6 +17,7 @@ Do not park target-repo product work here. Product, app, or service plans belong
 | [PLAN-0005 - Agent Docs Doctor Manifest Upgrade](agent-docs-doctor-manifest-upgrade/PLAN-0005-agent-docs-doctor-manifest-upgrade.md) | Completed manifest, read-only doctor, upgrade dry-run, and tooling-only write mode from SPEC-0003. |
 | [PLAN-0006 - Generated View And Legacy Manifest Upgrade Follow-ups](agent-docs-upgrade-follow-ups/PLAN-0006-generated-view-and-legacy-manifest-upgrade-follow-ups.md) | Completed legacy manifest baselining and opt-in generated-view upgrade writes from SPEC-0003. |
 | [PLAN-0007 - Generated View Manifest Registration](generated-view-manifest-registration/PLAN-0007-generated-view-manifest-registration.md) | Completed generated-view registration for fresh docs-meta installs and explicit legacy baseline `--generated-views`. |
+| [PLAN-0008 - Agent Continuity Public Rename](agent-continuity-public-rename/PLAN-0008-agent-continuity-public-rename.md) | Implemented first public rename slice for `agent-continuity` command aliases and `core/standard/expanded/complete` profiles. |
 
 ## Related Concepts
 

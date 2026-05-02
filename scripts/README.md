@@ -4,8 +4,8 @@ This folder contains two main scripts:
 
 | Script | Purpose |
 |---|---|
-| `../install.sh` | bootstrap installer that puts `agent-docs` and `agent-docs-init` on PATH |
-| `agent-docs` | command namespace for AGENT-DOCS workflows |
+| `../install.sh` | bootstrap installer that puts `agent-continuity` plus compatibility commands on PATH |
+| `agent-docs` | compatibility command namespace for AGENT-DOCS workflows |
 | `agent-docs-init` | compatibility selected scaffold installer for target repos |
 | `docs-meta` | deterministic metadata helper once docs are installed |
 | `changelog-check` | changelog gate for reusable adopter-facing surfaces |
@@ -13,10 +13,10 @@ This folder contains two main scripts:
 
 ## Agent Docs Init
 
-From the repo you want to document, install or update the command and preview the recommended small profile:
+From the repo you want to document, install or update the command and preview the recommended standard footprint:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile small --dry-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile standard --dry-run
 ```
 
 Use `--no-run` when you only want to install or update the command:
@@ -29,40 +29,46 @@ For private forks, authenticate with GitHub CLI and pipe the raw installer throu
 
 ```bash
 gh auth login
-gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile small --dry-run
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile standard --dry-run
 ```
 
-Then use `agent-docs init` or `agent-docs-init` to install the smallest useful
-AGENT-DOCS shape into another repo:
+Then use `agent-continuity init` to install the smallest useful AGENT-DOCS
+footprint into another repo:
 
 ```bash
-agent-docs init --profile small --dry-run
-agent-docs init --profile small --write
-agent-docs-init
-agent-docs-init --profile small --dry-run
-agent-docs-init --profile small --docs-meta yes --write
-agent-docs-init /path/to/project --profile small --dry-run
-agent-docs-init /path/to/project --profile growing --dry-run
-agent-docs-init /path/to/project --profile full --dry-run
+agent-continuity init --profile standard --dry-run
+agent-continuity init --profile standard --write
+agent-continuity init --profile standard --docs-meta yes --write
+agent-continuity init /path/to/project --profile standard --dry-run
+agent-continuity init /path/to/project --profile expanded --dry-run
+agent-continuity init /path/to/project --profile complete --dry-run
 ```
 
 If no target path is provided, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path.
 
 Repeated installs are safe: the bootstrapper updates the local source checkout,
-refreshes command symlinks, and reports when `agent-docs` and `agent-docs-init`
-are already installed. Existing project files are listed in dry-run, and write
-mode refuses to overwrite them unless `--force` is explicitly provided.
+refreshes command symlinks, and reports when `agent-continuity`, `agent-docs`,
+and `agent-docs-init` are already installed. Existing project files are listed
+in dry-run, and write mode refuses to overwrite them unless `--force` is
+explicitly provided.
 
 Profiles:
 
 | Profile | Meaning | Default |
 |---|---|---|
-| `tiny` | prototype, script, or single-person experiment | smallest flat docs, no `docs-meta` |
-| `small` | real app with a few features and occasional agents | recommended default, no `docs-meta` |
-| `growing` | multiple surfaces, handoffs, bugs, or decisions | selected topic folders, `docs-meta` |
-| `full` | long-lived repo with many agents and generated views | full scaffold, `docs-meta` |
+| `core` | prototype, script, or single-person experiment | smallest flat docs, no `docs-meta` |
+| `standard` | real app with a few features and occasional agents | recommended default, no `docs-meta` |
+| `expanded` | multiple surfaces, handoffs, bugs, or decisions | selected topic folders, `docs-meta` |
+| `complete` | long-lived repo with many agents and generated views | full scaffold, `docs-meta` |
 
-The interactive selector explains each profile and previews the tree while you move through the choices. `tiny` and `small` synthesize lighter docs, including a smaller `ARCHITECTURE.md`; `growing` and `full` copy selected files from `scaffold/`.
+Compatibility aliases still work for at least one release cycle: `tiny` maps to
+`core`, `small` maps to `standard`, `growing` maps to `expanded`, and `full`
+maps to `complete`. New manifests record the canonical profile key.
+
+The interactive selector explains each profile and previews the tree while you
+move through the choices. `core` and `standard` synthesize lighter docs,
+including a smaller `ARCHITECTURE.md`; `expanded` and `complete` copy selected
+files from `scaffold/`.
 
 ### Installed Manifest
 
@@ -73,7 +79,7 @@ Schema version 1 contains:
 - `schema_version`: currently `1`
 - `installed_at` and `updated_at`: UTC timestamps
 - `source`: AGENT-DOCS repository URL, ref, commit, and local source path when available
-- `profile`: selected profile
+- `profile`: selected canonical profile
 - `optional_components`: currently includes `docs-meta` when selected
 - `files`: installed file records
 - `generated_views`: present for future generated-view tracking, empty in this slice
@@ -91,8 +97,8 @@ Legacy installs without `.agent-docs/manifest.json` can intentionally create a
 baseline manifest only after a preview:
 
 ```bash
-agent-docs baseline --dry-run /path/to/project --profile small --docs-meta yes
-agent-docs baseline --write /path/to/project --profile small --docs-meta yes
+agent-continuity baseline --dry-run /path/to/project --profile standard --docs-meta yes
+agent-continuity baseline --write /path/to/project --profile standard --docs-meta yes
 ```
 
 `--dry-run` is the default. `--profile` is required and uses the same profile
@@ -111,9 +117,9 @@ paths, non-directory parent conflicts, and non-regular files are refused.
 Inspect a manifest-backed target without writing files:
 
 ```bash
-agent-docs doctor /path/to/project
-agent-docs upgrade /path/to/project
-agent-docs upgrade --dry-run /path/to/project
+agent-continuity doctor /path/to/project
+agent-continuity upgrade /path/to/project
+agent-continuity upgrade --dry-run /path/to/project
 ```
 
 Both commands classify the target with the schema version 1 manifest. Reports
@@ -128,11 +134,11 @@ manual-review.
 The only supported upgrade write path is:
 
 ```bash
-agent-docs upgrade --write --tooling-only /path/to/project
-agent-docs upgrade --write --tooling-only --generated-views /path/to/project
+agent-continuity upgrade --write --tooling-only /path/to/project
+agent-continuity upgrade --write --tooling-only --generated-views /path/to/project
 ```
 
-`agent-docs upgrade --write` without `--tooling-only` exits `2`. Tooling-only
+`agent-continuity upgrade --write` without `--tooling-only` exits `2`. Tooling-only
 write mode may restore missing AGENT-DOCS-owned files, update manifest-clean
 owned files from the current upstream action set, repair a missing executable bit
 when the file content still matches the manifest, and update

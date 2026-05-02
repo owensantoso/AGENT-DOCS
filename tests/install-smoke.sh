@@ -38,8 +38,10 @@ AGENT_DOCS_BIN_DIR="$bin_dir" \
 
 require_file "$bin_dir/agent-docs-init"
 require_file "$bin_dir/agent-docs"
+require_file "$bin_dir/agent-continuity"
 require_contains "$tmpdir/install.out" "agent-docs-init"
 require_contains "$tmpdir/install.out" "agent-docs"
+require_contains "$tmpdir/install.out" "agent-continuity"
 
 AGENT_DOCS_SOURCE="$repo_root" \
 AGENT_DOCS_HOME="$home_dir" \
@@ -47,6 +49,7 @@ AGENT_DOCS_BIN_DIR="$bin_dir" \
   "$repo_root/install.sh" --no-run >"$tmpdir/install-again.out"
 require_contains "$tmpdir/install-again.out" "already installed"
 require_contains "$tmpdir/install-again.out" "agent-docs already installed"
+require_contains "$tmpdir/install-again.out" "agent-continuity already installed"
 
 relative_source_bin="$tmpdir/relative-source-bin"
 (cd "$repo_root/.." && AGENT_DOCS_SOURCE="$(basename "$repo_root")" \
@@ -70,10 +73,43 @@ require_file "$target/docs/CURRENT_STATE.md"
 require_file "$target/.agent-docs/manifest.json"
 
 shim_target="$tmpdir/shim-project"
-"$bin_dir/agent-docs" init "$shim_target" --profile tiny --write >"$tmpdir/shim-init.out"
+"$bin_dir/agent-continuity" init "$shim_target" --profile core --write >"$tmpdir/shim-init.out"
 require_file "$shim_target/AGENTS.md"
 require_file "$shim_target/.agent-docs/manifest.json"
-require_contains "$tmpdir/shim-init.out" "Profile: tiny"
+require_contains "$tmpdir/shim-init.out" "Profile: core"
+"$bin_dir/agent-continuity" --help >"$tmpdir/agent-continuity-help.out"
+require_contains "$tmpdir/agent-continuity-help.out" "Usage: agent-continuity <command> [args]"
+"$bin_dir/agent-continuity" init --help >"$tmpdir/agent-continuity-init-help.out"
+require_contains "$tmpdir/agent-continuity-init-help.out" "usage: agent-continuity init"
+"$bin_dir/agent-continuity" doctor "$shim_target" >"$tmpdir/agent-continuity-doctor.out"
+require_contains "$tmpdir/agent-continuity-doctor.out" "- agent-continuity doctor"
+require_contains "$tmpdir/agent-continuity-doctor.out" "- agent-continuity upgrade --dry-run"
+"$bin_dir/agent-continuity" baseline --help >"$tmpdir/agent-continuity-baseline-help.out"
+require_contains "$tmpdir/agent-continuity-baseline-help.out" "usage: agent-continuity baseline"
+if "$bin_dir/agent-continuity" nope >"$tmpdir/agent-continuity-unknown.out" 2>&1; then
+  echo "Expected unknown agent-continuity command to fail" >&2
+  exit 1
+fi
+require_contains "$tmpdir/agent-continuity-unknown.out" 'Run `agent-continuity --help` for usage.'
+if "$bin_dir/agent-continuity" upgrade --write "$shim_target" >"$tmpdir/agent-continuity-write-without-tooling.out" 2>&1; then
+  echo "Expected agent-continuity upgrade --write without --tooling-only to fail" >&2
+  exit 1
+fi
+require_contains "$tmpdir/agent-continuity-write-without-tooling.out" '`agent-continuity upgrade --write` requires `--tooling-only`.'
+python3 - "$shim_target/.agent-docs/manifest.json" <<'PY'
+import json
+import sys
+
+manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+if manifest.get("profile") != "core":
+    raise SystemExit("Expected core profile in manifest")
+PY
+
+compat_shim_target="$tmpdir/compat-shim-project"
+"$bin_dir/agent-docs" init "$compat_shim_target" --profile tiny --write >"$tmpdir/compat-shim-init.out"
+require_file "$compat_shim_target/AGENTS.md"
+require_file "$compat_shim_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/compat-shim-init.out" "Profile: core"
 
 missing_sibling="$tmpdir/missing-sibling"
 mkdir -p "$missing_sibling"
@@ -92,7 +128,7 @@ AGENT_DOCS_HOME="$home_dir" \
 AGENT_DOCS_BIN_DIR="$bin_dir" \
   "$repo_root/install.sh" -- "$run_target" --profile small --dry-run >"$tmpdir/run.out"
 
-require_contains "$tmpdir/run.out" "Profile: small"
+require_contains "$tmpdir/run.out" "Profile: standard"
 require_contains "$tmpdir/run.out" "Target: $resolved_run_target"
 require_contains "$tmpdir/run.out" "Would create: docs/CURRENT_STATE.md"
 
@@ -213,6 +249,20 @@ fi
 require_contains "$agent_docs_conflict_bin/agent-docs" "existing command"
 require_absent "$agent_docs_conflict_bin/agent-docs-init"
 require_contains "$tmpdir/agent-docs-conflict-bin.out" "Refusing to replace existing command"
+
+agent_continuity_conflict_bin="$tmpdir/agent-continuity-conflict-bin"
+mkdir -p "$agent_continuity_conflict_bin"
+echo "existing command" >"$agent_continuity_conflict_bin/agent-continuity"
+if AGENT_DOCS_SOURCE="$repo_root" \
+  AGENT_DOCS_HOME="$home_dir" \
+  AGENT_DOCS_BIN_DIR="$agent_continuity_conflict_bin" \
+  "$repo_root/install.sh" --no-run >"$tmpdir/agent-continuity-conflict-bin.out" 2>&1; then
+  echo "Expected install to refuse replacing existing agent-continuity command" >&2
+  exit 1
+fi
+require_contains "$agent_continuity_conflict_bin/agent-continuity" "existing command"
+require_absent "$agent_continuity_conflict_bin/agent-docs-init"
+require_contains "$tmpdir/agent-continuity-conflict-bin.out" "Refusing to replace existing command"
 
 mismatch_home="$tmpdir/mismatch-home"
 mkdir -p "$mismatch_home"

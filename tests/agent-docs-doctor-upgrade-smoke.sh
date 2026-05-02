@@ -139,7 +139,7 @@ healthy_target_resolved="$(cd "$healthy_target" && pwd -P)"
 require_exit 0 "$tmpdir/healthy-doctor.out" "$agent_docs" doctor "$healthy_target"
 require_contains "$tmpdir/healthy-doctor.out" "AGENT-DOCS doctor"
 require_contains "$tmpdir/healthy-doctor.out" "Status: healthy/current"
-require_contains "$tmpdir/healthy-doctor.out" "Profile: small"
+require_contains "$tmpdir/healthy-doctor.out" "Profile: standard"
 require_contains "$tmpdir/healthy-doctor.out" "healthy/current"
 require_contains "$tmpdir/healthy-doctor.out" "Recommended next commands:"
 require_contains "$tmpdir/healthy-doctor.out" "agent-docs doctor $healthy_target_resolved"
@@ -207,7 +207,7 @@ legacy_target_resolved="$(cd "$legacy_target" && pwd -P)"
 require_exit 1 "$tmpdir/legacy-doctor.out" "$agent_docs" doctor "$legacy_target"
 require_contains "$tmpdir/legacy-doctor.out" "missing manifest/legacy/manual review"
 require_contains "$tmpdir/legacy-doctor.out" ".agent-docs/manifest.json"
-require_contains "$tmpdir/legacy-doctor.out" "agent-docs init $legacy_target_resolved --profile small --dry-run"
+require_contains "$tmpdir/legacy-doctor.out" "agent-docs init $legacy_target_resolved --profile standard --dry-run"
 
 baseline_preview_target="$tmpdir/baseline-preview"
 "$installer" "$baseline_preview_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-preview-install.out"
@@ -243,7 +243,7 @@ target = pathlib.Path(sys.argv[1])
 upstream_docs_meta = pathlib.Path(sys.argv[2])
 upstream_smoke = pathlib.Path(sys.argv[3])
 manifest = json.loads((target / ".agent-docs/manifest.json").read_text(encoding="utf-8"))
-assert manifest["profile"] == "small"
+assert manifest["profile"] == "standard"
 assert manifest["optional_components"] == ["docs-meta"]
 records = {record["path"]: record for record in manifest["files"]}
 owned_docs_meta = records["scripts/docs-meta"]

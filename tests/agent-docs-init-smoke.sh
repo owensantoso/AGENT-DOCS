@@ -30,33 +30,33 @@ require_contains() {
 }
 
 small_target="$tmpdir/small-app"
-"$installer" "$small_target" --profile small --dry-run >"$tmpdir/small-dry-run.out"
-require_contains "$tmpdir/small-dry-run.out" "Profile: small"
+"$installer" "$small_target" --profile standard --dry-run >"$tmpdir/small-dry-run.out"
+require_contains "$tmpdir/small-dry-run.out" "Profile: standard"
 require_contains "$tmpdir/small-dry-run.out" "real app with a few features"
 require_contains "$tmpdir/small-dry-run.out" "docs/ROADMAP.md"
 require_contains "$tmpdir/small-dry-run.out" "Would create"
 require_absent "$small_target/AGENTS.md"
 
-LC_ALL=C PYTHONUTF8=0 "$installer" "$tmpdir/ascii-app" --profile small --dry-run >"$tmpdir/ascii-dry-run.out"
-require_contains "$tmpdir/ascii-dry-run.out" "Profile: small"
+LC_ALL=C PYTHONUTF8=0 "$installer" "$tmpdir/ascii-app" --profile standard --dry-run >"$tmpdir/ascii-dry-run.out"
+require_contains "$tmpdir/ascii-dry-run.out" "Profile: standard"
 require_contains "$tmpdir/ascii-dry-run.out" "Would create: docs/CURRENT_STATE.md"
 
 mkdir -p "$small_target/docs"
 echo "# existing docs" >"$small_target/docs/README.md"
-"$installer" "$small_target" --profile small --dry-run >"$tmpdir/small-existing-dry-run.out"
+"$installer" "$small_target" --profile standard --dry-run >"$tmpdir/small-existing-dry-run.out"
 require_contains "$tmpdir/small-existing-dry-run.out" "Existing target files found"
 require_contains "$tmpdir/small-existing-dry-run.out" "docs/README.md"
 require_contains "$tmpdir/small-existing-dry-run.out" "Write mode will refuse"
 
 tiny_target="$tmpdir/tiny-app"
-"$installer" "$tiny_target" --profile tiny --write >"$tmpdir/tiny-write.out"
-require_contains "$tmpdir/tiny-write.out" "Profile: tiny"
+"$installer" "$tiny_target" --profile core --write >"$tmpdir/tiny-write.out"
+require_contains "$tmpdir/tiny-write.out" "Profile: core"
 require_contains "$tmpdir/tiny-write.out" "Created"
 require_file "$tiny_target/AGENTS.md"
 require_file "$tiny_target/docs/CURRENT_STATE.md"
 require_file "$tiny_target/docs/ARCHITECTURE.md"
 require_file "$tiny_target/.agent-docs/manifest.json"
-require_contains "$tiny_target/AGENTS.md" "Tiny Project"
+require_contains "$tiny_target/AGENTS.md" "Core Project"
 python3 - "$tiny_target/.agent-docs/manifest.json" <<'PY'
 import json
 import sys
@@ -64,10 +64,10 @@ import sys
 manifest = json.load(open(sys.argv[1], encoding="utf-8"))
 if manifest.get("schema_version") != 1:
     raise SystemExit("Expected manifest schema_version 1")
-if manifest.get("profile") != "tiny":
-    raise SystemExit("Expected tiny profile in manifest")
+if manifest.get("profile") != "core":
+    raise SystemExit("Expected core profile in manifest")
 if manifest.get("optional_components") != []:
-    raise SystemExit("Expected no optional components for tiny profile")
+    raise SystemExit("Expected no optional components for core profile")
 paths = {record["path"]: record for record in manifest.get("files", [])}
 for path in ("AGENTS.md", "docs/CURRENT_STATE.md", "docs/ARCHITECTURE.md"):
     record = paths.get(path)
@@ -83,8 +83,20 @@ if "installed_at" not in manifest or "updated_at" not in manifest:
     raise SystemExit("Expected install timestamps in manifest")
 PY
 
+compat_tiny_target="$tmpdir/compat-tiny-app"
+"$installer" "$compat_tiny_target" --profile tiny --write >"$tmpdir/compat-tiny-write.out"
+require_contains "$tmpdir/compat-tiny-write.out" "Profile: core"
+python3 - "$compat_tiny_target/.agent-docs/manifest.json" <<'PY'
+import json
+import sys
+
+manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+if manifest.get("profile") != "core":
+    raise SystemExit("Expected tiny alias to write canonical core profile")
+PY
+
 echo "# existing" >"$tiny_target/AGENTS.md"
-if "$installer" "$tiny_target" --profile tiny --write >"$tmpdir/overwrite.out" 2>&1; then
+if "$installer" "$tiny_target" --profile core --write >"$tmpdir/overwrite.out" 2>&1; then
   echo "Expected installer to refuse overwriting existing files" >&2
   exit 1
 fi
@@ -93,12 +105,12 @@ require_contains "$tmpdir/overwrite.out" "Refusing to overwrite"
 manifest_conflict_target="$tmpdir/manifest-conflict-app"
 mkdir -p "$manifest_conflict_target/.agent-docs"
 echo "{}" >"$manifest_conflict_target/.agent-docs/manifest.json"
-if "$installer" "$manifest_conflict_target" --profile tiny --write >"$tmpdir/manifest-conflict.out" 2>&1; then
+if "$installer" "$manifest_conflict_target" --profile core --write >"$tmpdir/manifest-conflict.out" 2>&1; then
   echo "Expected installer to refuse overwriting an existing manifest" >&2
   exit 1
 fi
 require_contains "$tmpdir/manifest-conflict.out" ".agent-docs/manifest.json"
-if "$installer" "$manifest_conflict_target" --profile tiny --write --force >"$tmpdir/manifest-force-conflict.out" 2>&1; then
+if "$installer" "$manifest_conflict_target" --profile core --write --force >"$tmpdir/manifest-force-conflict.out" 2>&1; then
   echo "Expected installer to refuse overwriting an existing manifest even with --force" >&2
   exit 1
 fi
@@ -108,7 +120,7 @@ symlink_target="$tmpdir/symlink-app"
 outside_target="$tmpdir/outside"
 mkdir -p "$symlink_target" "$outside_target"
 ln -s "$outside_target" "$symlink_target/docs"
-if "$installer" "$symlink_target" --profile tiny --write >"$tmpdir/symlink-write.out" 2>&1; then
+if "$installer" "$symlink_target" --profile core --write >"$tmpdir/symlink-write.out" 2>&1; then
   echo "Expected installer to refuse writing through symlinked target paths" >&2
   exit 1
 fi
@@ -116,7 +128,7 @@ require_contains "$tmpdir/symlink-write.out" "Refusing to write through symlinke
 require_absent "$outside_target/CURRENT_STATE.md"
 
 meta_target="$tmpdir/meta-app"
-"$installer" "$meta_target" --profile small --docs-meta yes --write >"$tmpdir/meta-write.out"
+"$installer" "$meta_target" --profile standard --docs-meta yes --write >"$tmpdir/meta-write.out"
 require_file "$meta_target/scripts/docs-meta"
 require_file "$meta_target/tests/docs-meta-smoke.sh"
 require_file "$meta_target/.agent-docs/manifest.json"
@@ -168,7 +180,7 @@ for path in ("docs/SPECS.md", "docs/DOCS-REGISTRY.md", "docs/TODOS.md"):
         raise SystemExit(f"Expected generated view checksum for {path}")
 PY
 
-"$installer" "$tmpdir/meta-preview-app" --profile small --docs-meta yes --dry-run >"$tmpdir/meta-preview.out"
+"$installer" "$tmpdir/meta-preview-app" --profile standard --docs-meta yes --dry-run >"$tmpdir/meta-preview.out"
 require_absent "$tmpdir/meta-preview-app/.agent-docs/manifest.json"
 python3 - "$tmpdir/meta-preview.out" <<'PY'
 import sys
@@ -188,7 +200,7 @@ not_type: generated-view
 
 # project-authored todos
 EOF
-if "$installer" "$meta_generated_conflict_target" --profile small --docs-meta yes --write >"$tmpdir/meta-generated-conflict.out" 2>&1; then
+if "$installer" "$meta_generated_conflict_target" --profile standard --docs-meta yes --write >"$tmpdir/meta-generated-conflict.out" 2>&1; then
   echo "Expected installer to refuse overwriting existing generated-view output paths" >&2
   exit 1
 fi
@@ -199,7 +211,7 @@ require_absent "$meta_generated_conflict_target/AGENTS.md"
 require_absent "$meta_generated_conflict_target/scripts/docs-meta"
 
 growing_target="$tmpdir/growing-app"
-"$installer" "$growing_target" --profile growing --write >"$tmpdir/growing-write.out"
+"$installer" "$growing_target" --profile expanded --write >"$tmpdir/growing-write.out"
 require_file "$growing_target/docs/repo-health/audits/README.md"
 require_file "$growing_target/docs/repo-health/audits/audit-profile.md"
 require_file "$growing_target/docs/repo-health/audits/guides/architecture.md"
@@ -212,12 +224,12 @@ require_contains "$tmpdir/growing-write.out" "docs/repo-health/audits/guides/arc
 cwd_target="$tmpdir/cwd-app"
 mkdir -p "$cwd_target"
 resolved_cwd_target="$(cd "$cwd_target" && pwd -P)"
-(cd "$cwd_target" && "$installer" --profile small --dry-run >"$tmpdir/cwd-dry-run.out")
+(cd "$cwd_target" && "$installer" --profile standard --dry-run >"$tmpdir/cwd-dry-run.out")
 require_contains "$tmpdir/cwd-dry-run.out" "Target: $resolved_cwd_target"
 require_contains "$tmpdir/cwd-dry-run.out" "Would create: docs/CURRENT_STATE.md"
 
 full_target="$tmpdir/full-app"
-"$installer" "$full_target" --profile full --dry-run >"$tmpdir/full-dry-run.out"
+"$installer" "$full_target" --profile complete --dry-run >"$tmpdir/full-dry-run.out"
 require_contains "$tmpdir/full-dry-run.out" "├── docs/"
 require_contains "$tmpdir/full-dry-run.out" "│   ├── architecture/"
 require_contains "$tmpdir/full-dry-run.out" "│   ├── decisions/"
@@ -242,7 +254,7 @@ if [[ "$docs_meta_action_count" != "1" ]]; then
   exit 1
 fi
 
-"$installer" "$tmpdir/full-no-meta-app" --profile full --docs-meta no --dry-run >"$tmpdir/full-no-meta-dry-run.out"
+"$installer" "$tmpdir/full-no-meta-app" --profile complete --docs-meta no --dry-run >"$tmpdir/full-no-meta-dry-run.out"
 require_contains "$tmpdir/full-no-meta-dry-run.out" "└── docs/"
 if grep -Fq -- "tooling: scripts/docs-meta" "$tmpdir/full-no-meta-dry-run.out"; then
   echo "Expected full profile without docs-meta to hide tooling row" >&2
@@ -307,11 +319,13 @@ text = output.decode("utf-8", errors="replace")
 print(text)
 if process.returncode != 0:
     raise SystemExit(process.returncode)
-if "Profile: growing" not in text:
-    raise SystemExit("Expected down-arrow interactive picker to choose growing")
+if "Profile: expanded" not in text:
+    raise SystemExit("Expected down-arrow interactive picker to choose expanded")
 if "Use arrow keys or j/k" not in text:
     raise SystemExit("Expected picker to advertise vertical navigation")
-if "\x1b[1;7m> growing" not in text:
+if "Choose starting docs footprint" not in text:
+    raise SystemExit("Expected picker to frame profiles as starting docs footprints")
+if "\x1b[1;7m> expanded" not in text:
     raise SystemExit("Expected selected profile row to be styled")
 if "Structure" not in text or "Template/doc types" not in text:
     raise SystemExit("Expected selected profile details to use two columns")
@@ -342,7 +356,7 @@ if "── README.md" in text:
 if text.count("\x1b[2J") > 1:
     raise SystemExit("Expected interactive picker to avoid full-screen clear on every redraw")
 PY
-require_contains "$tmpdir/interactive-picker.out" "Profile: growing"
+require_contains "$tmpdir/interactive-picker.out" "Profile: expanded"
 require_contains "$tmpdir/interactive-picker.out" "├── docs/"
 require_contains "$tmpdir/interactive-picker.out" $'\033[36mROADMAP.md\033[0m'
 
@@ -408,8 +422,8 @@ screen = text.split("\x1b[H\x1b[J")[-1].split("\x1b[?25hProfile:", 1)[0]
 screen_lines = [line for line in screen.splitlines() if line]
 if len(screen_lines) > 16:
     raise SystemExit(f"Expected small terminal screen to fit in 16 lines, got {len(screen_lines)}")
-if "\x1b[1;7m> full" not in screen:
-    raise SystemExit("Expected full profile selection to remain visible in small terminal")
+if "\x1b[1;7m> complete" not in screen:
+    raise SystemExit("Expected complete profile selection to remain visible in small terminal")
 if "... " not in screen:
     raise SystemExit("Expected oversized selected profile details to be summarized in a small terminal")
 if "Template/doc types" not in screen:
@@ -441,7 +455,7 @@ env = dict(os.environ)
 env["COLUMNS"] = "100"
 env["LINES"] = "18"
 process = subprocess.Popen(
-    [installer, "--profile", "small"],
+    [installer, "--profile", "standard"],
     cwd=target,
     stdin=slave,
     stdout=slave,
@@ -512,7 +526,7 @@ env = dict(os.environ)
 env["COLUMNS"] = "100"
 env["LINES"] = "18"
 process = subprocess.Popen(
-    [installer, "--profile", "small"],
+    [installer, "--profile", "standard"],
     cwd=source,
     stdin=slave,
     stdout=slave,

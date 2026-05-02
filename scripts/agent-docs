@@ -95,9 +95,9 @@ DOCS_META_UPDATE_OUTPUTS = {
 }
 
 
-def print_help() -> None:
+def print_help(command_name: str) -> None:
     print(
-        """Usage: agent-docs <command> [args]
+        f"""Usage: {command_name} <command> [args]
 
 Commands:
   init      Install an AGENT-DOCS scaffold profile into a target repository.
@@ -435,8 +435,9 @@ def classify_target(target: Path) -> Report:
 
     init_module = load_init_module()
     upstream_actions = {}
-    if report.profile in init_module.PROFILES:
-        profile = init_module.PROFILES[report.profile]
+    profile_key = init_module.canonical_profile_key(report.profile) if report.profile else None
+    if profile_key in init_module.PROFILES:
+        profile = init_module.PROFILES[profile_key]
         include_docs_meta = "docs-meta" in report.optional_components
         upstream_actions = {
             action.relpath.as_posix(): action
@@ -692,7 +693,7 @@ def status_label(report: Report) -> str:
     return "incompatible/refused/invalid usage"
 
 
-def print_report(command: str, report: Report) -> None:
+def print_report(command: str, report: Report, command_name: str = "agent-docs") -> None:
     print(f"AGENT-DOCS {command}")
     print(f"Target: {report.target}")
     print(f"Status: {status_label(report)}")
@@ -731,16 +732,16 @@ def print_report(command: str, report: Report) -> None:
 
     print("Recommended next commands:")
     if report_exit_code(report) == 0:
-        print(f"- agent-docs doctor {report.target}")
-        print(f"- agent-docs upgrade --dry-run {report.target}")
+        print(f"- {command_name} doctor {report.target}")
+        print(f"- {command_name} upgrade --dry-run {report.target}")
     elif report.categories.get("missing manifest/legacy/manual review"):
-        print(f"- agent-docs init {report.target} --profile small --dry-run")
+        print(f"- {command_name} init {report.target} --profile standard --dry-run")
         print("- Review legacy files manually before creating any future baseline manifest.")
     elif report_exit_code(report) == 1:
-        print(f"- agent-docs upgrade --dry-run {report.target}")
+        print(f"- {command_name} upgrade --dry-run {report.target}")
         print("- Review checksum drift and project-owned/manual-review items before any future write mode.")
     else:
-        print(f"- agent-docs doctor {report.target}")
+        print(f"- {command_name} doctor {report.target}")
         print("- Fix refused/unknown/incompatible manifest records before retrying.")
 
 
@@ -867,7 +868,7 @@ def path_inside_target(target: Path, relpath: Path) -> bool:
 
 def build_baseline(target_arg: Path, profile_key: str, docs_meta: str, include_generated_views: bool = False) -> tuple[Report, dict | None]:
     init_module = load_init_module()
-    profile = init_module.PROFILES[profile_key]
+    profile = init_module.profile_for_key(profile_key)
     optional_components = optional_components_for_docs_meta(profile, docs_meta)
     include_docs_meta = "docs-meta" in optional_components
     raw_target = target_arg.expanduser()
@@ -902,7 +903,7 @@ def build_baseline(target_arg: Path, profile_key: str, docs_meta: str, include_g
         report.add(
             "manual-review/refused",
             MANIFEST_PATH,
-            "Refusing to baseline target with existing manifest; use agent-docs doctor or upgrade instead",
+            "Refusing to baseline target with existing manifest; use doctor or upgrade instead",
         )
 
     records: list[dict] = []
@@ -1061,17 +1062,17 @@ def build_baseline(target_arg: Path, profile_key: str, docs_meta: str, include_g
     return report, manifest
 
 
-def baseline(args: list[str]) -> int:
+def baseline(args: list[str], command_name: str = "agent-docs") -> int:
     init_module = load_init_module()
     parser = argparse.ArgumentParser(
-        prog="agent-docs baseline",
+        prog=f"{command_name} baseline",
         description="Preview or create a manifest for a conservative legacy AGENT-DOCS install.",
     )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true", help="Preview without writing. This is the default.")
     mode.add_argument("--write", action="store_true", help="Create .agent-docs/manifest.json after safety checks pass.")
     parser.add_argument("target", nargs="?", type=Path, default=Path.cwd(), help="Target repository root. Defaults to the current directory.")
-    parser.add_argument("--profile", required=True, choices=sorted(init_module.PROFILES), help="Installed scaffold profile to baseline.")
+    parser.add_argument("--profile", required=True, choices=init_module.PROFILE_CHOICES, help="Installed scaffold profile to baseline.")
     parser.add_argument(
         "--docs-meta",
         choices=["auto", "yes", "no"],
@@ -1106,12 +1107,12 @@ def baseline(args: list[str]) -> int:
     return 0
 
 
-def doctor(args: list[str]) -> int:
-    parser = argparse.ArgumentParser(prog="agent-docs doctor", description="Read-only install and drift report.")
+def doctor(args: list[str], command_name: str = "agent-docs") -> int:
+    parser = argparse.ArgumentParser(prog=f"{command_name} doctor", description="Read-only install and drift report.")
     parser.add_argument("target", nargs="?", type=Path, default=Path.cwd(), help="Target repository root. Defaults to the current directory.")
     parsed = parser.parse_args(args)
     report = classify_target(parsed.target.expanduser())
-    print_report("doctor", report)
+    print_report("doctor", report, command_name)
     return report_exit_code(report)
 
 
@@ -1123,6 +1124,7 @@ def manifest_and_upstream_actions(target: Path, report: Report) -> tuple[dict | 
     profile_key = manifest.get("profile") if isinstance(manifest.get("profile"), str) else None
     optional_components = manifest.get("optional_components", [])
     include_docs_meta = isinstance(optional_components, list) and "docs-meta" in optional_components
+    profile_key = init_module.canonical_profile_key(profile_key) if profile_key else None
     if profile_key not in init_module.PROFILES:
         return manifest, {}, init_module
     profile = init_module.PROFILES[profile_key]
@@ -1346,6 +1348,7 @@ def build_generated_view_operations(report: Report, manifest: dict, init_module)
         profile_key = manifest.get("profile") if isinstance(manifest.get("profile"), str) else None
         optional_components = manifest.get("optional_components", [])
         include_docs_meta = isinstance(optional_components, list) and "docs-meta" in optional_components
+        profile_key = init_module.canonical_profile_key(profile_key) if profile_key else None
         if profile_key in init_module.PROFILES:
             profile = init_module.PROFILES[profile_key]
             for action in init_module.profile_actions(profile, include_docs_meta):
@@ -1452,10 +1455,15 @@ def build_generated_view_operations(report: Report, manifest: dict, init_module)
     return operations, refusals
 
 
-def write_audit(backup_root: Path, tooling_operations: list[ToolingOperation], generated_operations: list[GeneratedViewOperation]) -> None:
+def write_audit(
+    backup_root: Path,
+    operation_name: str,
+    tooling_operations: list[ToolingOperation],
+    generated_operations: list[GeneratedViewOperation],
+) -> None:
     audit = {
         "created_at": utc_timestamp(),
-        "operation": "agent-docs upgrade --write --tooling-only",
+        "operation": operation_name,
         "touched": [
             {
                 "path": operation.relpath.as_posix(),
@@ -1566,6 +1574,7 @@ def apply_upgrade_operations(
     manifest: dict,
     init_module,
     backup_root: Path,
+    operation_name: str,
 ) -> bool:
     backup_root_created = False
 
@@ -1630,14 +1639,14 @@ def apply_upgrade_operations(
     manifest["source"] = current_source_metadata(init_module)
     manifest["updated_at"] = utc_timestamp()
     ensure_backup_root_with_manifest()
-    write_audit(backup_root, tooling_operations, generated_operations)
+    write_audit(backup_root, operation_name, tooling_operations, generated_operations)
     atomic_write_json(report.target / MANIFEST_PATH, manifest)
     print(f"Updated: {MANIFEST_PATH}")
     return True
 
 
-def upgrade(args: list[str]) -> int:
-    parser = argparse.ArgumentParser(prog="agent-docs upgrade", description="Safe upgrade preview or tooling-only write mode.")
+def upgrade(args: list[str], command_name: str = "agent-docs") -> int:
+    parser = argparse.ArgumentParser(prog=f"{command_name} upgrade", description="Safe upgrade preview or tooling-only write mode.")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true", help="Preview changes without writing. This is the default.")
     mode.add_argument("--write", action="store_true", help="Apply deterministic safe updates.")
@@ -1650,14 +1659,14 @@ def upgrade(args: list[str]) -> int:
         return 2
     report = classify_target(parsed.target.expanduser())
     if not parsed.write:
-        print_report("upgrade dry-run", report)
+        print_report("upgrade dry-run", report, command_name)
         return report_exit_code(report)
     if not parsed.tooling_only:
-        print("`agent-docs upgrade --write` requires `--tooling-only`.", file=sys.stderr)
-        print("Use `agent-docs upgrade [target]` or `agent-docs upgrade --dry-run [target]` for a read-only preview.", file=sys.stderr)
+        print(f"`{command_name} upgrade --write` requires `--tooling-only`.", file=sys.stderr)
+        print(f"Use `{command_name} upgrade [target]` or `{command_name} upgrade --dry-run [target]` for a read-only preview.", file=sys.stderr)
         return 2
 
-    print_report("upgrade write tooling-only", report)
+    print_report("upgrade write tooling-only", report, command_name)
     if report.has_any(REFUSED_CATEGORIES):
         print("refusing tooling-only write: refused/unknown/incompatible shapes are present", file=sys.stderr)
         return 2
@@ -1704,15 +1713,18 @@ def upgrade(args: list[str]) -> int:
                 print("refusing tooling-only write: backup path is unsafe", file=sys.stderr)
                 print(f"- {backup_refusal.path}: {backup_refusal.reason}", file=sys.stderr)
                 return 2
-    if not apply_upgrade_operations(report, operations, generated_operations, manifest, init_module, backup_root):
+    operation_name = f"{command_name} upgrade --write --tooling-only"
+    if parsed.generated_views:
+        operation_name = f"{operation_name} --generated-views"
+    if not apply_upgrade_operations(report, operations, generated_operations, manifest, init_module, backup_root, operation_name):
         return 2
     post_write_report = classify_target(report.target)
     return report_exit_code(post_write_report)
 
 
-def main(argv: list[str]) -> int:
+def main(argv: list[str], command_name: str = "agent-docs") -> int:
     if not argv or argv[0] in {"-h", "--help"}:
-        print_help()
+        print_help(command_name)
         return 0
     command, *args = argv
     if command == "init":
@@ -1721,17 +1733,19 @@ def main(argv: list[str]) -> int:
             print(f"Could not find executable agent-docs-init next to {Path(__file__).name}.", file=sys.stderr)
             print("Re-run install.sh or use scripts/agent-docs-init from an AGENT-DOCS checkout.", file=sys.stderr)
             return 1
-        return subprocess.call([str(init_command), *args])
+        env = os.environ.copy()
+        env["AGENT_DOCS_INIT_PROG"] = f"{command_name} init"
+        return subprocess.call([str(init_command), *args], env=env)
     if command == "doctor":
-        return doctor(args)
+        return doctor(args, command_name)
     if command == "upgrade":
-        return upgrade(args)
+        return upgrade(args, command_name)
     if command == "baseline":
-        return baseline(args)
+        return baseline(args, command_name)
     print(f"Unknown command: {command}", file=sys.stderr)
-    print("Run `agent-docs --help` for usage.", file=sys.stderr)
+    print(f"Run `{command_name} --help` for usage.", file=sys.stderr)
     return 2
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1:]))
+    raise SystemExit(main(sys.argv[1:], Path(sys.argv[0]).name))

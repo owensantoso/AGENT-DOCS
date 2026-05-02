@@ -17,26 +17,26 @@ Do not copy the whole `scaffold/` folder into a target repo root. It contains it
 
 ## Minimum Install
 
-From the target repo root, install or update the CLI and preview the recommended small profile:
+From the target repo root, install or update the CLI and preview the recommended standard footprint:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile small --dry-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile standard --dry-run
 ```
 
-The curl installer installs `agent-docs` and the compatibility command
-`agent-docs-init`, then previews by default. Write mode requires explicit
-intent:
+The curl installer installs the primary `agent-continuity` command plus the
+compatibility commands `agent-docs` and `agent-docs-init`, then previews by
+default. Write mode requires explicit intent:
 
 ```bash
-agent-docs-init --profile small --dry-run
-agent-docs-init --profile small --write
+agent-continuity init --profile standard --dry-run
+agent-continuity init --profile standard --write
 ```
 
-The equivalent namespace form is:
+Compatibility command names and profile aliases remain available:
 
 ```bash
 agent-docs init --profile small --dry-run
-agent-docs init --profile small --write
+agent-docs-init --profile growing --dry-run
 ```
 
 If you omit the target path, non-interactive mode uses the current directory and interactive mode asks whether to install into the current directory or another path. The standalone `agent-docs-init` command also defaults to dry-run unless you pass `--write`.
@@ -51,11 +51,11 @@ If you are installing from a private fork, authenticate with GitHub CLI and let 
 
 ```bash
 gh auth login
-gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile small --dry-run
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile standard --dry-run
 ```
 
-Repeated installs update `~/.agent-docs`, refresh the `agent-docs` and
-`agent-docs-init` symlinks, and report when the commands are already installed.
+Repeated installs update `~/.agent-docs`, refresh the `agent-continuity`,
+`agent-docs`, and `agent-docs-init` symlinks, and report when the commands are already installed.
 Existing target files are listed during dry-run; write mode refuses to overwrite
 them unless you pass `--force`. An existing `docs/` folder is fine when the
 selected profile only needs to create missing files inside it.
@@ -65,23 +65,28 @@ Supported platforms and prerequisites:
 - macOS or Linux shell with Bash.
 - Git for installer clone/update paths.
 - Python 3.10 or newer.
-- Symlink support for the installed `agent-docs` and `agent-docs-init`
-  commands.
+- Symlink support for the installed `agent-continuity`, `agent-docs`, and
+  `agent-docs-init` commands.
 - A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_DOCS_BIN_DIR`.
 
 Write mode also creates `.agent-docs/manifest.json` with schema version 1. The
-manifest records source metadata when Git can provide it, the selected profile,
+manifest records source metadata when Git can provide it, the selected canonical profile,
 optional components such as `docs-meta`, installed files, and timestamps. It
 checksums AGENT-DOCS-owned reusable tooling and records expected file modes;
 starter Markdown is recorded as `project-owned-after-install` because target
 repos are expected to customize those docs.
 
+Profiles choose the starting local scaffold footprint only. They do not limit
+future command capabilities. The public profile keys are `core`, `standard`,
+`expanded`, and `complete`; the old `tiny`, `small`, `growing`, and `full`
+aliases continue to work and write canonical profile values in new manifests.
+
 For legacy installs that were created before manifests existed, use the
 preview-first baseline command instead of rerunning init over local docs:
 
 ```bash
-agent-docs baseline --dry-run /path/to/project --profile small --docs-meta yes
-agent-docs baseline --write /path/to/project --profile small --docs-meta yes
+agent-continuity baseline --dry-run /path/to/project --profile standard --docs-meta yes
+agent-continuity baseline --write /path/to/project --profile standard --docs-meta yes
 ```
 
 `--dry-run` is the default. `--profile` is required, and `--docs-meta` accepts
@@ -94,9 +99,9 @@ without checksums when present and is never modified.
 Use the read-only inspection commands before considering upgrade write mode:
 
 ```bash
-agent-docs doctor /path/to/project
-agent-docs upgrade /path/to/project
-agent-docs upgrade --dry-run /path/to/project
+agent-continuity doctor /path/to/project
+agent-continuity upgrade /path/to/project
+agent-continuity upgrade --dry-run /path/to/project
 ```
 
 Legacy installs without `.agent-docs/manifest.json` are reported as
@@ -104,8 +109,8 @@ manual-review. Bare `upgrade` and `upgrade --dry-run` do not write files.
 `upgrade --write` is refused unless it is paired with `--tooling-only`:
 
 ```bash
-agent-docs upgrade --write --tooling-only /path/to/project
-agent-docs upgrade --write --tooling-only --generated-views /path/to/project
+agent-continuity upgrade --write --tooling-only /path/to/project
+agent-continuity upgrade --write --tooling-only --generated-views /path/to/project
 ```
 
 Tooling-only write mode is limited to deterministic AGENT-DOCS-owned tooling:
@@ -153,7 +158,7 @@ After a full-scaffold install, edit at least these files before asking another a
 
 Remove example files that do not apply, or keep them only if they are clearly marked as examples.
 
-For a small-profile install, the first files are flatter:
+For a standard footprint install, the first files are flatter:
 
 - `AGENTS.md`
 - `docs/README.md`
@@ -228,7 +233,7 @@ Keep:
 
 - `AGENTS.md` as the first agent entry point
 - `docs/README.md` as the docs map
-- For small-profile repos, `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md`
+- For standard-footprint repos, `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md`, and `docs/ROADMAP.md`
 - `docs/orientation/CURRENT_STATE.md` as the short truth page
 - `docs/orientation/ONBOARDING.md` for the non-code walkthrough
 - `docs/orientation/ROADMAP.md` for sequence and rationale
@@ -261,7 +266,7 @@ Before handing off the target repo, make these true:
 
 ## Paste This Prompt To Another Agent
 
-Use the small-profile prompt when the target repo has flat docs:
+Use the standard-footprint prompt when the target repo has flat docs:
 
 ```text
 You are in a repo that uses the AGENT-DOCS workflow.
@@ -282,7 +287,7 @@ Then report:
 Do not implement from an implementation brief alone. Read its parent plan first.
 ```
 
-Use this growing/full-profile prompt when the target repo has `docs/orientation/` and repo-health docs:
+Use this expanded/complete-footprint prompt when the target repo has `docs/orientation/` and repo-health docs:
 
 ```text
 You are in a repo that uses the AGENT-DOCS workflow.

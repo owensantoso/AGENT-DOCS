@@ -191,10 +191,12 @@ install_command() {
 mkdir -p "$bin_dir"
 preflight_command "agent-docs-init" "$init_script"
 if [[ -f "$command_script" ]]; then
+  preflight_command "agent-continuity" "$command_script"
   preflight_command "agent-docs" "$command_script"
 fi
 install_command "agent-docs-init" "$init_script"
 if [[ -f "$command_script" ]]; then
+  install_command "agent-continuity" "$command_script"
   install_command "agent-docs" "$command_script"
 fi
 

@@ -60,10 +60,19 @@ class Profile:
     docs_meta_default: bool
 
 
+PUBLIC_PROFILE_KEYS = ("core", "standard", "expanded", "complete")
+PROFILE_ALIASES = {
+    "tiny": "core",
+    "small": "standard",
+    "growing": "expanded",
+    "full": "complete",
+}
+
+
 PROFILES = {
-    "tiny": Profile(
-        key="tiny",
-        label="Tiny",
+    "core": Profile(
+        key="core",
+        label="Core",
         summary="prototype, script, or single-person experiment",
         template_summary="core state + architecture",
         template_groups=(
@@ -82,9 +91,9 @@ PROFILES = {
         structure=("AGENTS.md", "docs/CURRENT_STATE.md", "docs/ARCHITECTURE.md"),
         docs_meta_default=False,
     ),
-    "small": Profile(
-        key="small",
-        label="Small / MVP",
+    "standard": Profile(
+        key="standard",
+        label="Standard",
         summary="real app with a few features and occasional agents",
         template_summary="core docs + light planning",
         template_groups=(
@@ -114,9 +123,9 @@ PROFILES = {
         ),
         docs_meta_default=False,
     ),
-    "growing": Profile(
-        key="growing",
-        label="Growing",
+    "expanded": Profile(
+        key="expanded",
+        label="Expanded",
         summary="multiple surfaces, recurring handoffs, bugs, or decisions",
         template_summary="orientation/plans/evidence",
         template_groups=(
@@ -159,9 +168,9 @@ PROFILES = {
         ),
         docs_meta_default=True,
     ),
-    "full": Profile(
-        key="full",
-        label="Full",
+    "complete": Profile(
+        key="complete",
+        label="Complete",
         summary="long-lived repo with many agents, plans, domains, and generated views",
         template_summary="all doc families + examples",
         template_groups=(
@@ -209,6 +218,16 @@ PROFILES = {
         docs_meta_default=True,
     ),
 }
+
+PROFILE_CHOICES = tuple(sorted((*PUBLIC_PROFILE_KEYS, *PROFILE_ALIASES)))
+
+
+def canonical_profile_key(profile_key: str) -> str:
+    return PROFILE_ALIASES.get(profile_key, profile_key)
+
+
+def profile_for_key(profile_key: str) -> Profile:
+    return PROFILES[canonical_profile_key(profile_key)]
 
 
 @dataclass(frozen=True)
@@ -355,10 +374,10 @@ def docs_meta_actions() -> list[Action]:
 
 def profile_actions(profile: Profile, include_docs_meta: bool) -> list[Action]:
     builders = {
-        "tiny": tiny_files,
-        "small": small_files,
-        "growing": growing_files,
-        "full": full_files,
+        "core": tiny_files,
+        "standard": small_files,
+        "expanded": growing_files,
+        "complete": full_files,
     }
     actions = builders[profile.key](profile)
     if include_docs_meta:
@@ -561,7 +580,7 @@ def render_profile(profile: Profile, include_docs_meta: bool, target: Path, writ
 
 
 def preview_entries(profile: Profile, include_docs_meta: bool) -> list[str]:
-    if profile.key == "full":
+    if profile.key == "complete":
         return [str(action.relpath) for action in profile_actions(profile, include_docs_meta)]
     return structure_entries(profile, include_docs_meta)
 
@@ -569,7 +588,7 @@ def preview_entries(profile: Profile, include_docs_meta: bool) -> list[str]:
 def picker_preview_entries(profile: Profile, include_docs_meta: bool | None = None) -> list[str]:
     if include_docs_meta is None:
         include_docs_meta = profile.docs_meta_default
-    if profile.key != "full":
+    if profile.key != "complete":
         return preview_entries(profile, include_docs_meta)
     doc_areas = [
         f"docs/{path.name}/"
@@ -699,8 +718,8 @@ def split_detail_columns(left_heading: str, left: list[str], right: list[str], w
 def render_profile_details(keys: list[str], index: int, terminal_size: os.terminal_size) -> list[str]:
     profile = PROFILES[keys[index]]
     lines = [
-        "Choose AGENT-DOCS project size",
-        "Use arrow keys or j/k, then Enter. Recommended default: small.",
+        "Choose starting docs footprint",
+        "Use arrow keys or j/k, then Enter. Recommended default: standard.",
     ]
     for i, key in enumerate(keys):
         profile_row = PROFILES[key]
@@ -718,7 +737,7 @@ def render_profile_details(keys: list[str], index: int, terminal_size: os.termin
         ]
     )
     remaining_rows = max(0, terminal_size.lines - len(lines))
-    structure_heading = "Structure summary (exact file list after Enter)" if profile.key == "full" else "Structure"
+    structure_heading = "Structure summary (exact file list after Enter)" if profile.key == "complete" else "Structure"
     structure = tree_lines(picker_preview_entries(profile), stylize=True)
     templates = template_lines(profile, stylize=True)
     lines.extend(split_detail_columns(structure_heading, structure, templates, terminal_size.columns, remaining_rows))
@@ -726,8 +745,8 @@ def render_profile_details(keys: list[str], index: int, terminal_size: os.termin
 
 
 def choose_profile() -> str:
-    keys = list(PROFILES)
-    index = keys.index("small")
+    keys = list(PUBLIC_PROFILE_KEYS)
+    index = keys.index("standard")
     first_draw = True
 
     def draw() -> None:
@@ -837,10 +856,10 @@ def choose_target() -> Path:
     return Path(typed).expanduser() if typed else cwd
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Install an AGENT-DOCS scaffold profile into a target repository.")
+def parse_args(prog: str | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog=prog, description="Install an AGENT-DOCS scaffold profile into a target repository.")
     parser.add_argument("target", type=Path, nargs="?", help="Target repository root. Defaults to the current directory.")
-    parser.add_argument("--profile", choices=sorted(PROFILES), help="Scaffold size. Recommended default when unsure: small.")
+    parser.add_argument("--profile", choices=PROFILE_CHOICES, help="Scaffold footprint. Recommended default when unsure: standard.")
     parser.add_argument("--docs-meta", choices=["auto", "yes", "no"], default="auto", help="Install scripts/docs-meta and its smoke test. Default: profile-specific.")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true", help="Preview changes without writing. This is the default.")
@@ -850,16 +869,16 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    args = parse_args()
+    args = parse_args(os.environ.get("AGENT_DOCS_INIT_PROG"))
     profile_key = args.profile
     if not profile_key:
         if sys.stdin.isatty() and sys.stdout.isatty():
             profile_key = choose_profile()
         else:
-            print("--profile is required in non-interactive mode. Recommended default: --profile small", file=sys.stderr)
+            print("--profile is required in non-interactive mode. Recommended default: --profile standard", file=sys.stderr)
             return 2
 
-    profile = PROFILES[profile_key]
+    profile = profile_for_key(profile_key)
     include_docs_meta = profile.docs_meta_default if args.docs_meta == "auto" else args.docs_meta == "yes"
     write = bool(args.write)
     if args.target:
