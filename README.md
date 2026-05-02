@@ -30,6 +30,19 @@ Install or update the CLI without running init:
 curl -fsSL https://raw.githubusercontent.com/owensantoso/agent-continuity/main/install.sh | bash -s -- --no-run
 ```
 
+Upgrade an existing project that already has older AGENT-DOCS files by updating
+the local command first, then inspecting the project:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/owensantoso/agent-continuity/main/install.sh | bash -s -- --no-run
+agent-continuity doctor /path/to/project
+agent-continuity upgrade --dry-run /path/to/project
+```
+
+Do not rerun `init --write` over an existing customized project. For old
+installs without `.agent-docs/manifest.json`, use the baseline preview in
+[INSTALL.md](INSTALL.md) before creating a manifest.
+
 If you are installing from a private fork, authenticate with GitHub CLI and let `gh` handle the token instead of placing a bearer token in shell history or process listings:
 
 ```bash
@@ -83,6 +96,7 @@ The point is not the folder tree. The point is making repo memory resumable: sou
 | Follow an adoption checklist | [guides/adoption-checklist.md](guides/adoption-checklist.md) |
 | Use the workflow as a Codex skill | [skills/structured-docs-workflow/SKILL.md](skills/structured-docs-workflow/SKILL.md) |
 | Plan upstream AGENT-DOCS improvements | [plans/README.md](plans/README.md) |
+| Follow package-manager distribution work | [PLAN-0010](plans/package-manager-distribution/PLAN-0010-package-manager-distribution.md) |
 | Explore the SQLite docs-index concept | [concepts/CONC-0001-read-only-sqlite-docs-index.md](concepts/CONC-0001-read-only-sqlite-docs-index.md) |
 | Explore future doctor/upgrade safety | [concepts/CONC-0002-agent-docs-doctor-and-upgrade.md](concepts/CONC-0002-agent-docs-doctor-and-upgrade.md) |
 | Explore open-loop review cadence | [concepts/CONC-0003-open-loop-review-cadence.md](concepts/CONC-0003-open-loop-review-cadence.md) |
