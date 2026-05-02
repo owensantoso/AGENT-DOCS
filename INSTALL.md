@@ -69,6 +69,10 @@ Supported platforms and prerequisites:
   `agent-docs-init` commands.
 - A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_DOCS_BIN_DIR`.
 
+Native Windows is not first-class yet. The current installer is Bash, writes
+Unix-style symlinks into a user-local bin directory, and is verified on
+macOS/Linux shell paths. Use WSL for the closest supported Windows path.
+
 Write mode also creates `.agent-docs/manifest.json` with schema version 1. The
 manifest records source metadata when Git can provide it, the selected canonical profile,
 optional components such as `docs-meta`, installed files, and timestamps. It
@@ -125,7 +129,8 @@ Use the result to choose the next step:
 
 The compatibility commands still work, so old instructions using `agent-docs`
 or `agent-docs-init` do not break immediately. New instructions should prefer
-`agent-continuity`.
+`agent-continuity`. To delegate the process to an agent, use the pasteable
+runbook in [guides/agent-upgrade-existing-install.md](guides/agent-upgrade-existing-install.md).
 
 Use the read-only inspection commands before considering upgrade write mode:
 

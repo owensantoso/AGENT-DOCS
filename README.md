@@ -8,6 +8,11 @@ This is a **scalable workflow**, not a requirement to install every folder and d
 
 ## Quick Start
 
+Supported today: macOS and Linux shells with Bash, Git, Python 3.10+, and
+symlink support. Native Windows is not first-class yet because the installer and
+command setup assume Unix-style shell behavior and symlinks; use WSL for the
+closest supported Windows path.
+
 From the repo you want to document, install or update the CLI and preview the recommended standard footprint:
 
 ```bash
@@ -41,7 +46,8 @@ agent-continuity upgrade --dry-run /path/to/project
 
 Do not rerun `init --write` over an existing customized project. For old
 installs without `.agent-docs/manifest.json`, use the baseline preview in
-[INSTALL.md](INSTALL.md) before creating a manifest.
+[INSTALL.md](INSTALL.md) before creating a manifest. If you want an agent to do
+the upgrade for you, paste them [the agent upgrade runbook](guides/agent-upgrade-existing-install.md).
 
 If you are installing from a private fork, authenticate with GitHub CLI and let `gh` handle the token instead of placing a bearer token in shell history or process listings:
 
@@ -87,6 +93,7 @@ The point is not the folder tree. The point is making repo memory resumable: sou
 | Need | Go To |
 |---|---|
 | Install this workflow in another repo | [INSTALL.md](INSTALL.md) |
+| Ask an agent to upgrade an existing install | [guides/agent-upgrade-existing-install.md](guides/agent-upgrade-existing-install.md) |
 | Contribute a focused improvement | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Report a security issue | [SECURITY.md](SECURITY.md) |
 | Understand the whole workflow in one pass | [guides/workflow-overview.md](guides/workflow-overview.md) |

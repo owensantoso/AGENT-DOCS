@@ -13,6 +13,8 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 - Added a dedicated package-manager distribution follow-up plan for Homebrew or
   a similar install channel after the GitHub install path settles.
 - Added upgrade guidance for existing projects with older AGENT-DOCS installs.
+- Added an agent-facing upgrade runbook and clarified that native Windows is
+  not first-class yet; WSL is the closest supported Windows path.
 - The primary installed command is now `agent-continuity`. Existing
   `agent-docs` and `agent-docs-init` commands remain compatibility commands.
 - Public install profiles are now `core`, `standard`, `expanded`, and
