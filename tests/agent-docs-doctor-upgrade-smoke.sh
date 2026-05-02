@@ -51,6 +51,16 @@ snapshot_tree() {
   (cd "$target" && find . -type f -print | sort | xargs shasum -a 256) >"$output"
 }
 
+file_mode() {
+  python3 - "$1" <<'PY'
+import pathlib
+import stat
+import sys
+
+print(f"{stat.S_IMODE(pathlib.Path(sys.argv[1]).stat().st_mode):03o}")
+PY
+}
+
 track_generated_view() {
   local target="$1"
   local view_path="$2"
@@ -869,10 +879,10 @@ cp "$repo_root/scripts/docs-meta" "$write_outside_hardlink"
 chmod 644 "$write_outside_hardlink"
 ln "$write_outside_hardlink" "$write_hardlink_target/scripts/docs-meta"
 outside_hardlink_before="$(shasum -a 256 "$write_outside_hardlink")"
-outside_hardlink_mode_before="$(stat -f '%Lp' "$write_outside_hardlink")"
+outside_hardlink_mode_before="$(file_mode "$write_outside_hardlink")"
 require_exit 0 "$tmpdir/write-hardlink.out" "$agent_docs" upgrade --write --tooling-only "$write_hardlink_target"
 outside_hardlink_after="$(shasum -a 256 "$write_outside_hardlink")"
-outside_hardlink_mode_after="$(stat -f '%Lp' "$write_outside_hardlink")"
+outside_hardlink_mode_after="$(file_mode "$write_outside_hardlink")"
 test "$outside_hardlink_before" = "$outside_hardlink_after"
 test "$outside_hardlink_mode_before" = "$outside_hardlink_mode_after"
 test -x "$write_hardlink_target/scripts/docs-meta"
