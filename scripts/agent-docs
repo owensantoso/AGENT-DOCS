@@ -769,6 +769,7 @@ def print_baseline_report(command: str, report: Report) -> None:
     for category in [
         "baseline owned tooling",
         "project-owned after install",
+        "baseline generated views",
         "manual-review/refused",
     ]:
         findings = report.categories.get(category, [])
@@ -790,6 +791,70 @@ def baseline_record_for_action(action, ownership: str) -> dict:
     return record
 
 
+def baseline_generated_view_records(target: Path, report: Report, include_docs_meta: bool) -> list[dict]:
+    records = []
+    if not include_docs_meta:
+        report.add(
+            "manual-review/refused",
+            "generated_views",
+            "--generated-views requires --docs-meta yes or a profile that includes docs-meta",
+        )
+        return records
+
+    for relpath in sorted(generated_outputs_for("scripts/docs-meta update")):
+        symlink_relpath = existing_symlink_in_target_path(target, relpath)
+        if symlink_relpath is not None:
+            report.add(
+                "manual-review/refused",
+                relpath,
+                f"generated view path would traverse existing symlink inside target: {symlink_relpath}",
+            )
+            continue
+        non_directory_parent = existing_non_directory_parent_in_target_path(target, relpath)
+        if non_directory_parent is not None:
+            report.add(
+                "manual-review/refused",
+                relpath,
+                f"generated view path parent is not a directory: {non_directory_parent}",
+            )
+            continue
+        if not path_inside_target(target, relpath):
+            report.add("manual-review/refused", relpath, "generated view path would resolve outside target")
+            continue
+
+        destination = target / relpath
+        if not destination.exists():
+            report.add("baseline generated views", relpath, "skipped; generated view does not exist")
+            continue
+        if not destination.is_file():
+            report.add("manual-review/refused", relpath, "generated view path is not a regular file")
+            continue
+        link_count = multiple_hardlinks(destination)
+        if link_count is not None:
+            report.add(
+                "manual-review/refused",
+                relpath,
+                f"generated view path has multiple hardlinks ({link_count}); baseline requires an unshared file",
+            )
+            continue
+        if not generated_view_has_marker(destination):
+            report.add("baseline generated views", relpath, "skipped; existing file lacks a generated-view marker")
+            continue
+        current_checksum, checksum_error = safe_checksum(destination)
+        if checksum_error is not None or current_checksum is None:
+            report.add("manual-review/refused", relpath, f"generated view {checksum_error}")
+            continue
+        records.append(
+            {
+                "path": relpath.as_posix(),
+                "generator": "scripts/docs-meta update",
+                "checksum_sha256": current_checksum,
+            }
+        )
+        report.add("baseline generated views", relpath, "registered existing generated view")
+    return records
+
+
 def path_inside_target(target: Path, relpath: Path) -> bool:
     try:
         target_resolved = target.resolve()
@@ -800,7 +865,7 @@ def path_inside_target(target: Path, relpath: Path) -> bool:
     return True
 
 
-def build_baseline(target_arg: Path, profile_key: str, docs_meta: str) -> tuple[Report, dict | None]:
+def build_baseline(target_arg: Path, profile_key: str, docs_meta: str, include_generated_views: bool = False) -> tuple[Report, dict | None]:
     init_module = load_init_module()
     profile = init_module.PROFILES[profile_key]
     optional_components = optional_components_for_docs_meta(profile, docs_meta)
@@ -973,6 +1038,12 @@ def build_baseline(target_arg: Path, profile_key: str, docs_meta: str) -> tuple[
             "no selected AGENT-DOCS files found; baseline refuses empty or unrelated targets",
         )
 
+    generated_view_records = (
+        baseline_generated_view_records(target, report, include_docs_meta)
+        if include_generated_views
+        else []
+    )
+
     if baseline_exit_code(report) != 0:
         return report, None
 
@@ -985,7 +1056,7 @@ def build_baseline(target_arg: Path, profile_key: str, docs_meta: str) -> tuple[
         "profile": profile.key,
         "optional_components": optional_components,
         "files": records,
-        "generated_views": [],
+        "generated_views": generated_view_records,
     }
     return report, manifest
 
@@ -1007,9 +1078,10 @@ def baseline(args: list[str]) -> int:
         default="auto",
         help="Whether docs-meta tooling should be part of the selected profile. Default: profile-specific.",
     )
+    parser.add_argument("--generated-views", action="store_true", help="Register existing recognized docs-meta generated views without running generators.")
     parsed = parser.parse_args(args)
 
-    report, manifest = build_baseline(parsed.target, parsed.profile, parsed.docs_meta)
+    report, manifest = build_baseline(parsed.target, parsed.profile, parsed.docs_meta, parsed.generated_views)
     print_baseline_report("write" if parsed.write else "dry-run", report)
     if baseline_exit_code(report) != 0:
         if parsed.write:
@@ -1160,7 +1232,7 @@ def generated_view_has_marker(path: Path) -> bool:
         return False
     frontmatter, _ = text.split("\n---", 1) if text.startswith("---\n") and "\n---" in text[4:] else ("", "")
     return (
-        "type: generated-view" in frontmatter
+        re.search(r"(?m)^\s*type\s*:\s*generated-view\s*$", frontmatter) is not None
         or "<!-- Generated by scripts/docs-meta update. Do not edit by hand. -->" in text
     )
 

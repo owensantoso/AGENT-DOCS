@@ -1054,6 +1054,82 @@ generated_arg_refused_target="$tmpdir/generated-arg-refused"
 require_exit 2 "$tmpdir/generated-arg-refused.out" "$agent_docs" upgrade --generated-views "$generated_arg_refused_target"
 require_contains "$tmpdir/generated-arg-refused.out" "--generated-views requires --write --tooling-only"
 
+baseline_generated_target="$tmpdir/baseline-generated"
+"$installer" "$baseline_generated_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-generated-install.out"
+rm "$baseline_generated_target/.agent-docs/manifest.json"
+require_exit 0 "$tmpdir/baseline-generated-default.out" "$agent_docs" baseline --write "$baseline_generated_target" --profile small --docs-meta yes
+python3 - "$baseline_generated_target/.agent-docs/manifest.json" <<'PY'
+import json
+import pathlib
+import sys
+
+manifest = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+if manifest.get("generated_views") != []:
+    raise SystemExit("Expected default baseline to leave generated_views empty")
+PY
+rm "$baseline_generated_target/.agent-docs/manifest.json"
+rm "$baseline_generated_target/docs/TODOS.md"
+require_exit 0 "$tmpdir/baseline-generated-views.out" "$agent_docs" baseline --write --generated-views "$baseline_generated_target" --profile small --docs-meta yes
+require_contains "$tmpdir/baseline-generated-views.out" "baseline generated views"
+require_contains "$tmpdir/baseline-generated-views.out" "registered existing generated view"
+require_contains "$tmpdir/baseline-generated-views.out" "skipped; generated view does not exist"
+python3 - "$baseline_generated_target/.agent-docs/manifest.json" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+manifest_path = pathlib.Path(sys.argv[1])
+target = manifest_path.parents[1]
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+records = {record["path"]: record for record in manifest.get("generated_views", [])}
+if "docs/TODOS.md" in records:
+    raise SystemExit("Expected missing generated view to be skipped")
+for path in ("docs/SPECS.md", "docs/DOCS-REGISTRY.md"):
+    record = records.get(path)
+    if not record:
+        raise SystemExit(f"Expected generated view record for {path}")
+    if record.get("generator") != "scripts/docs-meta update":
+        raise SystemExit(f"Expected docs-meta update generator for {path}")
+    expected = hashlib.sha256((target / path).read_bytes()).hexdigest()
+    if record.get("checksum_sha256") != expected:
+        raise SystemExit(f"Expected checksum for {path}")
+PY
+
+baseline_generated_near_miss_target="$tmpdir/baseline-generated-near-miss"
+"$installer" "$baseline_generated_near_miss_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-generated-near-miss-install.out"
+rm "$baseline_generated_near_miss_target/.agent-docs/manifest.json"
+cat >"$baseline_generated_near_miss_target/docs/TODOS.md" <<'EOF'
+---
+not_type: generated-view
+---
+
+# project-authored todos
+EOF
+require_exit 0 "$tmpdir/baseline-generated-near-miss.out" "$agent_docs" baseline --write --generated-views "$baseline_generated_near_miss_target" --profile small --docs-meta yes
+require_contains "$tmpdir/baseline-generated-near-miss.out" "skipped; existing file lacks a generated-view marker"
+python3 - "$baseline_generated_near_miss_target/.agent-docs/manifest.json" <<'PY'
+import json
+import pathlib
+import sys
+
+manifest = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+records = {record["path"]: record for record in manifest.get("generated_views", [])}
+if "docs/TODOS.md" in records:
+    raise SystemExit("Expected near-miss generated-view marker to be skipped")
+PY
+
+baseline_generated_hardlink_target="$tmpdir/baseline-generated-hardlink"
+"$installer" "$baseline_generated_hardlink_target" --profile small --docs-meta yes --write >"$tmpdir/baseline-generated-hardlink-install.out"
+rm "$baseline_generated_hardlink_target/.agent-docs/manifest.json"
+outside_generated_hardlink="$tmpdir/outside-generated-hardlink.md"
+cp "$baseline_generated_hardlink_target/docs/TODOS.md" "$outside_generated_hardlink"
+rm "$baseline_generated_hardlink_target/docs/TODOS.md"
+ln "$outside_generated_hardlink" "$baseline_generated_hardlink_target/docs/TODOS.md"
+require_exit 2 "$tmpdir/baseline-generated-hardlink.out" "$agent_docs" baseline --write --generated-views "$baseline_generated_hardlink_target" --profile small --docs-meta yes
+require_absent "$baseline_generated_hardlink_target/.agent-docs/manifest.json"
+require_contains "$tmpdir/baseline-generated-hardlink.out" "generated view path has multiple hardlinks"
+
 generated_write_target="$tmpdir/generated-write"
 "$installer" "$generated_write_target" --profile small --docs-meta yes --write >"$tmpdir/generated-write-install.out"
 (cd "$generated_write_target" && scripts/docs-meta update)

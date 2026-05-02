@@ -147,7 +147,7 @@ The installer is idempotent around existing project files: it may create missing
 Explicit write installs create `.agent-docs/manifest.json`. Manifest schema
 version 1 records the AGENT-DOCS source repo/ref/commit when available, the
 selected profile, optional components such as `docs-meta`, installed file
-records, and timestamps. Only reusable AGENT-DOCS tooling such as
+records, generated views produced by `docs-meta`, and timestamps. Only reusable AGENT-DOCS tooling such as
 `scripts/docs-meta` and `tests/docs-meta-smoke.sh` is checksummed and given an
 expected file mode as `agent-docs-owned`; starter Markdown is recorded as
 `project-owned-after-install` so future update tooling does not treat target
@@ -159,6 +159,8 @@ a preview-first baseline command:
 ```bash
 agent-docs baseline --dry-run /path/to/project --profile small --docs-meta yes
 agent-docs baseline --write /path/to/project --profile small --docs-meta yes
+agent-docs baseline --dry-run --generated-views /path/to/project --profile small --docs-meta yes
+agent-docs baseline --write --generated-views /path/to/project --profile small --docs-meta yes
 ```
 
 `--dry-run` is the default. Baseline write mode creates only
@@ -166,7 +168,9 @@ agent-docs baseline --write /path/to/project --profile small --docs-meta yes
 unknown profiles, unsafe paths, missing/drifted AGENT-DOCS-owned tooling,
 wrong file modes, symlinked paths, and non-regular files. Starter Markdown is
 recorded as `project-owned-after-install` when present, without checksums, and
-is not modified.
+is not modified. `--generated-views` is an explicit opt-in that registers only
+existing recognized `scripts/docs-meta update` outputs with generated-view
+markers. It does not run generators or overwrite files.
 
 After a manifest-backed install, inspect the target without writing files:
 

@@ -27,6 +27,10 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
   --tooling-only --generated-views [target]`. The first supported generator is
   `scripts/docs-meta update`, and only manifest-tracked generated views are
   refreshed.
+- Fresh installs that include `docs-meta` now generate and register recognized
+  docs-meta generated views in `.agent-docs/manifest.json`. Legacy baseline
+  installs can opt in with `agent-docs baseline --generated-views`, which
+  records existing recognized generated views without running generators.
 - Added `agent-docs baseline --dry-run|--write [target] --profile <profile>
   --docs-meta auto|yes|no` so legacy installs without `.agent-docs/manifest.json`
   can preview and create a conservative manifest for matching AGENT-DOCS-owned
@@ -75,6 +79,8 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
   unsupported generator refusal, malformed record refusal, unsafe path refusal,
   hand-edited drift refusal, generator failure, backups, audits, and manifest
   checksum updates.
+- Added generated-view registration smoke coverage for fresh docs-meta installs
+  and baseline `--generated-views`.
 - Added `scripts/changelog-check` for local and CI changelog enforcement.
 - Added smoke coverage for changelog-required, changelog-present, internal-only,
   and explicit-exemption cases.

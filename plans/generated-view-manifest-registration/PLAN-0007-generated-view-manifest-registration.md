@@ -3,13 +3,13 @@ type: plan
 id: PLAN-0007
 title: Generated View Manifest Registration
 domain: repo-health
-status: draft
+status: completed
 created_at: "2026-05-02 09:17:43 JST +0900"
-updated_at: "2026-05-02 09:17:43 JST +0900"
+updated_at: "2026-05-02 09:32:34 JST +0900"
 planned_execution_start:
 planned_execution_end:
 actual_execution_start:
-actual_execution_end:
+actual_execution_end: "2026-05-02 09:32:34 JST +0900"
 owner: codex
 sequence:
   roadmap:
@@ -29,6 +29,7 @@ related_concepts:
 related_adrs: []
 related_sessions:
   - session-logs/2026-05-02-plan-0004-closeout.md
+  - session-logs/2026-05-02-impl-0007-01-generated-view-registration.md
 related_issues: []
 related_prs: []
 repo_state:
@@ -42,8 +43,7 @@ repo_state:
 manifest editing by adding a safe way for fresh installs and legacy baselines to
 record generated-view manifest entries.
 
-**Status:** Draft. This is the next likely implementation direction after
-PLAN-0006, but it still needs a focused brief before coding.
+**Status:** Completed by IMPL-0007-01.
 
 **Source Spec:** [SPEC-0003 - AGENT-DOCS Versioning And Safe Upgrade](../agent-docs-versioning-and-upgrade/SPEC-0003-agent-docs-versioning-and-upgrade.md)
 
@@ -57,14 +57,18 @@ PLAN-0006 added:
 - `agent-docs upgrade --write --tooling-only --generated-views` for
   manifest-tracked generated views.
 
-Fresh installs and baselines still write:
+Before this plan, fresh installs and baselines wrote:
 
 ```json
 "generated_views": []
 ```
 
-That means generated-view writes are safe but not yet ergonomic: they only work
-when a generated-view record is already present in the manifest.
+That meant generated-view writes were safe but not yet ergonomic: they only
+worked when a generated-view record was already present in the manifest.
+
+IMPL-0007-01 now registers docs-meta generated views during fresh write installs
+that include `docs-meta`, and adds explicit baseline
+`--generated-views` registration for existing recognized generated views.
 
 ## Scope
 
@@ -87,14 +91,12 @@ when a generated-view record is already present in the manifest.
 
 ## Open Design Questions
 
-- Should fresh `agent-docs-init --docs-meta yes --write` run
-  `scripts/docs-meta update` automatically, or should it only record generated
-  views that already exist?
-- Should baseline have a separate explicit flag, such as `--generated-views`, to
-  refresh and register generated views?
-- Which generated views should be registered for small/growing/full profiles?
-- Should missing generated views during baseline be refused, generated, or
-  ignored unless explicitly requested?
+- Fresh `agent-docs-init --docs-meta yes --write` runs the trusted docs-meta
+  update path after scaffold files are copied and before manifest write.
+- Baseline uses explicit `--generated-views` registration.
+- Known `scripts/docs-meta update` outputs are registered only when they exist
+  as regular generated-view files.
+- Missing generated views during baseline are skipped, not generated.
 
 ## Candidate Implementation Slices
 
@@ -129,10 +131,10 @@ git diff --check
 
 ## Completion Criteria
 
-- [ ] Fresh installs that include `docs-meta` can produce manifest-tracked
+- [x] Fresh installs that include `docs-meta` can produce manifest-tracked
   generated views without manual manifest edits.
-- [ ] Legacy baselines have an explicit safe path for generated-view
+- [x] Legacy baselines have an explicit safe path for generated-view
   registration or refresh.
-- [ ] Generated-view registration refuses ambiguous or unsafe generated outputs.
-- [ ] PLAN-0006 generated-view upgrade writes remain opt-in and manifest-tracked
+- [x] Generated-view registration refuses ambiguous or unsafe generated outputs.
+- [x] PLAN-0006 generated-view upgrade writes remain opt-in and manifest-tracked
   only.

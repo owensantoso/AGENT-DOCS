@@ -150,6 +150,22 @@ for path in ("AGENTS.md", "docs/CURRENT_STATE.md"):
         raise SystemExit(f"Expected {path} to be project-owned after install")
     if "checksum_sha256" in records[path]:
         raise SystemExit(f"Expected no checksum for {path}")
+generated_views = {record["path"]: record for record in manifest.get("generated_views", [])}
+for path in ("docs/SPECS.md", "docs/DOCS-REGISTRY.md", "docs/TODOS.md"):
+    record = generated_views.get(path)
+    if not record:
+        raise SystemExit(f"Expected generated view record for {path}")
+    if record.get("generator") != "scripts/docs-meta update":
+        raise SystemExit(f"Expected docs-meta update generator for {path}")
+    view_path = target / path
+    if not view_path.is_file():
+        raise SystemExit(f"Expected generated view file for {path}")
+    text = view_path.read_text(encoding="utf-8")
+    if "type: generated-view" not in text:
+        raise SystemExit(f"Expected generated-view marker in {path}")
+    expected = hashlib.sha256(view_path.read_bytes()).hexdigest()
+    if record.get("checksum_sha256") != expected:
+        raise SystemExit(f"Expected generated view checksum for {path}")
 PY
 
 "$installer" "$tmpdir/meta-preview-app" --profile small --docs-meta yes --dry-run >"$tmpdir/meta-preview.out"
@@ -162,6 +178,25 @@ preview = text.split("Structure preview:", 1)[1].split("\n\nTarget:", 1)[0]
 if "scripts/" not in preview or "docs-meta" not in preview:
     raise SystemExit("Expected explicit docs-meta choice to appear in structure preview")
 PY
+
+meta_generated_conflict_target="$tmpdir/meta-generated-conflict-app"
+mkdir -p "$meta_generated_conflict_target/docs"
+cat >"$meta_generated_conflict_target/docs/TODOS.md" <<'EOF'
+---
+not_type: generated-view
+---
+
+# project-authored todos
+EOF
+if "$installer" "$meta_generated_conflict_target" --profile small --docs-meta yes --write >"$tmpdir/meta-generated-conflict.out" 2>&1; then
+  echo "Expected installer to refuse overwriting existing generated-view output paths" >&2
+  exit 1
+fi
+require_contains "$tmpdir/meta-generated-conflict.out" "Refusing to overwrite existing generated view output"
+require_contains "$meta_generated_conflict_target/docs/TODOS.md" "project-authored todos"
+require_absent "$meta_generated_conflict_target/.agent-docs/manifest.json"
+require_absent "$meta_generated_conflict_target/AGENTS.md"
+require_absent "$meta_generated_conflict_target/scripts/docs-meta"
 
 growing_target="$tmpdir/growing-app"
 "$installer" "$growing_target" --profile growing --write >"$tmpdir/growing-write.out"
