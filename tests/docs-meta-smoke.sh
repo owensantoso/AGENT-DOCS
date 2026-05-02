@@ -205,7 +205,7 @@ next_audit_due:
 | FINDING-009 | medium | open | Medium finding should not be grouped as high priority | PLAN | PLAN-0001 |  |
 | FINDING-010 | medium | routed | Freeform routed follow-up should stay visible | PLAN | Someone should look into this |  |
 | FINDING-011 | medium | routed | Markdown follow-up title should still resolve | PLAN | [Plan](../../product/plans/PLAN-0001-shared-capture-implementation/PLAN-0001-shared-capture-implementation.md#plan-0001-shared-capture-implementation "Open plan") |  |
-| FINDING-012 | low | routed | External Markdown issue link should be accepted | PLAN | [Issue](https://github.com/owensantoso/AGENT-DOCS/issues/1 "Issue") |  |
+| FINDING-012 | low | routed | External Markdown issue link should be accepted | PLAN | [Issue](https://github.com/owensantoso/agent-continuity/issues/1 "Issue") |  |
 | FINDING-013 | medium | routed | Route mismatch should stay visible | DIAG | PLAN-0001 |  |
 
 ```md
@@ -399,7 +399,7 @@ if grep -Fq "Invalid follow-up fragment #plan-0001-shared-capture-implementation
   echo "Expected Markdown follow-up links with optional titles to resolve" >&2
   exit 1
 fi
-if grep -Fq "Missing follow-up [Issue](https://github.com/owensantoso/AGENT-DOCS/issues/1" $tmpdir/docs-meta-review.json; then
+if grep -Fq "Missing follow-up [Issue](https://github.com/owensantoso/agent-continuity/issues/1" $tmpdir/docs-meta-review.json; then
   echo "Expected external Markdown issue links to be accepted" >&2
   exit 1
 fi

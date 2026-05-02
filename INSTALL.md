@@ -1,4 +1,4 @@
-# Install AGENT-DOCS In Another Repo
+# Install Agent Continuity In Another Repo
 
 Use this when you want a fresh human or agent on another computer to install this docs workflow into a target repository.
 
@@ -6,7 +6,7 @@ The goal is not to copy every example. The goal is to give the target repo a cle
 
 ## Fast Answer
 
-1. Put this `AGENT-DOCS` repo somewhere the target repo can read.
+1. Put this `agent-continuity` repo somewhere the target repo can read.
 2. Open the target repo.
 3. Copy the minimum scaffold files listed below.
 4. Replace placeholders with target-repo-specific names, paths, commands, and facts.
@@ -20,7 +20,7 @@ Do not copy the whole `scaffold/` folder into a target repo root. It contains it
 From the target repo root, install or update the CLI and preview the recommended standard footprint:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile standard --dry-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/agent-continuity/main/install.sh | bash -s -- --profile standard --dry-run
 ```
 
 The curl installer installs the primary `agent-continuity` command plus the
@@ -44,14 +44,14 @@ If you omit the target path, non-interactive mode uses the current directory and
 Install or update the CLI without running init:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/agent-continuity/main/install.sh | bash -s -- --no-run
 ```
 
 If you are installing from a private fork, authenticate with GitHub CLI and let `gh` handle the token instead of placing a bearer token in shell history or process listings:
 
 ```bash
 gh auth login
-gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile standard --dry-run
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/agent-continuity/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/agent-continuity.git bash -s -- --profile standard --dry-run
 ```
 
 Repeated installs update `~/.agent-docs`, refresh the `agent-continuity`,
@@ -132,7 +132,7 @@ Manual full-scaffold install:
 From the target repo root, set `AGENT_DOCS` to the path of this repo:
 
 ```bash
-AGENT_DOCS=/path/to/AGENT-DOCS
+AGENT_DOCS=/path/to/agent-continuity
 ```
 
 Then copy the minimum useful docs shape:
@@ -318,7 +318,7 @@ If those commands do not exist, recommend adding them or document the closest eq
 
 ## Verification
 
-In this `AGENT-DOCS` repo, run:
+In this `agent-continuity` repo, run:
 
 ```bash
 tests/docs-meta-smoke.sh

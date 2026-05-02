@@ -8,6 +8,8 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 
 ### For adopters
 
+- The public GitHub repository is now `owensantoso/agent-continuity`; install
+  URLs and the installer default source URL now use that repository path.
 - The primary installed command is now `agent-continuity`. Existing
   `agent-docs` and `agent-docs-init` commands remain compatibility commands.
 - Public install profiles are now `core`, `standard`, `expanded`, and

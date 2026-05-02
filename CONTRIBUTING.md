@@ -49,7 +49,7 @@ Source archives should be created from tracked Git content, not from a dirty
 working tree. Prefer GitHub tagged source archives or:
 
 ```bash
-git archive --format=tar.gz --prefix=AGENT-DOCS/ HEAD > agent-docs-source.tar.gz
+git archive --format=tar.gz --prefix=agent-continuity/ HEAD > agent-continuity-source.tar.gz
 ```
 
 Before publishing, run `scripts/release-check` and confirm the working tree does

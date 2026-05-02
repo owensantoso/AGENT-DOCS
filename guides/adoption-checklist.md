@@ -6,9 +6,9 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 
 ## Copy steps
 
-- Preview first: `agent-docs-init --profile small --dry-run`, `agent-docs-init --profile growing --dry-run`, or `agent-docs-init --profile full --dry-run`.
-- Write only after reviewing the preview: `agent-docs-init --profile small --write`.
-- For manual full-scaffold setup, set `AGENT_DOCS=/path/to/AGENT-DOCS` in the target repo shell.
+- Preview first: `agent-continuity init --profile standard --dry-run`, `agent-continuity init --profile expanded --dry-run`, or `agent-continuity init --profile complete --dry-run`.
+- Write only after reviewing the preview: `agent-continuity init --profile standard --write`.
+- For manual full-scaffold setup, set `AGENT_DOCS=/path/to/agent-continuity` in the target repo shell.
 - For manual full-scaffold setup, copy `scaffold/AGENTS.md` to the target repo root, merging if one already exists.
 - For manual full-scaffold setup, copy `scaffold/docs/` into the target repo's `docs/` folder.
 - Optionally copy `scripts/docs-meta` and `tests/docs-meta-smoke.sh`.
@@ -17,7 +17,7 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 - Delete or rewrite example `0000` files before treating the docs as target-repo truth.
 - Search for unreplaced placeholders such as `<path>`, `<command>`, or `<repo name>` before handoff.
 
-## Small-profile setup
+## Standard-footprint setup
 
 - Create a root `AGENTS.md`.
 - Create `docs/README.md`.
@@ -28,7 +28,7 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 - Create `docs/decisions/`.
 - Create `docs/session-logs/`.
 
-## Growing/full-profile setup
+## Expanded/complete-footprint setup
 
 - Create `docs/orientation/CURRENT_STATE.md`.
 - Create `docs/orientation/ONBOARDING.md` when the repo needs a non-code walkthrough.

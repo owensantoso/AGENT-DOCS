@@ -1,4 +1,4 @@
-# Agent Docs Workflow - Agent Notes
+# Agent Continuity Workflow - Agent Notes
 
 This folder is a reusable documentation kit for agent-driven software work.
 

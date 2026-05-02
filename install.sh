@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_url="${AGENT_DOCS_REPO_URL:-https://github.com/owensantoso/AGENT-DOCS.git}"
+repo_url="${AGENT_DOCS_REPO_URL:-https://github.com/owensantoso/agent-continuity.git}"
 agent_docs_home="${AGENT_DOCS_HOME:-$HOME/.agent-docs}"
 bin_dir="${AGENT_DOCS_BIN_DIR:-$HOME/.local/bin}"
 source_dir="${AGENT_DOCS_SOURCE:-}"
@@ -74,7 +74,7 @@ PY
 require_git() {
   if ! command -v git >/dev/null 2>&1 || ! git --version >/dev/null 2>&1; then
     echo "agent-docs-init installer requires git, but git was not found." >&2
-    echo "Install git or set AGENT_DOCS_SOURCE to a local AGENT-DOCS checkout." >&2
+    echo "Install git or set AGENT_DOCS_SOURCE to a local agent-continuity checkout." >&2
     exit 1
   fi
 }

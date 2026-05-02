@@ -16,20 +16,20 @@ This folder contains two main scripts:
 From the repo you want to document, install or update the command and preview the recommended standard footprint:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile standard --dry-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/agent-continuity/main/install.sh | bash -s -- --profile standard --dry-run
 ```
 
 Use `--no-run` when you only want to install or update the command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/agent-continuity/main/install.sh | bash -s -- --no-run
 ```
 
 For private forks, authenticate with GitHub CLI and pipe the raw installer through `gh api` so the token stays out of shell history and process listings:
 
 ```bash
 gh auth login
-gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile standard --dry-run
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/agent-continuity/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/agent-continuity.git bash -s -- --profile standard --dry-run
 ```
 
 Then use `agent-continuity init` to install the smallest useful AGENT-DOCS

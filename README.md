@@ -1,6 +1,6 @@
-# Agent Docs Workflow
+# Agent Continuity
 
-AGENT-DOCS gives AI-assisted repos a durable operating memory, so each new human or agent can see what is true now, what has been decided, what evidence exists, and what work is safe to do next without rereading old chat history.
+Agent Continuity gives AI-assisted repos a durable operating memory, so each new human or agent can see what is true now, what has been decided, what evidence exists, and what work is safe to do next without rereading old chat history.
 
 It solves the failure mode where project knowledge exists, but is scattered across stale chats, ad hoc notes, oversized plans, and hand-maintained indexes. The differentiator is the split between source-of-truth docs, generated views, and bounded execution handoffs.
 
@@ -11,7 +11,7 @@ This is a **scalable workflow**, not a requirement to install every folder and d
 From the repo you want to document, install or update the CLI and preview the recommended standard footprint:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --profile standard --dry-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/agent-continuity/main/install.sh | bash -s -- --profile standard --dry-run
 ```
 
 The curl installer installs the primary `agent-continuity` command plus the
@@ -27,14 +27,14 @@ If you run the installer from an interactive terminal without a profile, the CLI
 Install or update the CLI without running init:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/owensantoso/AGENT-DOCS/main/install.sh | bash -s -- --no-run
+curl -fsSL https://raw.githubusercontent.com/owensantoso/agent-continuity/main/install.sh | bash -s -- --no-run
 ```
 
 If you are installing from a private fork, authenticate with GitHub CLI and let `gh` handle the token instead of placing a bearer token in shell history or process listings:
 
 ```bash
 gh auth login
-gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/AGENT-DOCS/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/AGENT-DOCS.git bash -s -- --profile standard --dry-run
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/agent-continuity/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/agent-continuity.git bash -s -- --profile standard --dry-run
 ```
 
 Non-interactive examples:
@@ -232,7 +232,7 @@ If you have cloned this repo and want to run the script directly during developm
 Manual install still works if you want the full scaffold plus deterministic metadata tooling:
 
 ```bash
-AGENT_DOCS=/path/to/AGENT-DOCS
+AGENT_DOCS=/path/to/agent-continuity
 cp "$AGENT_DOCS/scaffold/AGENTS.md" ./AGENTS.md
 mkdir -p docs
 rsync -av "$AGENT_DOCS/scaffold/docs/" ./docs/
@@ -259,7 +259,7 @@ Those archives are built from tracked files and avoid copying local caches,
 ignored generated artifacts, editor files, or secrets from a developer machine:
 
 ```bash
-git archive --format=tar.gz --prefix=AGENT-DOCS/ HEAD > agent-docs-source.tar.gz
+git archive --format=tar.gz --prefix=agent-continuity/ HEAD > agent-continuity-source.tar.gz
 ```
 
 Do not create release archives by zipping a dirty working tree. If a manual
