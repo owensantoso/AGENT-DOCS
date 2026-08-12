@@ -32,7 +32,7 @@ Do not create a new `DIAG-*` for routine debugging that is obvious after one com
 Create new diagnostic records with:
 
 ```bash
-scripts/docs-meta new diag "<Title>" --domain <domain>
+agent-continuity docs new diag "<Title>" --domain <domain>
 ```
 
 ## Layout

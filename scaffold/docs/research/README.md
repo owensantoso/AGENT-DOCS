@@ -34,5 +34,5 @@ RSCH-####-<slug>.md
 Create new surveys with:
 
 ```bash
-scripts/docs-meta new research "<Title>" --domain <domain>
+agent-continuity docs new research "<Title>" --domain <domain>
 ```

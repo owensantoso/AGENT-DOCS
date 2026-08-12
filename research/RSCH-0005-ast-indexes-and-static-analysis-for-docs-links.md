@@ -40,7 +40,7 @@ agent_notes:
   - "This survey treats AST/compiler indexes as precision layers, not as the first source-of-truth store."
   - "Language-native APIs are powerful but vary sharply by ecosystem, so a common schema must preserve engine-specific evidence."
 related_ideas:
-  - ../docs-meta/ideas/IDEA-0001-docs-to-code-graph.md
+  - ../agent-continuity/ideas/IDEA-0001-docs-to-code-graph.md
 related_evaluations: []
 related_adrs: []
 related_specs: []

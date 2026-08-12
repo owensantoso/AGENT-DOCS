@@ -1,6 +1,6 @@
 # Agent Upgrade Runbook For Existing Installs
 
-Use this when a project already has older AGENT-DOCS or Agent Continuity files
+Use this when a project already has older Agent Continuity or Agent Continuity files
 and the human wants an agent to upgrade/check it safely.
 
 Do not rerun `agent-continuity init --write` over an existing customized
@@ -9,7 +9,7 @@ project. The project docs are local truth after installation.
 ## Pasteable Agent Prompt
 
 ```text
-You are in a project that may already have an older AGENT-DOCS / Agent
+You are in a project that may already have an older Agent Continuity / Agent
 Continuity install.
 
 Goal: update the local Agent Continuity command, inspect this project, and apply
@@ -29,10 +29,10 @@ Interpret the result:
 - If healthy/current: report that nothing else is required.
 - If missing manifest / legacy / manual review: do not run init --write. If the
   current files look like the intended local truth, run:
-  agent-continuity baseline --dry-run . --profile standard --docs-meta yes
+  agent-continuity baseline --dry-run . --profile standard --docs yes
   Review the dry-run output. Only then run the same command with --write if the
   profile/options match the installed shape.
-- If only AGENT-DOCS-owned tooling is missing or outdated, run:
+- If only Agent Continuity-owned tooling is missing or outdated, run:
   agent-continuity upgrade --write --tooling-only .
 - If generated views are stale and manifest-tracked, consider:
   agent-continuity upgrade --write --tooling-only --generated-views .

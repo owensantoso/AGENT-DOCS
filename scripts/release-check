@@ -26,23 +26,23 @@ fi
 echo "Checking $root_doc_count Markdown docs under repo root"
 
 run tests/install-smoke.sh
-run tests/agent-docs-init-smoke.sh
-run tests/agent-docs-doctor-upgrade-smoke.sh
-run tests/docs-meta-smoke.sh
+run tests/agent-continuity-init-smoke.sh
+run tests/agent-continuity-doctor-upgrade-smoke.sh
+run tests/agent-continuity-docs-smoke.sh
 run tests/changelog-check-smoke.sh
 pycache_dir="$(mktemp -d)"
-run env PYTHONPYCACHEPREFIX="$pycache_dir" python3 -m py_compile scripts/agent-docs scripts/agent-docs-init scripts/docs-meta
+run env PYTHONPYCACHEPREFIX="$pycache_dir" python3 -m py_compile scripts/agent-continuity scripts/agent-continuity-init scripts/agent-continuity-docs
 rm -rf "$pycache_dir"
 run scripts/changelog-check
 
-# `plans/` is AGENT-DOCS' strict structured-doc root today. The whole repo root
+# `plans/` is Agent Continuity' strict structured-doc root today. The whole repo root
 # is still link-scanned below so this command cannot silently pass on empty docs.
-run scripts/docs-meta --root plans check
-run scripts/docs-meta --root plans check-links
+run scripts/agent-continuity docs --root plans check
+run scripts/agent-continuity docs --root plans check-links
 
 root_links_json="$(mktemp)"
 trap 'rm -f "$root_links_json"' EXIT
-run scripts/docs-meta --root . check-links --json >"$root_links_json" || true
+run scripts/agent-continuity docs --root . check-links --json >"$root_links_json" || true
 
 python3 - "$root_links_json" <<'PY'
 import json

@@ -31,36 +31,47 @@ require_contains() {
 bin_dir="$tmpdir/bin"
 home_dir="$tmpdir/home"
 
-AGENT_DOCS_SOURCE="$repo_root" \
-AGENT_DOCS_HOME="$home_dir" \
-AGENT_DOCS_BIN_DIR="$bin_dir" \
+AGENT_CONTINUITY_SOURCE="$repo_root" \
+AGENT_CONTINUITY_HOME="$home_dir" \
+AGENT_CONTINUITY_BIN_DIR="$bin_dir" \
   "$repo_root/install.sh" --no-run >"$tmpdir/install.out"
 
 require_file "$bin_dir/agent-docs-init"
+require_file "$bin_dir/agent-continuity-init"
 require_file "$bin_dir/agent-docs"
 require_file "$bin_dir/agent-continuity"
 require_contains "$tmpdir/install.out" "agent-docs-init"
 require_contains "$tmpdir/install.out" "agent-docs"
 require_contains "$tmpdir/install.out" "agent-continuity"
 
-AGENT_DOCS_SOURCE="$repo_root" \
-AGENT_DOCS_HOME="$home_dir" \
-AGENT_DOCS_BIN_DIR="$bin_dir" \
+AGENT_CONTINUITY_SOURCE="$repo_root" \
+AGENT_CONTINUITY_HOME="$home_dir" \
+AGENT_CONTINUITY_BIN_DIR="$bin_dir" \
   "$repo_root/install.sh" --no-run >"$tmpdir/install-again.out"
 require_contains "$tmpdir/install-again.out" "already installed"
 require_contains "$tmpdir/install-again.out" "agent-docs already installed"
 require_contains "$tmpdir/install-again.out" "agent-continuity already installed"
 
+legacy_env_bin="$tmpdir/legacy-env-bin"
+legacy_env_home="$tmpdir/legacy-env-home"
+AGENT_DOCS_SOURCE="$repo_root" \
+AGENT_DOCS_HOME="$legacy_env_home" \
+AGENT_DOCS_BIN_DIR="$legacy_env_bin" \
+  "$repo_root/install.sh" --no-run >"$tmpdir/legacy-env-install.out"
+require_file "$legacy_env_bin/agent-continuity"
+require_file "$legacy_env_bin/agent-docs"
+require_contains "$tmpdir/legacy-env-install.out" "agent-continuity"
+
 relative_source_bin="$tmpdir/relative-source-bin"
-(cd "$repo_root/.." && AGENT_DOCS_SOURCE="$(basename "$repo_root")" \
-  AGENT_DOCS_HOME="$home_dir" \
-  AGENT_DOCS_BIN_DIR="$relative_source_bin" \
+(cd "$repo_root/.." && AGENT_CONTINUITY_SOURCE="$(basename "$repo_root")" \
+  AGENT_CONTINUITY_HOME="$home_dir" \
+  AGENT_CONTINUITY_BIN_DIR="$relative_source_bin" \
     "$repo_root/install.sh" --no-run >"$tmpdir/relative-source.out")
 relative_init_target="$(readlink "$relative_source_bin/agent-docs-init")"
 case "$relative_init_target" in
   /*) ;;
   *)
-    echo "Expected relative AGENT_DOCS_SOURCE to install an absolute symlink, got $relative_init_target" >&2
+    echo "Expected relative AGENT_CONTINUITY_SOURCE to install an absolute symlink, got $relative_init_target" >&2
     exit 1
     ;;
 esac
@@ -70,12 +81,12 @@ target="$tmpdir/project"
 "$bin_dir/agent-docs-init" "$target" --profile tiny --write >"$tmpdir/init.out"
 require_file "$target/AGENTS.md"
 require_file "$target/docs/CURRENT_STATE.md"
-require_file "$target/.agent-docs/manifest.json"
+require_file "$target/.agent-continuity/manifest.json"
 
 shim_target="$tmpdir/shim-project"
 "$bin_dir/agent-continuity" init "$shim_target" --profile core --write >"$tmpdir/shim-init.out"
 require_file "$shim_target/AGENTS.md"
-require_file "$shim_target/.agent-docs/manifest.json"
+require_file "$shim_target/.agent-continuity/manifest.json"
 require_contains "$tmpdir/shim-init.out" "Profile: core"
 "$bin_dir/agent-continuity" --help >"$tmpdir/agent-continuity-help.out"
 require_contains "$tmpdir/agent-continuity-help.out" "Usage: agent-continuity <command> [args]"
@@ -96,7 +107,7 @@ if "$bin_dir/agent-continuity" upgrade --write "$shim_target" >"$tmpdir/agent-co
   exit 1
 fi
 require_contains "$tmpdir/agent-continuity-write-without-tooling.out" '`agent-continuity upgrade --write` requires `--tooling-only`.'
-python3 - "$shim_target/.agent-docs/manifest.json" <<'PY'
+python3 - "$shim_target/.agent-continuity/manifest.json" <<'PY'
 import json
 import sys
 
@@ -108,24 +119,24 @@ PY
 compat_shim_target="$tmpdir/compat-shim-project"
 "$bin_dir/agent-docs" init "$compat_shim_target" --profile tiny --write >"$tmpdir/compat-shim-init.out"
 require_file "$compat_shim_target/AGENTS.md"
-require_file "$compat_shim_target/.agent-docs/manifest.json"
+require_file "$compat_shim_target/.agent-continuity/manifest.json"
 require_contains "$tmpdir/compat-shim-init.out" "Profile: core"
 
 missing_sibling="$tmpdir/missing-sibling"
 mkdir -p "$missing_sibling"
-cp "$repo_root/scripts/agent-docs" "$missing_sibling/agent-docs"
-chmod +x "$missing_sibling/agent-docs"
-if "$missing_sibling/agent-docs" init "$tmpdir/missing-sibling-target" --profile tiny --dry-run >"$tmpdir/missing-sibling.out" 2>&1; then
-  echo "Expected agent-docs init to fail when agent-docs-init sibling is missing" >&2
+cp "$repo_root/scripts/agent-continuity" "$missing_sibling/agent-continuity"
+chmod +x "$missing_sibling/agent-continuity"
+if "$missing_sibling/agent-continuity" init "$tmpdir/missing-sibling-target" --profile core --dry-run >"$tmpdir/missing-sibling.out" 2>&1; then
+  echo "Expected agent-continuity init to fail when agent-continuity-init sibling is missing" >&2
   exit 1
 fi
-require_contains "$tmpdir/missing-sibling.out" "Could not find executable agent-docs-init"
+require_contains "$tmpdir/missing-sibling.out" "Could not find executable agent-continuity-init"
 
 run_target="$tmpdir/run-project"
 resolved_run_target="$(mkdir -p "$run_target" && cd "$run_target" && pwd -P)"
-AGENT_DOCS_SOURCE="$repo_root" \
-AGENT_DOCS_HOME="$home_dir" \
-AGENT_DOCS_BIN_DIR="$bin_dir" \
+AGENT_CONTINUITY_SOURCE="$repo_root" \
+AGENT_CONTINUITY_HOME="$home_dir" \
+AGENT_CONTINUITY_BIN_DIR="$bin_dir" \
   "$repo_root/install.sh" -- "$run_target" --profile small --dry-run >"$tmpdir/run.out"
 
 require_contains "$tmpdir/run.out" "Profile: standard"
@@ -133,17 +144,17 @@ require_contains "$tmpdir/run.out" "Target: $resolved_run_target"
 require_contains "$tmpdir/run.out" "Would create: docs/CURRENT_STATE.md"
 
 run_write_target="$tmpdir/run-write-project"
-AGENT_DOCS_SOURCE="$repo_root" \
-AGENT_DOCS_HOME="$home_dir" \
-AGENT_DOCS_BIN_DIR="$bin_dir" \
+AGENT_CONTINUITY_SOURCE="$repo_root" \
+AGENT_CONTINUITY_HOME="$home_dir" \
+AGENT_CONTINUITY_BIN_DIR="$bin_dir" \
   "$repo_root/install.sh" -- "$run_write_target" --profile tiny >"$tmpdir/run-write.out"
 require_contains "$tmpdir/run-write.out" "Mode: dry-run"
 require_absent "$run_write_target/AGENTS.md"
 
 explicit_write_target="$tmpdir/explicit-write-project"
-AGENT_DOCS_SOURCE="$repo_root" \
-AGENT_DOCS_HOME="$home_dir" \
-AGENT_DOCS_BIN_DIR="$bin_dir" \
+AGENT_CONTINUITY_SOURCE="$repo_root" \
+AGENT_CONTINUITY_HOME="$home_dir" \
+AGENT_CONTINUITY_BIN_DIR="$bin_dir" \
   "$repo_root/install.sh" -- "$explicit_write_target" --profile tiny --write >"$tmpdir/explicit-write.out"
 require_contains "$tmpdir/explicit-write.out" "Mode: write"
 require_file "$explicit_write_target/AGENTS.md"
@@ -152,15 +163,22 @@ require_file "$explicit_write_target/docs/CURRENT_STATE.md"
 macos_bash_source="$tmpdir/macos-bash-source"
 macos_bash_bin="$tmpdir/macos-bash-bin"
 mkdir -p "$macos_bash_source/scripts"
-cat >"$macos_bash_source/scripts/agent-docs-init" <<'SH'
+cat >"$macos_bash_source/scripts/agent-continuity-init" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 echo "fake init args=$*"
 SH
-chmod +x "$macos_bash_source/scripts/agent-docs-init"
-AGENT_DOCS_SOURCE="$macos_bash_source" \
-AGENT_DOCS_HOME="$tmpdir/macos-bash-home" \
-AGENT_DOCS_BIN_DIR="$macos_bash_bin" \
+cat >"$macos_bash_source/scripts/agent-continuity" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ "${1:-}" == "init" ]]; then shift; fi
+exec "$script_dir/agent-continuity-init" "$@"
+SH
+chmod +x "$macos_bash_source/scripts/agent-continuity-init" "$macos_bash_source/scripts/agent-continuity"
+AGENT_CONTINUITY_SOURCE="$macos_bash_source" \
+AGENT_CONTINUITY_HOME="$tmpdir/macos-bash-home" \
+AGENT_CONTINUITY_BIN_DIR="$macos_bash_bin" \
   /bin/bash "$repo_root/install.sh" >"$tmpdir/macos-bash-install.out"
 require_contains "$tmpdir/macos-bash-install.out" "fake init args=--dry-run"
 
@@ -172,8 +190,8 @@ exit 127
 SH
 chmod +x "$fake_no_git/git"
 if PATH="$fake_no_git:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" \
-  AGENT_DOCS_HOME="$tmpdir/no-git-home" \
-  AGENT_DOCS_BIN_DIR="$tmpdir/no-git-bin" \
+  AGENT_CONTINUITY_HOME="$tmpdir/no-git-home" \
+  AGENT_CONTINUITY_BIN_DIR="$tmpdir/no-git-bin" \
   "$repo_root/install.sh" --no-run >"$tmpdir/no-git.out" 2>&1; then
   echo "Expected install to fail when git is unavailable" >&2
   exit 1
@@ -191,19 +209,23 @@ if [[ "$1 $2" != "repo clone" ]]; then
 fi
 echo "$3 -> $4" >>"$GH_FAKE_LOG"
 mkdir -p "$4/scripts"
-cat >"$4/scripts/agent-docs-init" <<'PY'
+cat >"$4/scripts/agent-continuity-init" <<'PY'
 #!/usr/bin/env python3
 print("fake init")
 PY
-chmod +x "$4/scripts/agent-docs-init"
+cat >"$4/scripts/agent-continuity" <<'PY'
+#!/usr/bin/env python3
+print("fake command")
+PY
+chmod +x "$4/scripts/agent-continuity-init" "$4/scripts/agent-continuity"
 SH
 chmod +x "$fakebin/gh"
 
 PATH="$fakebin:$PATH" \
 GH_FAKE_LOG="$tmpdir/gh.log" \
 AGENT_DOCS_REPO_URL="https://github.com/example/private-docs.git" \
-AGENT_DOCS_HOME="$fake_home" \
-AGENT_DOCS_BIN_DIR="$tmpdir/private-bin" \
+AGENT_CONTINUITY_HOME="$fake_home" \
+AGENT_CONTINUITY_BIN_DIR="$tmpdir/private-bin" \
   "$repo_root/install.sh" --no-run >"$tmpdir/private-install.out"
 
 require_contains "$tmpdir/gh.log" "example/private-docs -> $fake_home"
@@ -212,11 +234,11 @@ require_contains "$tmpdir/private-install.out" "Installed agent-docs-init"
 existing_home="$tmpdir/existing-home"
 mkdir -p "$existing_home"
 echo "keep me" >"$existing_home/marker.txt"
-if AGENT_DOCS_HOME="$existing_home" \
-  AGENT_DOCS_BIN_DIR="$tmpdir/existing-home-bin" \
+if AGENT_CONTINUITY_HOME="$existing_home" \
+  AGENT_CONTINUITY_BIN_DIR="$tmpdir/existing-home-bin" \
   AGENT_DOCS_REPO_URL="https://github.com/example/private-docs.git" \
   "$repo_root/install.sh" --no-run >"$tmpdir/existing-home.out" 2>&1; then
-  echo "Expected install to refuse existing non-git AGENT_DOCS_HOME" >&2
+  echo "Expected install to refuse existing non-git AGENT_CONTINUITY_HOME" >&2
   exit 1
 fi
 require_file "$existing_home/marker.txt"
@@ -226,9 +248,9 @@ require_absent "$tmpdir/existing-home-bin/agent-docs-init"
 conflict_bin="$tmpdir/conflict-bin"
 mkdir -p "$conflict_bin"
 echo "existing command" >"$conflict_bin/agent-docs-init"
-if AGENT_DOCS_SOURCE="$repo_root" \
-  AGENT_DOCS_HOME="$home_dir" \
-  AGENT_DOCS_BIN_DIR="$conflict_bin" \
+if AGENT_CONTINUITY_SOURCE="$repo_root" \
+  AGENT_CONTINUITY_HOME="$home_dir" \
+  AGENT_CONTINUITY_BIN_DIR="$conflict_bin" \
   "$repo_root/install.sh" --no-run >"$tmpdir/conflict-bin.out" 2>&1; then
   echo "Expected install to refuse replacing existing agent-docs-init command" >&2
   exit 1
@@ -239,9 +261,9 @@ require_contains "$tmpdir/conflict-bin.out" "Refusing to replace existing comman
 agent_docs_conflict_bin="$tmpdir/agent-docs-conflict-bin"
 mkdir -p "$agent_docs_conflict_bin"
 echo "existing command" >"$agent_docs_conflict_bin/agent-docs"
-if AGENT_DOCS_SOURCE="$repo_root" \
-  AGENT_DOCS_HOME="$home_dir" \
-  AGENT_DOCS_BIN_DIR="$agent_docs_conflict_bin" \
+if AGENT_CONTINUITY_SOURCE="$repo_root" \
+  AGENT_CONTINUITY_HOME="$home_dir" \
+  AGENT_CONTINUITY_BIN_DIR="$agent_docs_conflict_bin" \
   "$repo_root/install.sh" --no-run >"$tmpdir/agent-docs-conflict-bin.out" 2>&1; then
   echo "Expected install to refuse replacing existing agent-docs command" >&2
   exit 1
@@ -253,9 +275,9 @@ require_contains "$tmpdir/agent-docs-conflict-bin.out" "Refusing to replace exis
 agent_continuity_conflict_bin="$tmpdir/agent-continuity-conflict-bin"
 mkdir -p "$agent_continuity_conflict_bin"
 echo "existing command" >"$agent_continuity_conflict_bin/agent-continuity"
-if AGENT_DOCS_SOURCE="$repo_root" \
-  AGENT_DOCS_HOME="$home_dir" \
-  AGENT_DOCS_BIN_DIR="$agent_continuity_conflict_bin" \
+if AGENT_CONTINUITY_SOURCE="$repo_root" \
+  AGENT_CONTINUITY_HOME="$home_dir" \
+  AGENT_CONTINUITY_BIN_DIR="$agent_continuity_conflict_bin" \
   "$repo_root/install.sh" --no-run >"$tmpdir/agent-continuity-conflict-bin.out" 2>&1; then
   echo "Expected install to refuse replacing existing agent-continuity command" >&2
   exit 1
@@ -268,8 +290,8 @@ mismatch_home="$tmpdir/mismatch-home"
 mkdir -p "$mismatch_home"
 git -C "$mismatch_home" init --quiet
 git -C "$mismatch_home" remote add origin "https://github.com/example/not-agent-docs.git"
-if AGENT_DOCS_HOME="$mismatch_home" \
-  AGENT_DOCS_BIN_DIR="$tmpdir/mismatch-bin" \
+if AGENT_CONTINUITY_HOME="$mismatch_home" \
+  AGENT_CONTINUITY_BIN_DIR="$tmpdir/mismatch-bin" \
   "$repo_root/install.sh" --no-run >"$tmpdir/mismatch-home.out" 2>&1; then
   echo "Expected install to refuse existing checkout with unexpected origin" >&2
   exit 1
@@ -284,9 +306,9 @@ exit 1
 SH
 chmod +x "$fakepython/python3"
 if PATH="$fakepython:$PATH" \
-  AGENT_DOCS_SOURCE="$repo_root" \
-  AGENT_DOCS_HOME="$home_dir" \
-  AGENT_DOCS_BIN_DIR="$tmpdir/python-bin" \
+  AGENT_CONTINUITY_SOURCE="$repo_root" \
+  AGENT_CONTINUITY_HOME="$home_dir" \
+  AGENT_CONTINUITY_BIN_DIR="$tmpdir/python-bin" \
   "$repo_root/install.sh" --no-run >"$tmpdir/python-version.out" 2>&1; then
   echo "Expected install to fail when Python 3.10+ is unavailable" >&2
   exit 1

@@ -37,7 +37,7 @@ File path:
 docs/<domain>/plans/PLAN-0000-<slug>/IMPL-0000-00-<slug>.md
 ```
 
-Prefer `scripts/docs-meta new impl "<title>" --plan PLAN-0000` when the repo has `docs-meta`; it will assign the next implementation ID scoped to the parent plan, fill timestamps and repo state, and create the brief beside its parent plan.
+Prefer `agent-continuity docs new impl "<title>" --plan PLAN-0000` when the repo has Agent Continuity document tooling; it will assign the next implementation ID scoped to the parent plan, fill timestamps and repo state, and create the brief beside its parent plan.
 
 ## Parent plan
 

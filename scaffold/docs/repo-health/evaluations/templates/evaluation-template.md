@@ -5,7 +5,7 @@ Use this for `EVAL-*` docs: repeatable evaluation reports that compare approache
 Create new evaluations with:
 
 ```bash
-scripts/docs-meta new eval "<Title>" --domain <domain>
+agent-continuity docs new eval "<Title>" --domain <domain>
 ```
 
 ---

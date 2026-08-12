@@ -26,12 +26,12 @@
 ## Checks
 
 ```bash
-scripts/docs-meta recent
-scripts/docs-meta roadmap
-scripts/docs-meta health
+agent-continuity docs recent
+agent-continuity docs roadmap
+agent-continuity docs health
 ```
 
-Use equivalent commands when the target repo does not provide `docs-meta`.
+Use equivalent checks when Agent Continuity document tooling is unavailable.
 
 ## Finding Categories
 

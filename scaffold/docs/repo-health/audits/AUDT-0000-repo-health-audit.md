@@ -42,12 +42,12 @@ Audits do not block unrelated implementation by default. Pause related implement
 
 Read-only commands:
 
-- `scripts/docs-meta check`
+- `agent-continuity docs check`
 
 Optional cleanup commands, only if in scope:
 
-- `scripts/docs-meta health --write`
-- `scripts/docs-meta roadmap --write`
+- `agent-continuity docs health --write`
+- `agent-continuity docs roadmap --write`
 
 Manual or agent checks:
 

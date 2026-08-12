@@ -1,4 +1,4 @@
-# AGENT-DOCS Scaffold
+# Agent Continuity Scaffold
 
 This folder is shaped like the repo docs tree it creates.
 
@@ -22,22 +22,22 @@ docs/
 
 Use one canonical physical home for each doc. Use generated views like `IDEAS.md`, `CONCEPTS.md`, `SPECS.md`, `LEARNINGS.md`, `EXPLAINERS.md`, `QUESTIONS.md`, `AREAS.md`, `AUDITS.md`, `ROADMAP-VIEW.md`, `DOCS-REGISTRY.md`, `TODOS.md`, and `HEALTH.md` for cross-cutting navigation instead of duplicating files.
 
-If the target repo uses `scripts/docs-meta`, prefer the CLI for new IDs and generated views:
+If the target repo uses `agent-continuity docs`, prefer the CLI for new IDs and generated views:
 
 ```bash
-scripts/docs-meta new idea "<title>" --domain product
-scripts/docs-meta new concept "<title>" --domain product
-scripts/docs-meta new research "<title>" --domain research
-scripts/docs-meta new eval "<title>" --domain repo-health
-scripts/docs-meta new diag "<title>" --domain repo-health
-scripts/docs-meta new spec "<title>" --domain product
-scripts/docs-meta new learning "<title>" --domain repo-health
-scripts/docs-meta new explainer "<title>" --domain orientation
-scripts/docs-meta new question "<title>" --domain repo-health
-scripts/docs-meta update
-scripts/docs-meta health --write
-scripts/docs-meta roadmap --write
-scripts/docs-meta check
+agent-continuity docs new idea "<title>" --domain product
+agent-continuity docs new concept "<title>" --domain product
+agent-continuity docs new research "<title>" --domain research
+agent-continuity docs new eval "<title>" --domain repo-health
+agent-continuity docs new diag "<title>" --domain repo-health
+agent-continuity docs new spec "<title>" --domain product
+agent-continuity docs new learning "<title>" --domain repo-health
+agent-continuity docs new explainer "<title>" --domain orientation
+agent-continuity docs new question "<title>" --domain repo-health
+agent-continuity docs update
+agent-continuity docs health --write
+agent-continuity docs roadmap --write
+agent-continuity docs check
 ```
 
 The example artifact files use `0000` IDs. Replace them with real IDs before committing real project docs.

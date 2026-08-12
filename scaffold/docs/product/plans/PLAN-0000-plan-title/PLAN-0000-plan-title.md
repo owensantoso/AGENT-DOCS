@@ -42,7 +42,7 @@ docs/<domain>/plans/PLAN-0000-<slug>/PLAN-0000-<slug>.md
 Do not use `plan.md` for parent plans. The folder and file must both carry the
 same uppercase `PLAN-####` ID and slug.
 
-Prefer `scripts/docs-meta new plan "<title>" --spec SPEC-0000` when the repo has `docs-meta`; it will assign the next `PLAN-####`, fill timestamps and repo state, and create the topic-first plan folder.
+Prefer `agent-continuity docs new plan "<title>" --spec SPEC-0000` when the repo has Agent Continuity document tooling; it will assign the next `PLAN-####`, fill timestamps and repo state, and create the topic-first plan folder.
 
 **Goal:** <One paragraph on the user-facing or system outcome.>
 

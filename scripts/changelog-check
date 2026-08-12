@@ -10,7 +10,7 @@ usage() {
   cat <<'USAGE'
 Usage: scripts/changelog-check [--repo PATH] [--base REF] [--head REF] [--message-file PATH]
 
-Requires CHANGELOG.md to change when adopter-facing AGENT-DOCS surfaces change.
+Requires CHANGELOG.md to change when adopter-facing Agent Continuity surfaces change.
 Use the explicit marker below in commit or PR text for changes that do not need
 an adopter-facing record:
 
@@ -66,7 +66,7 @@ is_adopter_facing_path() {
     scaffold/*|skills/*)
       return 0
       ;;
-    scripts/agent-docs-init|scripts/changelog-check|scripts/docs-meta|scripts/release-check|scripts/README.md)
+    scripts/agent-continuity|scripts/agent-continuity-init|scripts/agent-continuity-docs|scripts/agent-docs|scripts/agent-docs-init|scripts/docs-meta|scripts/changelog-check|scripts/release-check|scripts/README.md)
       return 0
       ;;
     guides/workflow-overview.md|guides/doc-types-and-responsibilities.md|guides/subagent-execution-loop.md|guides/adoption-checklist.md)
@@ -159,7 +159,7 @@ if grep -Fq "$change_record_marker" <<<"$record_text"; then
 fi
 
 {
-  echo "ERROR: adopter-facing AGENT-DOCS surfaces changed without CHANGELOG.md."
+  echo "ERROR: adopter-facing Agent Continuity surfaces changed without CHANGELOG.md."
   echo
   echo "Changed adopter-facing paths:"
   printf '%s' "$adopter_paths_text" | sed 's/^/  - /'

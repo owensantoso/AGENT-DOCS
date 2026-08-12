@@ -97,8 +97,8 @@ Then run the most relevant manual checks.
 If `./run agent-check` does not exist yet, run the closest equivalent:
 
 ```bash
-scripts/docs-meta update
-scripts/docs-meta check
+agent-continuity docs update
+agent-continuity docs check
 git diff --check
 <primary test command>
 ```

@@ -15,7 +15,7 @@ A diagnostic record is not the raw trace itself. The doc preserves the symptom, 
 Create new diagnostic records with:
 
 ```bash
-scripts/docs-meta new diag "<Title>" --domain <domain>
+agent-continuity docs new diag "<Title>" --domain <domain>
 ```
 
 ## Artifact Shape

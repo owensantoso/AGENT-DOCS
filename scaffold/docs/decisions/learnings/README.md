@@ -9,7 +9,7 @@ Do not use learning records to teach a concept from scratch. Use `EXPL-*` explai
 Create a new learning with:
 
 ```bash
-scripts/docs-meta new learning "Title" --domain repo-health
+agent-continuity docs new learning "Title" --domain repo-health
 ```
 
 ## When To Create One
@@ -37,4 +37,4 @@ Create a `QST-*` only when the question needs durable status, ownership, links, 
 
 ## Template
 
-Start from `LRN-0000-learning-title.md` or `scripts/docs-meta new learning`.
+Start from `LRN-0000-learning-title.md` or `agent-continuity docs new learning`.

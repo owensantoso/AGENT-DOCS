@@ -28,7 +28,7 @@ related_specs: []
 related_plans: []
 related_sessions: []
 linked_paths:
-  - docs-meta/ideas/IDEA-0001-docs-to-code-graph.md
+  - agent-continuity/ideas/IDEA-0001-docs-to-code-graph.md
   - scripts/docs-meta
   - concepts/CONC-0001-read-only-sqlite-docs-index.md
 repo_state:

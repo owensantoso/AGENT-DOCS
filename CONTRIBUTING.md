@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve AGENT-DOCS. This project is a reusable documentation
+Thanks for helping improve Agent Continuity. This project is a reusable documentation
 workflow for agent-assisted repositories, so contributions should keep first-run
 safety, clear handoffs, and small-project adoption in mind.
 
@@ -28,7 +28,7 @@ For narrower edits, run the smallest relevant subset:
 git diff --check
 tests/install-smoke.sh
 tests/agent-docs-init-smoke.sh
-tests/docs-meta-smoke.sh
+tests/agent-continuity-docs-smoke.sh
 ```
 
 Adopter-facing changes to installer, scaffold, skills, scripts, reusable guides,

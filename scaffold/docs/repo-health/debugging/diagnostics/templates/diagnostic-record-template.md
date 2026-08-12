@@ -5,7 +5,7 @@ Use this for `DIAG-*` docs: real-run investigations that need structured evidenc
 Create new diagnostic records with:
 
 ```bash
-scripts/docs-meta new diag "<Title>" --domain <domain>
+agent-continuity docs new diag "<Title>" --domain <domain>
 ```
 
 ---

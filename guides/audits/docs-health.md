@@ -24,13 +24,13 @@
 ## Checks
 
 ```bash
-scripts/docs-meta check
-scripts/docs-meta check-links
-scripts/docs-meta check-todos
-scripts/docs-meta health
+agent-continuity docs check
+agent-continuity docs check-links
+agent-continuity docs check-todos
+agent-continuity docs health
 ```
 
-Use equivalent checks if the target repo lacks `docs-meta`.
+Use equivalent checks if the target repo lacks Agent Continuity document tooling.
 
 ## Finding Categories
 

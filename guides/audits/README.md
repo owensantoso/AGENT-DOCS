@@ -1,6 +1,6 @@
 # Audit Guides
 
-Reusable procedures for AGENT-DOCS audit kinds.
+Reusable procedures for Agent Continuity audit kinds.
 
 These guides are repo-agnostic. A target repo can add a small local audit profile that says where its specs, plans, code, tests, generated views, security-sensitive files, and release commands live.
 
@@ -10,7 +10,7 @@ Recommended target-repo profile path:
 docs/repo-health/audits/audit-profile.md
 ```
 
-The profile should contain repo-specific paths and commands only. Keep reusable audit method here in AGENT-DOCS.
+The profile should contain repo-specific paths and commands only. Keep reusable audit method here in Agent Continuity.
 
 ## Routing Rule
 
@@ -75,7 +75,7 @@ Never paste secret values, bearer tokens, private keys, auth headers, raw user c
 
 ## Fallback Discovery
 
-If the target repo has no `docs-meta` tooling or no audit profile yet:
+If the target repo has no Agent Continuity document tooling or no audit profile yet:
 
 ```bash
 rg --files

@@ -2,7 +2,7 @@
 type: concept
 id: CONC-0001
 title: Read-Only SQLite Docs Index
-domain: docs-meta
+domain: structured-docs
 status: draft
 concept_type: architecture
 created_at: "2026-04-27 08:34:23 JST +0900"
@@ -14,7 +14,7 @@ source:
   notes: Discussion about whether a generated SQLite index would improve docs-meta queryability over script-only commands.
 areas:
   - docs
-  - docs-meta
+  - structured-docs
 related_specs: []
 related_plans:
   - ../plans/docs-meta-link-graph-and-safe-move/PLAN-0001-docs-meta-link-graph-and-safe-move.md

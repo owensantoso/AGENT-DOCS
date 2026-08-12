@@ -6,7 +6,7 @@ This folder is a reusable documentation kit for agent-driven software work.
 
 1. `README.md`
 2. `INSTALL.md` when setting this workflow up in another repo
-3. `skills/structured-docs-workflow/SKILL.md` before implementation or planning in repos that use plans, briefs, TODOs, or docs-meta
+3. `skills/structured-docs-workflow/SKILL.md` before implementation or planning in repos that use plans, briefs, TODOs, or Agent Continuity document tooling
 4. `guides/workflow-overview.md`
 5. `guides/doc-types-and-responsibilities.md`
 6. `guides/subagent-execution-loop.md`

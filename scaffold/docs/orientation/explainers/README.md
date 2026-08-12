@@ -7,7 +7,7 @@ Explainers teach how something works. They are not records of what the team lear
 Create a new explainer with:
 
 ```bash
-scripts/docs-meta new explainer "Title" --domain orientation
+agent-continuity docs new explainer "Title" --domain orientation
 ```
 
 ## When To Create One
@@ -34,4 +34,4 @@ Prefer one strong diagram over several average ones. Default to Mermaid, keep sc
 
 ## Template
 
-Start from `EXPL-0000-explainer-title.md` or `scripts/docs-meta new explainer`.
+Start from `EXPL-0000-explainer-title.md` or `agent-continuity docs new explainer`.

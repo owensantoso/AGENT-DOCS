@@ -104,6 +104,41 @@ Should answer:
 
 Learning records are not session logs, ADRs, specs, or plans. If the doc mainly says what happened, use a session log. If it chooses a durable direction, use an ADR. If it defines requirements or execution scope, use a spec, plan, or brief.
 
+### Workflow Failure Convention
+
+For now, record a systematic planning, orchestration, review, verification, or
+agent-workflow failure as an `LRN-*` with `domain: workflow`. Do not introduce a
+separate `FAIL-*` or `INC-*` family for the first examples.
+
+Record the learning in the affected repository when that repository has Agent
+Continuity document tooling and the lesson is local. Record or summarize it in
+the Agent Continuity framework repository when it changes reusable workflow
+guidance. One cross-repo lesson may cite the affected repository; do not copy a
+full transcript into both places.
+
+A workflow-failure learning should include:
+
+1. **Intended Decision** - the outcome or uncertainty the workflow was meant to
+   resolve.
+2. **Observed Failure** - how the process diverged from that decision.
+3. **Evidence And Cost** - confirmed artifacts or measurements, with inference
+   labeled separately.
+4. **Causal Factors** - prompt ambiguity, agent assumption, docs or template
+   incentives, orchestration or review incentives, missing stopping rules, or
+   another named source.
+5. **Corrective Action** - the smallest current change, including what is
+   intentionally deferred.
+6. **Prevention And Recurrence Checks** - observable checks future agents can
+   apply before repeating the pattern.
+7. **Revisit Trigger** - evidence that would justify stronger policy, tooling,
+   schema, or a dedicated failure/incident family.
+
+Keep `learning_type: lesson`; `domain: workflow` is the current aggregation key.
+The generated `LEARNINGS.md` view makes these records discoverable. Reconsider a
+dedicated family only after multiple examples show recurring lifecycle or query
+needs that the learning family cannot express cleanly. Do not build new CLI,
+schema, lint, or index machinery on the first example.
+
 ## Explainer
 
 Purpose:

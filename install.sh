@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_url="${AGENT_DOCS_REPO_URL:-https://github.com/owensantoso/agent-continuity.git}"
-agent_docs_home="${AGENT_DOCS_HOME:-$HOME/.agent-docs}"
-bin_dir="${AGENT_DOCS_BIN_DIR:-$HOME/.local/bin}"
-source_dir="${AGENT_DOCS_SOURCE:-}"
+repo_url="${AGENT_CONTINUITY_REPO_URL:-${AGENT_DOCS_REPO_URL:-https://github.com/owensantoso/agent-continuity.git}}"
+agent_docs_home="${AGENT_CONTINUITY_HOME:-${AGENT_DOCS_HOME:-$HOME/.agent-continuity}}"
+bin_dir="${AGENT_CONTINUITY_BIN_DIR:-${AGENT_DOCS_BIN_DIR:-$HOME/.local/bin}}"
+source_dir="${AGENT_CONTINUITY_SOURCE:-${AGENT_DOCS_SOURCE:-}}"
 run_after_install=true
 run_args=()
+
+# Existing default installs continue updating in place. Fresh installs use the
+# canonical ~/.agent-continuity location.
+if [[ -z "${AGENT_CONTINUITY_HOME:-}" && -z "${AGENT_DOCS_HOME:-}" && ! -e "$HOME/.agent-continuity" && -d "$HOME/.agent-docs/.git" ]]; then
+  agent_docs_home="$HOME/.agent-docs"
+fi
 
 github_repo_from_url() {
   local url="$1"
@@ -74,7 +80,7 @@ PY
 require_git() {
   if ! command -v git >/dev/null 2>&1 || ! git --version >/dev/null 2>&1; then
     echo "agent-docs-init installer requires git, but git was not found." >&2
-    echo "Install git or set AGENT_DOCS_SOURCE to a local agent-continuity checkout." >&2
+    echo "Install git or set AGENT_CONTINUITY_SOURCE to a local Agent Continuity checkout." >&2
     exit 1
   fi
 }
@@ -130,14 +136,14 @@ if [[ -z "$source_dir" ]]; then
       echo "Refusing to update existing checkout with unexpected origin: $agent_docs_home" >&2
       echo "Expected: $repo_url" >&2
       echo "Actual: ${origin_url:-<none>}" >&2
-      echo "Move it aside, remove it manually, or set AGENT_DOCS_HOME to another path." >&2
+      echo "Move it aside, remove it manually, or set AGENT_CONTINUITY_HOME to another path." >&2
       exit 1
     fi
     git -C "$agent_docs_home" pull --ff-only --quiet
   else
     if [[ -e "$agent_docs_home" ]]; then
       echo "Refusing to replace existing non-git directory: $agent_docs_home" >&2
-      echo "Move it aside, remove it manually, or set AGENT_DOCS_HOME to another path." >&2
+      echo "Move it aside, remove it manually, or set AGENT_CONTINUITY_HOME to another path." >&2
       exit 1
     fi
     clone_repo
@@ -146,10 +152,10 @@ if [[ -z "$source_dir" ]]; then
 fi
 source_dir="$(cd "$source_dir" && pwd -P)"
 
-init_script="$source_dir/scripts/agent-docs-init"
-command_script="$source_dir/scripts/agent-docs"
+init_script="$source_dir/scripts/agent-continuity-init"
+command_script="$source_dir/scripts/agent-continuity"
 if [[ ! -f "$init_script" ]]; then
-  echo "Could not find scripts/agent-docs-init in $source_dir" >&2
+  echo "Could not find scripts/agent-continuity-init in $source_dir" >&2
   exit 1
 fi
 
@@ -161,7 +167,7 @@ preflight_command() {
   if [[ ( -e "$installed_path" || -L "$installed_path" ) ]] &&
     ! [[ -L "$installed_path" && "$(readlink "$installed_path")" == "$source_path" ]]; then
     echo "Refusing to replace existing command: $installed_path" >&2
-    echo "Move it aside, remove it manually, or set AGENT_DOCS_BIN_DIR to another path." >&2
+    echo "Move it aside, remove it manually, or set AGENT_CONTINUITY_BIN_DIR to another path." >&2
     exit 1
   fi
 }
@@ -189,11 +195,13 @@ install_command() {
 }
 
 mkdir -p "$bin_dir"
+preflight_command "agent-continuity-init" "$init_script"
 preflight_command "agent-docs-init" "$init_script"
 if [[ -f "$command_script" ]]; then
   preflight_command "agent-continuity" "$command_script"
   preflight_command "agent-docs" "$command_script"
 fi
+install_command "agent-continuity-init" "$init_script"
 install_command "agent-docs-init" "$init_script"
 if [[ -f "$command_script" ]]; then
   install_command "agent-continuity" "$command_script"
@@ -209,17 +217,17 @@ case ":$PATH:" in
 esac
 
 if [[ "$run_after_install" == true ]]; then
-  if [[ -r /dev/tty && -t 1 ]]; then
+    if [[ -r /dev/tty && -t 1 ]]; then
     if [[ "${#run_args[@]}" -gt 0 ]]; then
-      "$bin_dir/agent-docs-init" "${run_args[@]}" </dev/tty
+      "$bin_dir/agent-continuity" init "${run_args[@]}" </dev/tty
     else
-      "$bin_dir/agent-docs-init" </dev/tty
+      "$bin_dir/agent-continuity" init </dev/tty
     fi
   else
     if [[ "${#run_args[@]}" -gt 0 ]]; then
-      "$bin_dir/agent-docs-init" "${run_args[@]}"
+      "$bin_dir/agent-continuity" init "${run_args[@]}"
     else
-      "$bin_dir/agent-docs-init"
+      "$bin_dir/agent-continuity" init
     fi
   fi
 fi

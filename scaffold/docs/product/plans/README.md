@@ -13,22 +13,22 @@ Reusable implementation-session handoff prompt:
 
 - `docs/repo-health/prompts/reusable-implementer-handoff-prompt.md`
 
-If this repo has `scripts/docs-meta`, use it for mechanical metadata:
+If this repo has `agent-continuity docs`, use it for mechanical metadata:
 
 ```bash
-scripts/docs-meta next spec
-scripts/docs-meta next idea
-scripts/docs-meta next plan
-scripts/docs-meta next impl --plan PLAN-0000
-scripts/docs-meta new spec "<title>" --domain product --spec-type feature
-scripts/docs-meta new idea "<title>" --domain product
-scripts/docs-meta new plan "<title>" --domain product --spec SPEC-0000
-scripts/docs-meta new impl "<title>" --plan PLAN-0000
-scripts/docs-meta set-status PLAN-0000 in_progress
-scripts/docs-meta todos
-scripts/docs-meta update
-scripts/docs-meta check
-scripts/docs-meta roadmap --write
+agent-continuity docs next spec
+agent-continuity docs next idea
+agent-continuity docs next plan
+agent-continuity docs next impl --plan PLAN-0000
+agent-continuity docs new spec "<title>" --domain product --spec-type feature
+agent-continuity docs new idea "<title>" --domain product
+agent-continuity docs new plan "<title>" --domain product --spec SPEC-0000
+agent-continuity docs new impl "<title>" --plan PLAN-0000
+agent-continuity docs set-status PLAN-0000 in_progress
+agent-continuity docs todos
+agent-continuity docs update
+agent-continuity docs check
+agent-continuity docs roadmap --write
 ```
 
 Do not ask agents to guess the next ID when the repo can derive it.
@@ -156,7 +156,7 @@ sequence:
   before: [PLAN-0036]
 ```
 
-Use `scripts/docs-meta roadmap --write` to generate `docs/ROADMAP-VIEW.md` from plan frontmatter.
+Use `agent-continuity docs roadmap --write` to generate `docs/ROADMAP-VIEW.md` from plan frontmatter.
 
 ## Status and todos
 
@@ -184,10 +184,10 @@ Use Markdown checkboxes for local task lists. Use structured `TODO-*` checkboxes
 - [ ] TODO-0001 [ready] [skill:docs-writer] [plan:PLAN-0002] Define stable todo lifecycle states.
 ```
 
-Keep parent plans and implementation briefs authoritative for scope. Use `TODO-*` IDs for progress references, handoff, filtering, and closeout. `docs-meta todos` derives a repo-level task view without making a second source of truth.
+Keep parent plans and implementation briefs authoritative for scope. Use `TODO-*` IDs for progress references, handoff, filtering, and closeout. `agent-continuity docs todos` derives a repo-level task view without making a second source of truth.
 `skill:<name>` is a routing hint only. It does not imply that a matching Codex skill is installed in every environment.
 
-`docs-meta` does not scan source-code TODO comments. Keep those comments for local implementation notes. Promote an in-file TODO to a structured Markdown `TODO-*` when it needs ownership, delegation, review, or cross-session tracking.
+Agent Continuity does not scan source-code TODO comments. Keep those comments for local implementation notes. Promote an in-file TODO to a structured Markdown `TODO-*` when it needs ownership, delegation, review, or cross-session tracking.
 
 Place structured todos in the lowest durable doc that owns the work:
 

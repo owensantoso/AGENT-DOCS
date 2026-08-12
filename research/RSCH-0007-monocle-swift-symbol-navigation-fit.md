@@ -36,7 +36,7 @@ agent_notes:
   - "This survey is grounded primarily in the local cached Monocle source, not the unrelated Homebrew core formula metadata."
   - "Monocle is a Swift/SourceKit-LSP adapter and should be treated as a language-specific precision tool, not a universal docs graph store."
 related_ideas:
-  - ../docs-meta/ideas/IDEA-0001-docs-to-code-graph.md
+  - ../agent-continuity/ideas/IDEA-0001-docs-to-code-graph.md
 related_evaluations: []
 related_adrs: []
 related_specs: []

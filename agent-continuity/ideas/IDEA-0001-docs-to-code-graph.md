@@ -2,7 +2,7 @@
 type: idea
 id: IDEA-0001
 title: Docs To Code Graph
-domain: docs-meta
+domain: structured-docs
 status: captured
 created_at: "2026-04-27 20:14:25 JST +0900"
 updated_at: "2026-04-27 22:05:46 JST +0900"
@@ -10,9 +10,9 @@ owner: "Codex main agent"
 source:
   type: conversation
   link:
-  notes: "User asked whether AGENT-DOCS could bridge the docs graph and code graph, with stale-aware links to files, lines, symbols, commits, and Monocle/Swift symbol lookup."
+  notes: "User asked whether Agent Continuity could bridge the docs graph and code graph, with stale-aware links to files, lines, symbols, commits, and Monocle/Swift symbol lookup."
 areas:
-  - docs-meta
+  - structured-docs
   - code-intelligence
 related_specs: []
 related_research:
@@ -27,7 +27,7 @@ related_issues: []
 related_prs: []
 related_sessions: []
 linked_paths:
-  - scripts/docs-meta
+  - scripts/agent-continuity-docs
   - concepts/CONC-0001-read-only-sqlite-docs-index.md
   - plans/docs-meta-link-graph-and-safe-move/PLAN-0001-docs-meta-link-graph-and-safe-move.md
 promoted_to: []
@@ -40,7 +40,7 @@ repo_state:
 
 ## Raw Thought
 
-AGENT-DOCS is becoming a graph: docs link to docs, plans link to briefs, research links to decisions, TODOs link to execution, and `docs-meta` can already inspect links/backlinks. Code is also naturally graph-shaped through files, symbols, definitions, references, calls, imports, tests, packages, and generated docs.
+Agent Continuity is becoming a graph: docs link to docs, plans link to briefs, research links to decisions, TODOs link to execution, and `agent-continuity docs` can already inspect links/backlinks. Code is also naturally graph-shaped through files, symbols, definitions, references, calls, imports, tests, packages, and generated docs.
 
 The idea is to bridge those two graphs so an agent can move from durable docs to the exact code surface the doc is talking about, then back from code to the docs that explain intent, history, decisions, and follow-up work.
 
@@ -65,7 +65,7 @@ Potential source fields:
 code_refs:
   - id: DREF-0001
     intent: current_surface
-    path: scripts/docs-meta
+    path: scripts/agent-continuity-docs
     symbol:
       language: python
       name: validate_linked_paths
@@ -94,7 +94,7 @@ Likely layers:
 3. Tree-sitter syntax extraction for cheap candidates.
 4. LSP/Monocle verification for interactive precision.
 5. Optional compiler/SCIP/CodeQL adapters for high-confidence semantic edges.
-6. Optional SQLite read model if cross-cutting queries outgrow simple `docs-meta` subcommands.
+6. Optional SQLite read model if cross-cutting queries outgrow simple `agent-continuity docs` subcommands.
 
 ## Questions
 
@@ -103,7 +103,7 @@ Likely layers:
 - What edge intents are necessary in the first version: `mentions`, `current_surface`, `implements`, `tests`, `decides`, `evidence_for`, `definition`, `reference`?
 - How strict should stale checks be? Advisory health warning, CI failure, or only explicit review queue?
 - Should exact code snippets be stored, or only hashes and commit-pinned permalinks?
-- Which repo should host the first prototype: AGENT-DOCS itself, a Swift app with Monocle available, or a mixed-language target repo?
+- Which repo should host the first prototype: Agent Continuity itself, a Swift app with Monocle available, or a mixed-language target repo?
 - Does the SQLite docs-index concept become the natural home for generated code graph tables?
 
 ## Promotion Criteria

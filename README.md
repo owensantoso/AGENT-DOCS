@@ -35,7 +35,7 @@ Install or update the CLI without running init:
 curl -fsSL https://raw.githubusercontent.com/owensantoso/agent-continuity/main/install.sh | bash -s -- --no-run
 ```
 
-Upgrade an existing project that already has older AGENT-DOCS files by updating
+Upgrade an existing project that already has older Agent Continuity files by updating
 the local command first, then inspecting the project:
 
 ```bash
@@ -45,7 +45,7 @@ agent-continuity upgrade --dry-run /path/to/project
 ```
 
 Do not rerun `init --write` over an existing customized project. For old
-installs without `.agent-docs/manifest.json`, use the baseline preview in
+installs without `.agent-continuity/manifest.json`, use the baseline preview in
 [INSTALL.md](INSTALL.md) before creating a manifest. If you want an agent to do
 the upgrade for you, paste them [the agent upgrade runbook](guides/agent-upgrade-existing-install.md).
 
@@ -53,7 +53,7 @@ If you are installing from a private fork, authenticate with GitHub CLI and let 
 
 ```bash
 gh auth login
-gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/agent-continuity/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/agent-continuity.git bash -s -- --profile standard --dry-run
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/agent-continuity/contents/install.sh | AGENT_CONTINUITY_REPO_URL=https://github.com/OWNER/agent-continuity.git bash -s -- --profile standard --dry-run
 ```
 
 Non-interactive examples:
@@ -77,11 +77,11 @@ agent-docs-init --profile growing --dry-run
 
 Agent-driven projects usually do not fail because nobody wrote notes. They fail because the next session cannot tell which note is canonical, which plan is current, which decision still applies, or which evidence is safe to trust.
 
-| Common Failure | AGENT-DOCS Answer |
+| Common Failure | Agent Continuity Answer |
 |---|---|
 | Current reality is inferred from code and stale chat | `CURRENT_STATE.md` is the first truth page |
 | Ideas, specs, plans, and decisions blur together | Each doc type has one job and one owner of truth |
-| Agents guess the next ID or hand-edit registries | `docs-meta` derives IDs and generated views from source docs |
+| Agents guess the next ID or hand-edit registries | `agent-continuity docs` derives IDs and generated views from source docs |
 | Bug evidence disappears into pasted logs | `DIAG-*` records preserve sanitized run evidence |
 | Research, benchmarks, and decisions get mixed | `RSCH-*`, `EVAL-*`, and `ADR-*` stay separate |
 | Plans become too large to hand off safely | `PLAN-*` owns scope; `IMPL-*` owns bounded execution |
@@ -102,7 +102,7 @@ The point is not the folder tree. The point is making repo memory resumable: sou
 | Learn how agents split and integrate work | [guides/subagent-execution-loop.md](guides/subagent-execution-loop.md) |
 | Follow an adoption checklist | [guides/adoption-checklist.md](guides/adoption-checklist.md) |
 | Use the workflow as a Codex skill | [skills/structured-docs-workflow/SKILL.md](skills/structured-docs-workflow/SKILL.md) |
-| Plan upstream AGENT-DOCS improvements | [plans/README.md](plans/README.md) |
+| Plan upstream Agent Continuity improvements | [plans/README.md](plans/README.md) |
 | Follow package-manager distribution work | [PLAN-0010](plans/package-manager-distribution/PLAN-0010-package-manager-distribution.md) |
 | Explore the SQLite docs-index concept | [concepts/CONC-0001-read-only-sqlite-docs-index.md](concepts/CONC-0001-read-only-sqlite-docs-index.md) |
 | Explore future doctor/upgrade safety | [concepts/CONC-0002-agent-docs-doctor-and-upgrade.md](concepts/CONC-0002-agent-docs-doctor-and-upgrade.md) |
@@ -110,14 +110,14 @@ The point is not the folder tree. The point is making repo memory resumable: sou
 
 ## Choose A Starting Footprint
 
-AGENT-DOCS has one full scaffold today: [scaffold/](scaffold/). You do not need to copy all of it. Profiles choose the starting local docs footprint only; they do not limit later commands, audits, templates, generated views, or upgrade tooling.
+Agent Continuity has one full scaffold today: [scaffold/](scaffold/). You do not need to copy all of it. Profiles choose the starting local docs footprint only; they do not limit later commands, audits, templates, generated views, or upgrade tooling.
 
 | Profile | Use When | Recommended Shape |
 |---|---|---|
 | Core | prototype, script, single-person experiment | `AGENTS.md`, `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md` |
 | Standard | real app with a few features and occasional agents | flat `docs/`, simple `plans/`, optional `ADR` and `DIAG` |
 | Expanded | multiple surfaces, recurring bugs, decisions, or handoffs | topic folders, `SPEC`, `PLAN`, `IMPL`, `ADR`, `DIAG`, session logs |
-| Complete | long-lived repo with many agents, plans, domains, and generated views | copy/adapt [scaffold/](scaffold/) plus `scripts/docs-meta` |
+| Complete | long-lived repo with many agents, plans, domains, and generated views | copy/adapt [scaffold/](scaffold/) plus `agent-continuity docs` |
 
 Compatibility aliases still work for at least one release cycle: `tiny` maps to
 `core`, `small` maps to `standard`, `growing` maps to `expanded`, and `full`
@@ -148,7 +148,7 @@ docs/
   session-logs/
 ```
 
-For a full AGENT-DOCS-style repo, use [scaffold/](scaffold/) as the source tree and delete what is irrelevant.
+For a full Agent Continuity-style repo, use [scaffold/](scaffold/) as the source tree and delete what is irrelevant.
 
 ## Install
 
@@ -159,7 +159,7 @@ Supported platforms and prerequisites:
 - Python 3.10 or newer.
 - Symlink support for the installed `agent-continuity`, `agent-docs`, and
   `agent-docs-init` commands.
-- A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_DOCS_BIN_DIR`.
+- A user-local bin directory such as `~/.local/bin` on `PATH`, or set `AGENT_CONTINUITY_BIN_DIR`.
 
 Use the installed command when you want the CLI to explain profiles, show the structure preview, and copy the selected scaffold. If you omit the target path, it uses the current directory in non-interactive mode and asks about the current directory in interactive mode:
 
@@ -169,32 +169,32 @@ agent-continuity init
 
 The installer is idempotent around existing project files: it may create missing docs inside an existing `docs/` folder, but it lists exact file conflicts and refuses to overwrite those files in write mode unless `--force` is explicitly provided.
 
-Explicit write installs create `.agent-docs/manifest.json`. Manifest schema
-version 1 records the AGENT-DOCS source repo/ref/commit when available, the
-selected profile, optional components such as `docs-meta`, installed file
-records, generated views produced by `docs-meta`, and timestamps. Only reusable AGENT-DOCS tooling such as
-`scripts/docs-meta` and `tests/docs-meta-smoke.sh` is checksummed and given an
-expected file mode as `agent-docs-owned`; starter Markdown is recorded as
+Explicit write installs create `.agent-continuity/manifest.json`. Manifest schema
+version 1 records the Agent Continuity source repo/ref/commit when available, the
+selected profile, optional components such as `agent-continuity-docs`, installed file
+records, generated views produced by Agent Continuity, and timestamps. Only reusable tooling such as
+`scripts/agent-continuity-docs` and `tests/agent-continuity-docs-smoke.sh` is checksummed and given an
+expected file mode as `agent-continuity-owned`; starter Markdown is recorded as
 `project-owned-after-install` so future update tooling does not treat target
 repo truth as automatically replaceable.
 
-Legacy installs that predate `.agent-docs/manifest.json` can be inspected with
+Legacy installs that predate `.agent-continuity/manifest.json` can be inspected with
 a preview-first baseline command:
 
 ```bash
-agent-continuity baseline --dry-run /path/to/project --profile standard --docs-meta yes
-agent-continuity baseline --write /path/to/project --profile standard --docs-meta yes
-agent-continuity baseline --dry-run --generated-views /path/to/project --profile standard --docs-meta yes
-agent-continuity baseline --write --generated-views /path/to/project --profile standard --docs-meta yes
+agent-continuity baseline --dry-run /path/to/project --profile standard --docs yes
+agent-continuity baseline --write /path/to/project --profile standard --docs yes
+agent-continuity baseline --dry-run --generated-views /path/to/project --profile standard --docs yes
+agent-continuity baseline --write --generated-views /path/to/project --profile standard --docs yes
 ```
 
 `--dry-run` is the default. Baseline write mode creates only
-`.agent-docs/manifest.json`, writes it last, and refuses existing manifests,
-unknown profiles, unsafe paths, missing/drifted AGENT-DOCS-owned tooling,
+`.agent-continuity/manifest.json`, writes it last, and refuses existing manifests,
+unknown profiles, unsafe paths, missing/drifted Agent Continuity-owned tooling,
 wrong file modes, symlinked paths, and non-regular files. Starter Markdown is
 recorded as `project-owned-after-install` when present, without checksums, and
 is not modified. `--generated-views` is an explicit opt-in that registers only
-existing recognized `scripts/docs-meta update` outputs with generated-view
+existing recognized `agent-continuity docs update` outputs with generated-view
 markers. It does not run generators or overwrite files.
 
 After a manifest-backed install, inspect the target without writing files:
@@ -219,15 +219,15 @@ agent-continuity upgrade --write --tooling-only --generated-views /path/to/proje
 ```
 
 Tooling-only write mode may restore missing manifest-owned tooling, update
-manifest-clean AGENT-DOCS-owned tooling to the current upstream action, repair a
+manifest-clean Agent Continuity-owned tooling to the current upstream action, repair a
 missing executable bit when content still matches the manifest, and update the
-manifest last. It creates backups under `.agent-docs/backups/<timestamp>/` for
-touched existing files plus `.agent-docs/backups/<timestamp>/audit.json` for the
+manifest last. It creates backups under `.agent-continuity/backups/<timestamp>/` for
+touched existing files plus `.agent-continuity/backups/<timestamp>/audit.json` for the
 write batch. `agent-continuity upgrade --write` without `--tooling-only` is refused,
 and project-owned Markdown remains report-only. Generated views remain
 report-only unless `--generated-views` is also provided; that opt-in mode
 regenerates only manifest-tracked generated views through supported local
-generators, initially `scripts/docs-meta update`.
+generators, initially `agent-continuity docs update`.
 
 Exit codes are `0` for healthy/current, `1` for warnings or actionable drift,
 and `2` for invalid usage, refused, unknown, or incompatible shapes.
@@ -241,26 +241,26 @@ agent-continuity init --profile standard --dry-run
 agent-continuity init --profile standard --write
 agent-continuity init /path/to/project --profile standard --dry-run
 agent-continuity init /path/to/project --profile expanded --dry-run
-agent-continuity init /path/to/project --profile standard --docs-meta yes --write
+agent-continuity init /path/to/project --profile standard --docs yes --write
 agent-continuity init /path/to/project --profile complete --dry-run
 agent-continuity init /path/to/project --profile complete --write
 ```
 
-If you have cloned this repo and want to run the script directly during development, use `scripts/agent-docs-init` from the repo root.
+If you have cloned this repo and want to run the script directly during development, use `scripts/agent-continuity-init` from the repo root.
 
 `core` and `standard` synthesize smaller flat files such as `docs/CURRENT_STATE.md` and `docs/ARCHITECTURE.md`. `expanded` and `complete` copy selected files from the full scaffold, where current-state and architecture docs live under `docs/orientation/`. This keeps smaller project docs lighter without duplicating the whole scaffold tree.
 
 Manual install still works if you want the full scaffold plus deterministic metadata tooling:
 
 ```bash
-AGENT_DOCS=/path/to/agent-continuity
-cp "$AGENT_DOCS/scaffold/AGENTS.md" ./AGENTS.md
+AGENT_CONTINUITY_SOURCE=/path/to/agent-continuity
+cp "$AGENT_CONTINUITY_SOURCE/scaffold/AGENTS.md" ./AGENTS.md
 mkdir -p docs
-rsync -av "$AGENT_DOCS/scaffold/docs/" ./docs/
+rsync -av "$AGENT_CONTINUITY_SOURCE/scaffold/docs/" ./docs/
 mkdir -p scripts tests
-cp "$AGENT_DOCS/scripts/docs-meta" ./scripts/docs-meta
-cp "$AGENT_DOCS/tests/docs-meta-smoke.sh" ./tests/docs-meta-smoke.sh
-chmod +x ./scripts/docs-meta ./tests/docs-meta-smoke.sh
+cp "$AGENT_CONTINUITY_SOURCE/scripts/agent-continuity-docs" ./scripts/agent-continuity-docs
+cp "$AGENT_CONTINUITY_SOURCE/tests/agent-continuity-docs-smoke.sh" ./tests/agent-continuity-docs-smoke.sh
+chmod +x ./scripts/agent-continuity-docs ./tests/agent-continuity-docs-smoke.sh
 ```
 
 Then adapt placeholders, delete irrelevant examples, and make `AGENTS.md` plus the current-state doc truthful for that repo.
@@ -338,7 +338,7 @@ Use the smallest durable doc that answers the actual question.
 
 ## Stable File Naming
 
-AGENT-DOCS artifacts use uppercase stable IDs in both frontmatter and filenames.
+Agent Continuity artifacts use uppercase stable IDs in both frontmatter and filenames.
 Do not create generic source docs like `plan.md`, `spec.md`, or `brief.md` when
 the artifact has an ID family.
 
@@ -354,7 +354,7 @@ The parent plan folder and parent plan filename must repeat the same `PLAN-####`
 ID and slug. Implementation briefs live in that plan folder and use
 `IMPL-<plan-id>-<sequence>-<slug>.md`.
 
-When `scripts/docs-meta` exists, prefer it over guessing IDs or paths. When it
+When `agent-continuity docs` exists, prefer it over guessing IDs or paths. When it
 does not exist, inspect existing docs and preserve the same uppercase ID pattern.
 
 ## Folder Model
@@ -433,27 +433,27 @@ The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. Copy 
 | [scaffold/docs/research/](scaffold/docs/research/) | `RSCH-*` convention and research notes |
 | [scaffold/docs/operations/](scaffold/docs/operations/) | release and operational checklists |
 | [scaffold/docs/marketing/](scaffold/docs/marketing/) | launch and campaign planning |
-| [scripts/agent-docs](scripts/agent-docs) | command namespace for AGENT-DOCS workflows |
-| [scripts/agent-docs-init](scripts/agent-docs-init) | compatibility selected scaffold installer |
-| [scripts/docs-meta](scripts/docs-meta) | deterministic docs metadata CLI |
+| [scripts/agent-docs](scripts/agent-docs) | command namespace for Agent Continuity workflows |
+| [scripts/agent-continuity-init](scripts/agent-continuity-init) | compatibility selected scaffold installer |
+| [agent-continuity docs](scripts/agent-continuity-docs) | structured-document command |
 
 ## Docs Meta
 
-When installed in a repo, [scripts/docs-meta](scripts/docs-meta) scans Markdown filenames and frontmatter as the source of truth, then creates generated views from that state.
+`agent-continuity docs` scans Markdown filenames and frontmatter as the source of truth, then creates generated views from that state. The installed implementation lives at [scripts/agent-continuity-docs](scripts/agent-continuity-docs).
 
-This exists because agents are good at synthesis but unreliable at bookkeeping. They can forget the next ID, miss a stale status, or hand-edit a registry that no longer matches the repo. `docs-meta` moves that work into a small script.
+This exists because agents are good at synthesis but unreliable at bookkeeping. They can forget the next ID, miss a stale status, or hand-edit a registry that no longer matches the repo. Agent Continuity moves that work into deterministic tooling.
 
 | Need | Command |
 |---|---|
-| Create a doc | `scripts/docs-meta new <family> "<title>" --domain <domain>` |
-| Find next ID | `scripts/docs-meta next <family>` |
-| Update generated views | `scripts/docs-meta update` |
-| Validate metadata and generated views | `scripts/docs-meta check` |
-| Validate structured todos | `scripts/docs-meta check-todos` |
-| Review open loops | `scripts/docs-meta review` |
-| Inspect links | `scripts/docs-meta links`, `check-links`, `backlinks`, `orphans` |
-| Move docs safely | `scripts/docs-meta move OLD NEW --dry-run` |
-| Check freshness | `scripts/docs-meta health --write` |
+| Create a doc | `agent-continuity docs new <family> "<title>" --domain <domain>` |
+| Find next ID | `agent-continuity docs next <family>` |
+| Update generated views | `agent-continuity docs update` |
+| Validate metadata and generated views | `agent-continuity docs check` |
+| Validate structured todos | `agent-continuity docs check-todos` |
+| Review open loops | `agent-continuity docs review` |
+| Inspect links | `agent-continuity docs links`, `check-links`, `backlinks`, `orphans` |
+| Move docs safely | `agent-continuity docs move OLD NEW --dry-run` |
+| Check freshness | `agent-continuity docs health --write` |
 
 Supported stable-ID families include `IDEA`, `RSCH`, `EVAL`, `DIAG`, `CONC`, `SPEC`, `PLAN`, `IMPL`, `ADR`, `LRN`, `EXPL`, `QST`, and `TODO`.
 

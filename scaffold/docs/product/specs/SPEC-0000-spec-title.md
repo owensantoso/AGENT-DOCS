@@ -38,7 +38,7 @@ docs/<domain>/specs/SPEC-0000-<slug>.md
 
 Register this spec in `docs/SPECS.md`.
 
-Prefer `scripts/docs-meta new spec "<title>"` when the repo has `docs-meta`; it will assign the next `SPEC-####`, fill timestamps and repo state, and place the file in the topic-first specs folder.
+Prefer `agent-continuity docs new spec "<title>"` when the repo has Agent Continuity document tooling; it will assign the next `SPEC-####`, fill timestamps and repo state, and place the file in the topic-first specs folder.
 
 ## Summary
 

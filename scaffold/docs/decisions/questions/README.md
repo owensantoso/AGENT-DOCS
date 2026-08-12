@@ -7,7 +7,7 @@ Use `QST-*` only when unresolved uncertainty needs status, ownership, links, or 
 Create a new question with:
 
 ```bash
-scripts/docs-meta new question "Title" --domain product
+agent-continuity docs new question "Title" --domain product
 ```
 
 ## Statuses
@@ -25,4 +25,4 @@ archived
 
 ## Template
 
-Start from `QST-0000-question-title.md` or `scripts/docs-meta new question`.
+Start from `QST-0000-question-title.md` or `agent-continuity docs new question`.

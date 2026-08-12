@@ -11,7 +11,7 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 - For manual full-scaffold setup, set `AGENT_DOCS=/path/to/agent-continuity` in the target repo shell.
 - For manual full-scaffold setup, copy `scaffold/AGENTS.md` to the target repo root, merging if one already exists.
 - For manual full-scaffold setup, copy `scaffold/docs/` into the target repo's `docs/` folder.
-- Optionally copy `scripts/docs-meta` and `tests/docs-meta-smoke.sh`.
+- Optionally copy `agent-continuity docs` and `tests/agent-continuity-docs-smoke.sh`.
 - Optionally copy `scaffold/agent-instructions/` into a repo-health or team instructions folder.
 - Do not copy `scaffold/README.md` over the target repo's root README.
 - Delete or rewrite example `0000` files before treating the docs as target-repo truth.
@@ -49,7 +49,7 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 - Create a codebase map for the main app or service surface.
 - Create a testing guide that lists the real verification commands.
 - Create a seams guide if the repo has compatibility layers or transitional models.
-- Copy `scripts/docs-meta` if the repo should deterministically manage `IDEA-*`, `CONC-*`, `SPEC-*`, `PLAN-*`, `IMPL-*`, status, and docs todos.
+- Copy `agent-continuity docs` if the repo should deterministically manage `IDEA-*`, `CONC-*`, `SPEC-*`, `PLAN-*`, `IMPL-*`, status, and docs todos.
 - Create `docs/repo-health/state/` for detailed historical state snapshots.
 - Create plan templates with YAML frontmatter and exact timestamp fields.
 
@@ -72,9 +72,9 @@ For exact copy commands and a pasteable handoff prompt, start with [../INSTALL.m
 - Update session logs at closeout for meaningful work.
 - Use commit trailers for meaningful commits.
 - Run `./run check` for ordinary handoff and `./run agent-check` before meaningful closeout/commit when those commands exist.
-- Use `scripts/docs-meta move ... --dry-run` before moving or renaming docs when the repo has `docs-meta`.
-- Run `scripts/docs-meta check-links` after docs layout changes.
-- Run `scripts/docs-meta check-todos` when the repo uses structured `TODO-*` items for durable work.
+- Use `agent-continuity docs move ... --dry-run` before moving or renaming docs when the repo has Agent Continuity document tooling.
+- Run `agent-continuity docs check-links` after docs layout changes.
+- Run `agent-continuity docs check-todos` when the repo uses structured `TODO-*` items for durable work.
 - Keep roadmap ordering intentional.
 - Move over-detailed execution notes out of parent plans and into briefs.
 - Move over-detailed state history out of `CURRENT_STATE.md` and into `state/`.

@@ -1,12 +1,12 @@
 ---
 name: Workflow request
-about: Propose an AGENT-DOCS workflow, scaffold, or tooling improvement
+about: Propose an Agent Continuity workflow, scaffold, or tooling improvement
 labels: enhancement
 ---
 
 ## Problem
 
-What confusion, repeated work, or unsafe handoff should AGENT-DOCS improve?
+What confusion, repeated work, or unsafe handoff should Agent Continuity improve?
 
 ## Target reader or user
 

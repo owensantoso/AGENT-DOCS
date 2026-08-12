@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible AGENT-DOCS problem
+about: Report a reproducible Agent Continuity problem
 labels: bug
 ---
 
@@ -19,7 +19,7 @@ Describe the problem and what you expected instead.
 - OS:
 - Shell:
 - Python version:
-- AGENT-DOCS source or commit:
+- Agent Continuity source or commit:
 - Install profile, if relevant:
 
 ## Output
@@ -30,4 +30,4 @@ customer data before posting.
 ## Verification tried
 
 List any checks you ran, such as `scripts/release-check`,
-`tests/install-smoke.sh`, or `scripts/docs-meta check`.
+`tests/install-smoke.sh`, or `agent-continuity docs check`.

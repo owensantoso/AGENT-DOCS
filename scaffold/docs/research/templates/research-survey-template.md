@@ -5,7 +5,7 @@ Use this for `RSCH-*` docs: sourced surveys that answer "what options exist?" be
 Create new surveys with:
 
 ```bash
-scripts/docs-meta new research "<Title>" --domain <domain>
+agent-continuity docs new research "<Title>" --domain <domain>
 ```
 
 ---

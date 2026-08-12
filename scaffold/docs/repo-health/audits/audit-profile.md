@@ -1,6 +1,6 @@
 # Audit Profile
 
-Repo-local map for reusable AGENT-DOCS audit guides.
+Repo-local map for reusable Agent Continuity audit guides.
 
 Keep reusable audit method in `docs/repo-health/audits/guides/`. Keep repo-specific paths, commands, exclusions, and sensitive surfaces here.
 
@@ -31,17 +31,17 @@ Keep reusable audit method in `docs/repo-health/audits/guides/`. Keep repo-speci
 Read-only checks:
 
 ```bash
-scripts/docs-meta check
-scripts/docs-meta check-links
-scripts/docs-meta check-todos
+agent-continuity docs check
+agent-continuity docs check-links
+agent-continuity docs check-todos
 ```
 
 Write-mode cleanup commands, only when explicitly in scope:
 
 ```bash
-scripts/docs-meta update
-scripts/docs-meta health --write
-scripts/docs-meta roadmap --write
+agent-continuity docs update
+agent-continuity docs health --write
+agent-continuity docs roadmap --write
 ```
 
 Test/build commands:

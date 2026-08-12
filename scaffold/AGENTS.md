@@ -27,7 +27,7 @@ Short index. Read the file for your task.
 | Implementing a plan | relevant `<domain>/plans/README.md` + parent `PLAN-*` doc + relevant `IMPL-*` brief(s) |
 | Starting a fresh implementation session | `docs/repo-health/prompts/reusable-implementer-handoff-prompt.md` |
 | Closing a meaningful work session | `<session logs guide path>` |
-| Resuming or delegating todo-backed work | `docs/TODOS.md` or `scripts/docs-meta todos` + parent plan/brief |
+| Resuming or delegating todo-backed work | `docs/TODOS.md` or `agent-continuity docs todos` + parent plan/brief |
 | Surface codebase orientation | `docs/orientation/CURRENT_STATE.md` + codebase map + surface `AGENTS.md` |
 | Model / repository seam question | `docs/orientation/CURRENT_STATE.md` + seams guide + `docs/orientation/ARCHITECTURE.md` |
 | Verification / test command question | testing guide + surface `AGENTS.md` + any execution-readiness doc |
@@ -38,7 +38,7 @@ Short index. Read the file for your task.
 | Human-facing concept explanation | `docs/EXPLAINERS.md` + relevant `docs/orientation/explainers/EXPL-####-<slug>.md` |
 | Durable open question | `docs/QUESTIONS.md` + relevant `docs/decisions/questions/QST-####-<slug>.md` |
 
-If the repo includes `skills/structured-docs-workflow/SKILL.md`, read it before implementation when the repo uses plans, briefs, structured `TODO-*`, or `docs-meta`.
+If the repo includes `skills/structured-docs-workflow/SKILL.md`, read it before implementation when the repo uses plans, briefs, structured `TODO-*`, or Agent Continuity document tooling.
 
 ## Rules
 

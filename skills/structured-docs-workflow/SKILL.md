@@ -1,13 +1,13 @@
 ---
 name: structured-docs-workflow
-description: Use when working with AGENT-DOCS structured repository docs, including doc-type selection, read order, plans versus implementation briefs, structured TODO-* items, and docs-meta workflows.
+description: Use when working with Agent Continuity structured repository docs, including doc-type selection, read order, plans versus implementation briefs, structured TODO-* items, and Agent Continuity document workflows.
 ---
 
 # Structured Docs Workflow
 
-Use this skill when the task is about how AGENT-DOCS structured docs fit together or how to use them safely in a repo.
+Use this skill when the task is about how Agent Continuity structured docs fit together or how to use them safely in a repo.
 
-This skill is a router and quick-start guide. The source of truth still lives in the repo docs and `scripts/docs-meta`.
+This skill is a router and quick-start guide. The source of truth still lives in the repo docs and `agent-continuity docs`.
 
 ## Fast Path
 
@@ -23,7 +23,7 @@ If you are planning or drafting docs:
 
 1. use this skill first
 2. choose the owning doc type
-3. use `scripts/docs-meta` for IDs, status, and generated views
+3. use `agent-continuity docs` for IDs, status, and generated views
 
 If you are adopting the workflow in another repo:
 
@@ -33,13 +33,13 @@ If you are adopting the workflow in another repo:
 
 ## Use This For
 
-- booting a fresh implementation session in a repo that uses AGENT-DOCS
+- booting a fresh implementation session in a repo that uses Agent Continuity
 - choosing which durable doc type to create or update
 - deciding whether work belongs in an idea, spec, plan, implementation brief, ADR, session log, learning, explainer, or question
 - understanding the read order for a fresh agent
 - using structured `TODO-*` items
-- using `scripts/docs-meta` for IDs, status, generated views, todo checks, and link checks
-- using `scripts/docs-meta review` to find audit findings, routed follow-ups, stale docs, and TODOs needing attention
+- using `agent-continuity docs` for IDs, status, generated views, todo checks, and link checks
+- using `agent-continuity docs review` to find audit findings, routed follow-ups, stale docs, and TODOs needing attention
 - explaining the workflow to another agent or installing it into another repo
 
 ## Start Here
@@ -105,22 +105,22 @@ Rules:
 
 Detailed syntax and lifecycle rules live in `scripts/README.md` and `scaffold/docs/product/plans/README.md`.
 
-## docs-meta Commands
+## Agent Continuity Document Commands
 
-Use `scripts/docs-meta` for mechanical workflow tasks instead of inventing IDs or hand-maintaining registries.
+Use `agent-continuity docs` for mechanical workflow tasks instead of inventing IDs or hand-maintaining registries.
 
 Common commands:
 
 ```bash
-scripts/docs-meta next spec
-scripts/docs-meta next todo
-scripts/docs-meta new plan "Title" --domain product --spec SPEC-0001
-scripts/docs-meta todos --status ready
-scripts/docs-meta review
-scripts/docs-meta check-todos
-scripts/docs-meta update
-scripts/docs-meta check
-scripts/docs-meta check-links
+agent-continuity docs next spec
+agent-continuity docs next todo
+agent-continuity docs new plan "Title" --domain product --spec SPEC-0001
+agent-continuity docs todos --status ready
+agent-continuity docs review
+agent-continuity docs check-todos
+agent-continuity docs update
+agent-continuity docs check
+agent-continuity docs check-links
 ```
 
 ## Verification Wrappers

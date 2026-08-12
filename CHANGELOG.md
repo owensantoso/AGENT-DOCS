@@ -1,18 +1,24 @@
 # Changelog
 
-Adopter-facing AGENT-DOCS changes are recorded here. Internal planning notes,
+Adopter-facing Agent Continuity changes are recorded here. Internal planning notes,
 session logs, and repo-private docs do not need entries unless they change how
-another repository installs, runs, verifies, or reuses AGENT-DOCS.
+another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ## Unreleased
 
 ### For adopters
 
+- Structured-document operations now live under `agent-continuity docs`. Fresh
+  installs use `--docs`, install `scripts/agent-continuity-docs`, record the
+  `agent-continuity-docs` optional component, and emit the
+  `agent-continuity docs update` generated-view marker. Existing
+  `scripts/docs-meta`, `--docs-meta`, old manifest components, and old generator
+  records remain supported as legacy compatibility inputs.
 - The public GitHub repository is now `owensantoso/agent-continuity`; install
   URLs and the installer default source URL now use that repository path.
 - Added a dedicated package-manager distribution follow-up plan for Homebrew or
   a similar install channel after the GitHub install path settles.
-- Added upgrade guidance for existing projects with older AGENT-DOCS installs.
+- Added upgrade guidance for existing projects with older Agent Continuity installs.
 - Added an agent-facing upgrade runbook and clarified that native Windows is
   not first-class yet; WSL is the closest supported Windows path.
 - The primary installed command is now `agent-continuity`. Existing
@@ -23,30 +29,30 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
   manifests record canonical profile keys.
 - The installer still publishes `agent-docs` and `agent-docs-init` as
   compatibility commands for existing adopters.
-- Explicit write installs now create `.agent-docs/manifest.json` with schema
+- Explicit write installs now create `.agent-continuity/manifest.json` with schema
   version 1, profile/source metadata, optional component records, conservative
-  file ownership, and checksums for AGENT-DOCS-owned tooling.
+  file ownership, and checksums for Agent Continuity-owned tooling.
 - Added read-only `agent-continuity doctor [target]` and `agent-continuity upgrade
   --dry-run [target]` reports for manifest health, drift, safe additions,
   candidate tooling updates, generated-view refreshes, manual-review items,
   and refused shapes.
 - Added `agent-continuity upgrade --write --tooling-only [target]` for deterministic
-  AGENT-DOCS-owned tooling updates, missing owned-file restores, executable-bit
-  repairs, backups under `.agent-docs/backups/<timestamp>/`, and manifest-last
+  Agent Continuity-owned tooling updates, missing owned-file restores, executable-bit
+  repairs, backups under `.agent-continuity/backups/<timestamp>/`, and manifest-last
   updates. Bare `agent-continuity upgrade` remains a read-only preview, and
   `--write` without `--tooling-only` is refused. Successful tooling-only writes
   return the post-write classification, so fully repaired targets exit `0`.
 - Added explicit generated-view upgrade writes with `agent-continuity upgrade --write
   --tooling-only --generated-views [target]`. The first supported generator is
-  `scripts/docs-meta update`, and only manifest-tracked generated views are
+  `agent-continuity docs update`, and only manifest-tracked generated views are
   refreshed.
-- Fresh installs that include `docs-meta` now generate and register recognized
-  docs-meta generated views in `.agent-docs/manifest.json`. Legacy baseline
+- Fresh installs that include `agent-continuity-docs` now generate and register recognized
+  structured-document views in `.agent-continuity/manifest.json`. Legacy baseline
   installs can opt in with `agent-continuity baseline --generated-views`, which
   records existing recognized generated views without running generators.
 - Added `agent-continuity baseline --dry-run|--write [target] --profile <profile>
-  --docs-meta auto|yes|no` so legacy installs without `.agent-docs/manifest.json`
-  can preview and create a conservative manifest for matching AGENT-DOCS-owned
+  --docs auto|yes|no` so legacy installs without a manifest
+  can preview and create a conservative manifest for matching Agent Continuity-owned
   tooling while keeping project Markdown unmodified and unchecksummed.
 - Public-readiness work now favors preview-first install and init flows so first
   runs show intended changes before writing files.
@@ -59,7 +65,7 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 
 ### For future agents
 
-- Release checks now include a changelog gate for reusable AGENT-DOCS surfaces.
+- Release checks now include a changelog gate for reusable Agent Continuity surfaces.
   Add a `CHANGELOG.md` entry when installer, scaffold, skill, reusable guide, or
   public command behavior changes.
 - Use `Change-Record: not-needed` in commit or PR text only when an
@@ -70,8 +76,8 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
 
 ### Tooling changes
 
-- Added `agent-continuity init ...` and `agent-docs init ...` as thin
-  delegators to `agent-docs-init`.
+- Added `agent-continuity init ...` as the canonical initializer; `agent-docs`
+  and `agent-docs-init` remain compatibility aliases.
 - Added exit-code semantics for doctor/dry-run reports: `0` healthy/current,
   `1` warnings or actionable drift, and `2` invalid usage, refused, unknown, or
   incompatible shapes.
@@ -93,7 +99,7 @@ another repository installs, runs, verifies, or reuses AGENT-DOCS.
   unsupported generator refusal, malformed record refusal, unsafe path refusal,
   hand-edited drift refusal, generator failure, backups, audits, and manifest
   checksum updates.
-- Added generated-view registration smoke coverage for fresh docs-meta installs
+- Added generated-view registration smoke coverage for fresh Agent Continuity document-tooling installs
   and baseline `--generated-views`.
 - Added `scripts/changelog-check` for local and CI changelog enforcement.
 - Added smoke coverage for changelog-required, changelog-present, internal-only,

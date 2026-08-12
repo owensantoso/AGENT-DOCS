@@ -45,5 +45,5 @@ EVAL-####-<slug>.md
 Create new evaluations with:
 
 ```bash
-scripts/docs-meta new eval "<Title>" --domain <domain>
+agent-continuity docs new eval "<Title>" --domain <domain>
 ```

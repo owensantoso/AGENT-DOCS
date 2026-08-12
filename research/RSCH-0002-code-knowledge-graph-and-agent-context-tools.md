@@ -39,7 +39,7 @@ agent_notes:
   - "Sourcegraph SCIP and Kythe are the strongest prior art for source ranges, symbols, and cross-reference graphs."
   - "CodeQL is powerful for queryable semantic analysis, but its security-analysis database is heavier than a first docs navigation layer."
 related_ideas:
-  - ../docs-meta/ideas/IDEA-0001-docs-to-code-graph.md
+  - ../agent-continuity/ideas/IDEA-0001-docs-to-code-graph.md
 related_evaluations: []
 related_adrs: []
 related_specs: []

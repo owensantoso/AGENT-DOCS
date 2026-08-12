@@ -1,0 +1,1038 @@
+#!/usr/bin/env python3
+"""Install an Agent Continuity scaffold profile into a target repository."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import termios
+import tty
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCAFFOLD = REPO_ROOT / "scaffold"
+ANSI_PATTERN = re.compile(r"\033\[[0-9;]*m")
+ANSI_RESET = "\033[0m"
+IMPORTANT_DOCS = {"AGENTS.md", "ARCHITECTURE.md", "CURRENT_STATE.md", "ROADMAP.md"}
+IMPORTANT_FOLDERS = {("docs", "orientation")}
+QUIET_FOLDERS = {("scripts",), ("tests",)}
+DETAIL_LEFT_WIDTH = 52
+DETAIL_GAP = 4
+AGENT_CONTINUITY_OWNED_PATHS = {
+    Path("scripts/agent-continuity-docs"),
+    Path("tests/agent-continuity-docs-smoke.sh"),
+    Path("scripts/docs-meta"),
+    Path("tests/docs-meta-smoke.sh"),
+}
+MANIFEST_PATH = Path(".agent-continuity/manifest.json")
+LEGACY_MANIFEST_PATH = Path(".agent-docs/manifest.json")
+DOCS_TOOLING_UPDATE_GENERATOR = "agent-continuity docs update"
+LEGACY_DOCS_META_UPDATE_GENERATOR = "scripts/docs-meta update"
+DOCS_TOOLING_UPDATE_OUTPUTS = {
+    Path("docs/IDEAS.md"),
+    Path("docs/CONCEPTS.md"),
+    Path("docs/SPECS.md"),
+    Path("docs/LEARNINGS.md"),
+    Path("docs/EXPLAINERS.md"),
+    Path("docs/QUESTIONS.md"),
+    Path("docs/DOCS-REGISTRY.md"),
+    Path("docs/TODOS.md"),
+    Path("docs/AREAS.md"),
+    Path("docs/AUDITS.md"),
+    Path("docs/ROADMAP-VIEW.md"),
+}
+
+
+@dataclass(frozen=True)
+class Profile:
+    key: str
+    label: str
+    summary: str
+    template_summary: str
+    template_groups: tuple[tuple[str, tuple[tuple[str, str], ...]], ...]
+    implications: tuple[str, ...]
+    structure: tuple[str, ...]
+    docs_tooling_default: bool
+
+
+PUBLIC_PROFILE_KEYS = ("core", "standard", "expanded", "complete")
+PROFILE_ALIASES = {
+    "tiny": "core",
+    "small": "standard",
+    "growing": "expanded",
+    "full": "complete",
+}
+
+
+PROFILES = {
+    "core": Profile(
+        key="core",
+        label="Core",
+        summary="prototype, script, or single-person experiment",
+        template_summary="core state + architecture",
+        template_groups=(
+            (
+                "No repeatable templates",
+                (
+                    ("core docs", "single files only"),
+                ),
+            ),
+        ),
+        implications=(
+            "Lowest ceremony.",
+            "No generated views by default.",
+            "Architecture stays in one small file.",
+        ),
+        structure=("AGENTS.md", "docs/CURRENT_STATE.md", "docs/ARCHITECTURE.md"),
+        docs_tooling_default=False,
+    ),
+    "standard": Profile(
+        key="standard",
+        label="Standard",
+        summary="real app with a few features and occasional agents",
+        template_summary="core docs + light planning",
+        template_groups=(
+            (
+                "Planning",
+                (
+                    ("PLAN-*", "parent plan"),
+                    ("ADR-*", "durable decision"),
+                    ("session log", "work receipt"),
+                ),
+            ),
+        ),
+        implications=(
+            "Still flat enough to scan quickly.",
+            "Plans, decisions, and session logs exist only when useful.",
+            "Good default when you are unsure.",
+        ),
+        structure=(
+            "AGENTS.md",
+            "docs/README.md",
+            "docs/CURRENT_STATE.md",
+            "docs/ARCHITECTURE.md",
+            "docs/ROADMAP.md",
+            "docs/plans/.gitkeep",
+            "docs/decisions/.gitkeep",
+            "docs/session-logs/.gitkeep",
+        ),
+        docs_tooling_default=False,
+    ),
+    "expanded": Profile(
+        key="expanded",
+        label="Expanded",
+        summary="multiple surfaces, recurring handoffs, bugs, or decisions",
+        template_summary="orientation/plans/evidence",
+        template_groups=(
+            (
+                "Planning",
+                (
+                    ("PLAN-*", "parent plan"),
+                    ("ADR-*", "durable decision"),
+                    ("session log", "work receipt"),
+                ),
+            ),
+            (
+                "Evidence",
+                (
+                    ("audit", "dated review finding set"),
+                    ("DIAG-*", "diagnostic record"),
+                    ("research note", "source survey or finding"),
+                ),
+            ),
+        ),
+        implications=(
+            "Introduces topic folders and evidence docs.",
+            "Useful once flat docs start competing for space.",
+            "Installs Agent Continuity document tooling by default for IDs and generated views.",
+        ),
+        structure=(
+            "AGENTS.md",
+            "docs/README.md",
+            "docs/orientation/CURRENT_STATE.md",
+            "docs/orientation/ARCHITECTURE.md",
+            "docs/orientation/ROADMAP.md",
+            "docs/product/plans/README.md",
+            "docs/decisions/adr/README.md",
+            "docs/repo-health/audits/README.md",
+            "docs/repo-health/audits/audit-profile.md",
+            "docs/repo-health/audits/guides/README.md",
+            "docs/repo-health/session-logs/README.md",
+            "docs/repo-health/debugging/README.md",
+            "docs/research/README.md",
+        ),
+        docs_tooling_default=True,
+    ),
+    "complete": Profile(
+        key="complete",
+        label="Complete",
+        summary="long-lived repo with many agents, plans, domains, and generated views",
+        template_summary="all doc families + examples",
+        template_groups=(
+            (
+                "Product work",
+                (
+                    ("SPEC-*", "feature contract"),
+                    ("PLAN-*", "parent plan"),
+                    ("IMPL-*", "implementation brief"),
+                    ("IDEA-*", "raw product thought"),
+                    ("CONC-*", "domain concept"),
+                ),
+            ),
+            (
+                "Decisions and learning",
+                (
+                    ("ADR-*", "durable decision"),
+                    ("LRN-*", "learning"),
+                    ("QST-*", "open question"),
+                ),
+            ),
+            (
+                "Repo health",
+                (
+                    ("audit", "dated review finding set"),
+                    ("DIAG-*", "diagnostic record"),
+                    ("EVAL-*", "evaluation harness"),
+                    ("session log", "work receipt"),
+                ),
+            ),
+            (
+                "Explanatory docs",
+                (
+                    ("EXPL-*", "human explanation"),
+                    ("research note", "source survey or finding"),
+                ),
+            ),
+        ),
+        implications=(
+            "Copies the full scaffold tree.",
+            "Best for multi-surface or long-running repos.",
+            "Installs Agent Continuity document tooling by default.",
+        ),
+        structure=("AGENTS.md", "docs/", "scripts/agent-continuity-docs", "tests/agent-continuity-docs-smoke.sh"),
+        docs_tooling_default=True,
+    ),
+}
+
+PROFILE_CHOICES = tuple(sorted((*PUBLIC_PROFILE_KEYS, *PROFILE_ALIASES)))
+
+
+def canonical_profile_key(profile_key: str) -> str:
+    return PROFILE_ALIASES.get(profile_key, profile_key)
+
+
+def profile_for_key(profile_key: str) -> Profile:
+    return PROFILES[canonical_profile_key(profile_key)]
+
+
+@dataclass(frozen=True)
+class Action:
+    relpath: Path
+    content: str | None = None
+    source: Path | None = None
+    executable: bool = False
+
+
+def tiny_files(profile: Profile) -> list[Action]:
+    return [
+        Action(
+            Path("AGENTS.md"),
+            f"""# {profile.label} Project - Agent Notes
+
+Read `docs/CURRENT_STATE.md` first. Keep docs small and truthful.
+
+## Rules
+
+- Prefer the smallest useful doc.
+- Update `docs/CURRENT_STATE.md` when reality changes.
+- Add more Agent Continuity structure only when missing structure is causing confusion.
+""",
+        ),
+        Action(
+            Path("docs/CURRENT_STATE.md"),
+            """# Current State
+
+What is true today?
+
+## Built
+
+## Important Paths
+
+## Current Risks
+
+## Next Best Step
+""",
+        ),
+        Action(
+            Path("docs/ARCHITECTURE.md"),
+            """# Architecture
+
+Keep this short. For a tiny project, this file should answer:
+
+- What are the main parts?
+- Where does state live?
+- What external systems does this touch?
+- What decisions should future agents preserve?
+""",
+        ),
+    ]
+
+
+def small_files(profile: Profile) -> list[Action]:
+    actions = tiny_files(profile)
+    actions.extend(
+        [
+            Action(
+                Path("docs/README.md"),
+                """# Docs
+
+Start here:
+
+1. `CURRENT_STATE.md` - what is true today
+2. `ARCHITECTURE.md` - system shape and state
+3. `ROADMAP.md` - likely sequence
+4. `plans/` - only when work needs a plan
+5. `decisions/` - only when a choice should survive future work
+6. `session-logs/` - only for meaningful work receipts
+""",
+            ),
+            Action(
+                Path("docs/ROADMAP.md"),
+                """# Roadmap
+
+Use this for sequence and rationale, not as a dumping ground.
+
+## Now
+
+## Next
+
+## Later
+""",
+            ),
+            Action(Path("docs/plans/.gitkeep"), ""),
+            Action(Path("docs/decisions/.gitkeep"), ""),
+            Action(Path("docs/session-logs/.gitkeep"), ""),
+        ]
+    )
+    return actions
+
+
+def copy_actions(relpaths: tuple[str, ...]) -> list[Action]:
+    actions: list[Action] = []
+    for rel in relpaths:
+        source = SCAFFOLD / rel
+        if source.is_file():
+            actions.append(Action(Path(rel), source=source, executable=os.access(source, os.X_OK)))
+    return actions
+
+
+def audit_guide_actions() -> list[Action]:
+    actions: list[Action] = []
+    for path in sorted((REPO_ROOT / "guides" / "audits").rglob("*.md")):
+        target = Path("docs/repo-health/audits/guides") / path.relative_to(REPO_ROOT / "guides" / "audits")
+        actions.append(Action(target, source=path))
+    return actions
+
+
+def growing_files(_: Profile) -> list[Action]:
+    rels = (
+        "AGENTS.md",
+        "docs/README.md",
+        "docs/orientation/CURRENT_STATE.md",
+        "docs/orientation/ARCHITECTURE.md",
+        "docs/orientation/ROADMAP.md",
+        "docs/product/plans/README.md",
+        "docs/decisions/adr/README.md",
+        "docs/repo-health/audits/README.md",
+        "docs/repo-health/audits/audit-profile.md",
+        "docs/repo-health/session-logs/README.md",
+        "docs/repo-health/debugging/README.md",
+        "docs/research/README.md",
+    )
+    return [*copy_actions(rels), *audit_guide_actions()]
+
+
+def full_files(_: Profile) -> list[Action]:
+    actions = [Action(Path("AGENTS.md"), source=SCAFFOLD / "AGENTS.md")]
+    for path in sorted((SCAFFOLD / "docs").rglob("*")):
+        if path.is_file():
+            actions.append(Action(path.relative_to(SCAFFOLD), source=path, executable=os.access(path, os.X_OK)))
+    return [*actions, *audit_guide_actions()]
+
+
+def docs_tooling_actions(include_legacy_docs_meta: bool = False) -> list[Action]:
+    actions = [
+        Action(Path("scripts/agent-continuity-docs"), source=REPO_ROOT / "scripts" / "agent-continuity-docs", executable=True),
+        Action(
+            Path("tests/agent-continuity-docs-smoke.sh"),
+            source=REPO_ROOT / "tests" / "agent-continuity-docs-smoke.sh",
+            executable=True,
+        ),
+    ]
+    if include_legacy_docs_meta:
+        actions.extend(
+            [
+                Action(Path("scripts/docs-meta"), source=REPO_ROOT / "scripts" / "docs-meta", executable=True),
+                Action(Path("tests/docs-meta-smoke.sh"), source=REPO_ROOT / "tests" / "docs-meta-smoke.sh", executable=True),
+            ]
+        )
+    return actions
+
+
+def profile_actions(
+    profile: Profile,
+    include_docs_tooling: bool,
+    include_legacy_docs_meta: bool = False,
+) -> list[Action]:
+    builders = {
+        "core": tiny_files,
+        "standard": small_files,
+        "expanded": growing_files,
+        "complete": full_files,
+    }
+    actions = builders[profile.key](profile)
+    if include_docs_tooling:
+        actions.extend(docs_tooling_actions(include_legacy_docs_meta))
+    return actions
+
+
+def symlinked_target_path(target: Path, actions: list[Action], manifest_path: Path = MANIFEST_PATH) -> Path | None:
+    for action in [*actions, Action(manifest_path)]:
+        current = target
+        if current.is_symlink():
+            return Path(".")
+        for part in action.relpath.parts:
+            current = current / part
+            if current.is_symlink():
+                return current.relative_to(target)
+    return None
+
+
+def git_output(args: list[str]) -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), *args],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    value = result.stdout.strip()
+    return value or None
+
+
+def action_ownership(action: Action) -> str:
+    if action.relpath in AGENT_CONTINUITY_OWNED_PATHS:
+        return "agent-continuity-owned"
+    return "project-owned-after-install"
+
+
+def manifest_for(
+    target: Path,
+    profile: Profile,
+    include_docs_tooling: bool,
+    actions: list[Action],
+    legacy_docs_meta: bool = False,
+) -> dict:
+    timestamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    source_url = git_output(["config", "--get", "remote.origin.url"])
+    source_ref = git_output(["symbolic-ref", "--quiet", "--short", "HEAD"])
+    source_commit = git_output(["rev-parse", "--verify", "HEAD"])
+    records = []
+    for action in actions:
+        record = {
+            "path": action.relpath.as_posix(),
+            "ownership": action_ownership(action),
+        }
+        if legacy_docs_meta and record["ownership"] == "agent-continuity-owned":
+            record["ownership"] = "agent-docs-owned"
+        if record["ownership"] in {"agent-continuity-owned", "agent-docs-owned"}:
+            record["checksum_sha256"] = hashlib.sha256((target / action.relpath).read_bytes()).hexdigest()
+            record["mode"] = "755" if action.executable else "644"
+        records.append(record)
+    return {
+        "schema_version": 1,
+        "installed_at": timestamp,
+        "updated_at": timestamp,
+        "source": {
+            "repository": source_url,
+            "ref": source_ref,
+            "commit": source_commit,
+            "path": str(REPO_ROOT),
+        },
+        "profile": profile.key,
+        "optional_components": ["docs-meta" if legacy_docs_meta else "agent-continuity-docs"] if include_docs_tooling else [],
+        "files": records,
+        "generated_views": generated_view_records(
+            target,
+            LEGACY_DOCS_META_UPDATE_GENERATOR if legacy_docs_meta else DOCS_TOOLING_UPDATE_GENERATOR,
+        )
+        if include_docs_tooling
+        else [],
+    }
+
+
+def write_manifest(
+    target: Path,
+    profile: Profile,
+    include_docs_tooling: bool,
+    actions: list[Action],
+    legacy_docs_meta: bool = False,
+) -> None:
+    manifest_relpath = LEGACY_MANIFEST_PATH if legacy_docs_meta else MANIFEST_PATH
+    manifest_path = target / manifest_relpath
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(
+        json.dumps(
+            manifest_for(target, profile, include_docs_tooling, actions, legacy_docs_meta),
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def generated_view_has_marker(path: Path) -> bool:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return False
+    frontmatter, _ = text.split("\n---", 1) if text.startswith("---\n") and "\n---" in text[4:] else ("", "")
+    return (
+        re.search(r"(?m)^\s*type\s*:\s*generated-view\s*$", frontmatter) is not None
+        or "<!-- Generated by agent-continuity docs update. Do not edit by hand. -->" in text
+        or "<!-- Generated by scripts/docs-meta update. Do not edit by hand. -->" in text
+    )
+
+
+def generated_view_records(target: Path, generator: str = DOCS_TOOLING_UPDATE_GENERATOR) -> list[dict]:
+    records = []
+    for relpath in sorted(DOCS_TOOLING_UPDATE_OUTPUTS):
+        path = target / relpath
+        if not path.is_file() or not generated_view_has_marker(path):
+            continue
+        records.append(
+            {
+                "path": relpath.as_posix(),
+                "generator": generator,
+                "checksum_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+        )
+    return records
+
+
+def generated_view_output_preflight(target: Path) -> bool:
+    for relpath in sorted(DOCS_TOOLING_UPDATE_OUTPUTS):
+        destination = target / relpath
+        current = target
+        for index, part in enumerate(relpath.parts):
+            current = current / part
+            if current.is_symlink():
+                print(
+                    f"Refusing to overwrite existing generated view output through symlink: {Path(*relpath.parts[: index + 1])}",
+                    file=sys.stderr,
+                )
+                return False
+        parent = target
+        for part in relpath.parts[:-1]:
+            parent = parent / part
+            if parent.exists() and not parent.is_dir():
+                print(f"Refusing to overwrite existing generated view output with non-directory parent: {parent}", file=sys.stderr)
+                return False
+        if destination.exists() and not destination.is_file():
+            print(f"Refusing to overwrite existing generated view output that is not a regular file: {relpath}", file=sys.stderr)
+            return False
+        if destination.exists() and destination.stat().st_nlink > 1:
+            print(f"Refusing to overwrite hardlinked generated view output: {relpath}", file=sys.stderr)
+            return False
+        if destination.exists() and not generated_view_has_marker(destination):
+            print(f"Refusing to overwrite existing generated view output: {relpath}", file=sys.stderr)
+            return False
+    return True
+
+
+def run_docs_tooling_update(target: Path) -> bool:
+    docs_tooling = target / "scripts/agent-continuity-docs"
+    if not docs_tooling.is_file():
+        print("Refusing to register generated views: scripts/agent-continuity-docs is missing.", file=sys.stderr)
+        return False
+    if not generated_view_output_preflight(target):
+        return False
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)
+    env.pop("PYTHONHOME", None)
+    env["PYTHONSAFEPATH"] = "1"
+    result = subprocess.run(
+        [sys.executable, str(docs_tooling), "--root", str(target / "docs"), "update"],
+        cwd=target,
+        text=True,
+        capture_output=True,
+        env=env,
+    )
+    if result.returncode != 0:
+        print("Refusing to register generated views: agent-continuity docs update failed.", file=sys.stderr)
+        if result.stdout:
+            print(result.stdout, file=sys.stderr, end="" if result.stdout.endswith("\n") else "\n")
+        if result.stderr:
+            print(result.stderr, file=sys.stderr, end="" if result.stderr.endswith("\n") else "\n")
+        return False
+    for record in generated_view_records(target):
+        print(f"Generated view: {record['path']}")
+    return True
+
+
+def remove_created_paths(target: Path, relpaths: list[Path]) -> None:
+    for relpath in reversed(relpaths):
+        destination = target / relpath
+        try:
+            if destination.is_file() or destination.is_symlink():
+                destination.unlink()
+        except OSError:
+            pass
+        parent = destination.parent
+        while parent != target and parent.is_relative_to(target):
+            try:
+                parent.rmdir()
+            except OSError:
+                break
+            parent = parent.parent
+
+
+def render_profile(profile: Profile, include_docs_tooling: bool, target: Path, write: bool) -> str:
+    lines = [
+        f"Profile: {profile.key} - {profile.label}",
+        f"Use when: {profile.summary}",
+        f"Templates: {profile.template_summary}",
+        "",
+        "Implications:",
+    ]
+    lines.extend(f"- {item}" for item in profile.implications)
+    lines.extend(["", "Structure preview:"])
+    lines.extend(tree_lines(picker_preview_entries(profile, include_docs_tooling)))
+    lines.extend(["", f"Target: {target}", "Mode: write" if write else "Mode: dry-run"])
+    return "\n".join(lines)
+
+
+def preview_entries(profile: Profile, include_docs_tooling: bool) -> list[str]:
+    if profile.key == "complete":
+        return [str(action.relpath) for action in profile_actions(profile, include_docs_tooling)]
+    return structure_entries(profile, include_docs_tooling)
+
+
+def picker_preview_entries(profile: Profile, include_docs_tooling: bool | None = None) -> list[str]:
+    if include_docs_tooling is None:
+        include_docs_tooling = profile.docs_tooling_default
+    if profile.key != "complete":
+        return preview_entries(profile, include_docs_tooling)
+    doc_areas = [
+        f"docs/{path.name}/"
+        for path in sorted(SCAFFOLD.joinpath("docs").iterdir(), key=lambda item: item.name.lower())
+        if path.is_dir()
+    ]
+    entries = ["AGENTS.md", *doc_areas]
+    if include_docs_tooling:
+        entries.extend(["scripts/agent-continuity-docs", "tests/agent-continuity-docs-smoke.sh"])
+    return entries
+
+
+def structure_entries(profile: Profile, include_docs_tooling: bool) -> list[str]:
+    entries = list(profile.structure)
+    if include_docs_tooling and "scripts/agent-continuity-docs" not in entries:
+        entries.extend(["scripts/agent-continuity-docs", "tests/agent-continuity-docs-smoke.sh"])
+    return entries
+
+
+def terminal_style(text: str, code: str) -> str:
+    return f"\033[{code}m{text}{ANSI_RESET}"
+
+
+def tree_lines(entries: list[str], stylize: bool = False) -> list[str]:
+    tree: dict[str, dict] = {}
+    explicit_dirs: set[tuple[str, ...]] = set()
+    for entry in entries:
+        is_dir = entry.endswith("/")
+        parts = [part for part in entry.strip("/").split("/") if part]
+        if parts and parts[-1] == ".gitkeep":
+            parts = parts[:-1]
+            is_dir = True
+        elif parts and parts[-1] == "README.md":
+            continue
+        if not parts:
+            continue
+        if is_dir and parts:
+            explicit_dirs.add(tuple(parts))
+        node = tree
+        for part in parts:
+            node = node.setdefault(part, {})
+
+    unicode_output = (sys.stdout.encoding or "").lower() not in {"ascii", "ansi_x3.4-1968", "us-ascii"}
+    tee = "├── " if unicode_output else "|-- "
+    elbow = "└── " if unicode_output else "`-- "
+    pipe = "│   " if unicode_output else "|   "
+    space = "    "
+
+    def walk(node: dict[str, dict], prefix: str = "", path: tuple[str, ...] = ()) -> list[str]:
+        lines: list[str] = []
+        items = list(node.items())
+        for index, (name, children) in enumerate(items):
+            last = index == len(items) - 1
+            branch = elbow if last else tee
+            child_path = path + (name,)
+            suffix = "/" if children or child_path in explicit_dirs else ""
+            label = f"{name}{suffix}"
+            if stylize and (name in IMPORTANT_DOCS or child_path in IMPORTANT_FOLDERS):
+                label = terminal_style(label, "36")
+            elif stylize and child_path in QUIET_FOLDERS:
+                label = terminal_style(label, "2")
+            lines.append(f"{prefix}{branch}{label}")
+            if children:
+                extension = space if last else pipe
+                lines.extend(walk(children, prefix + extension, child_path))
+        return lines
+
+    return walk(tree)
+
+
+def fit_terminal_line_to_width(text: str, width: int) -> str:
+    if width < 20:
+        width = 20
+    plain = ANSI_PATTERN.sub("", text)
+    if len(plain) <= width:
+        return text
+    return plain[: max(0, width - 3)] + "..."
+
+
+def terminal_width(text: str) -> int:
+    return len(ANSI_PATTERN.sub("", text))
+
+
+def pad_terminal_line(text: str, width: int) -> str:
+    fitted = fit_terminal_line_to_width(text, width)
+    return fitted + (" " * max(0, width - terminal_width(fitted)))
+
+
+def template_lines(profile: Profile, stylize: bool = False) -> list[str]:
+    lines: list[str] = []
+    for group_index, (group, items) in enumerate(profile.template_groups):
+        if group_index:
+            lines.append("")
+        lines.append(group)
+        for name, description in items:
+            lines.append(f"  {name} - {description}")
+    return lines
+
+
+def split_detail_columns(left_heading: str, left: list[str], right: list[str], width: int, height: int) -> list[str]:
+    if width < 72:
+        lines = [left_heading, *left, "", "Template/doc types", *right]
+        if len(lines) > height:
+            return lines[: max(0, height - 1)] + [f"... {len(lines) - max(0, height - 1)} more lines"]
+        return lines
+
+    def cap_column(lines: list[str], label: str) -> list[str]:
+        if len(lines) <= height:
+            return lines
+        shown_count = max(0, height - 1)
+        return lines[:shown_count] + [f"... {len(lines) - shown_count} more {label}"]
+
+    gap = " " * DETAIL_GAP
+    left_width = min(DETAIL_LEFT_WIDTH, max(30, width - len(gap) - 24))
+    right_width = max(24, width - left_width - len(gap))
+    left_lines = cap_column([left_heading, *left], "structure lines")
+    right_lines = cap_column(["Template/doc types", *right], "template lines")
+    row_count = max(len(left_lines), len(right_lines))
+    rows: list[str] = []
+    for row in range(row_count):
+        left_text = left_lines[row] if row < len(left_lines) else ""
+        right_text = right_lines[row] if row < len(right_lines) else ""
+        rows.append(f"{pad_terminal_line(left_text, left_width)}{gap}{fit_terminal_line_to_width(right_text, right_width)}")
+    return rows
+
+
+def render_profile_details(keys: list[str], index: int, terminal_size: os.terminal_size) -> list[str]:
+    profile = PROFILES[keys[index]]
+    lines = [
+        "Choose starting docs footprint",
+        "Use arrow keys or j/k, then Enter. Recommended default: standard.",
+    ]
+    for i, key in enumerate(keys):
+        profile_row = PROFILES[key]
+        marker = ">" if i == index else " "
+        row = f"{marker} {profile_row.key:<7} {profile_row.label} - {profile_row.summary}"
+        if i == index:
+            row = terminal_style(fit_terminal_line_to_width(row, terminal_size.columns), "1;7")
+        else:
+            row = fit_terminal_line_to_width(row, terminal_size.columns)
+        lines.append(row)
+    lines.extend(
+        [
+            "",
+            f"Selected: {profile.label} | Templates: {profile.template_summary} | Legend: {terminal_style('start here', '36')}, {terminal_style('tooling', '2')}",
+        ]
+    )
+    remaining_rows = max(0, terminal_size.lines - len(lines))
+    structure_heading = "Structure summary (exact file list after Enter)" if profile.key == "complete" else "Structure"
+    structure = tree_lines(picker_preview_entries(profile), stylize=True)
+    templates = template_lines(profile, stylize=True)
+    lines.extend(split_detail_columns(structure_heading, structure, templates, terminal_size.columns, remaining_rows))
+    return lines
+
+
+def choose_profile() -> str:
+    keys = list(PUBLIC_PROFILE_KEYS)
+    index = keys.index("standard")
+    first_draw = True
+
+    def draw() -> None:
+        nonlocal first_draw
+        terminal_size = shutil.get_terminal_size((100, 24))
+        if first_draw:
+            print("\033[?25l\033[2J\033[H", end="")
+            first_draw = False
+        else:
+            print("\033[H\033[J", end="")
+        print("\n".join(render_profile_details(keys, index, terminal_size)))
+
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setcbreak(fd)
+        while True:
+            draw()
+            char = sys.stdin.read(1)
+            if char in {"\r", "\n"}:
+                print("")
+                return keys[index]
+            if char == "\x03":
+                raise KeyboardInterrupt
+            if char in {"k", "K"}:
+                index = (index - 1) % len(keys)
+            elif char in {"j", "J"}:
+                index = (index + 1) % len(keys)
+            elif char == "\x1b" and sys.stdin.read(1) == "[":
+                arrow = sys.stdin.read(1)
+                if arrow == "A":
+                    index = (index - 1) % len(keys)
+                elif arrow == "B":
+                    index = (index + 1) % len(keys)
+    finally:
+        print("\033[?25h", end="")
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+
+def render_target_details(keys: list[str], index: int, cwd: Path, terminal_size: os.terminal_size) -> list[str]:
+    labels = {
+        "current": ("Current folder", str(cwd)),
+        "other": ("Other folder", "type a path after selecting"),
+    }
+    lines = [
+        "Choose target folder",
+        "Use arrow keys or j/k, then Enter. Recommended default: current.",
+    ]
+    for i, key in enumerate(keys):
+        label, summary = labels[key]
+        marker = ">" if i == index else " "
+        row = f"{marker} {key:<7} {label} - {summary}"
+        if i == index:
+            row = terminal_style(fit_terminal_line_to_width(row, terminal_size.columns), "1;7")
+        else:
+            row = fit_terminal_line_to_width(row, terminal_size.columns)
+        lines.append(row)
+    return lines
+
+
+def choose_target() -> Path:
+    cwd = Path.cwd()
+    keys = ["current", "other"]
+    index = 0
+    first_draw = True
+
+    def draw() -> None:
+        nonlocal first_draw
+        terminal_size = shutil.get_terminal_size((100, 24))
+        if first_draw:
+            print("\033[?25l\033[2J\033[H", end="")
+            first_draw = False
+        else:
+            print("\033[H\033[J", end="")
+        print("\n".join(render_target_details(keys, index, cwd, terminal_size)))
+
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setcbreak(fd)
+        while True:
+            draw()
+            char = sys.stdin.read(1)
+            if char in {"\r", "\n"}:
+                print("")
+                choice = keys[index]
+                break
+            if char == "\x03":
+                raise KeyboardInterrupt
+            if char in {"k", "K"}:
+                index = (index - 1) % len(keys)
+            elif char in {"j", "J"}:
+                index = (index + 1) % len(keys)
+            elif char == "\x1b" and sys.stdin.read(1) == "[":
+                arrow = sys.stdin.read(1)
+                if arrow == "A":
+                    index = (index - 1) % len(keys)
+                elif arrow == "B":
+                    index = (index + 1) % len(keys)
+    finally:
+        print("\033[?25h", end="")
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+    if choice == "current":
+        return cwd
+    typed = input("Target folder path: ").strip()
+    return Path(typed).expanduser() if typed else cwd
+
+
+def parse_args(prog: str | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog=prog, description="Install an Agent Continuity scaffold profile into a target repository.")
+    parser.add_argument("target", type=Path, nargs="?", help="Target repository root. Defaults to the current directory.")
+    parser.add_argument("--profile", choices=PROFILE_CHOICES, help="Scaffold footprint. Recommended default when unsure: standard.")
+    parser.add_argument(
+        "--docs",
+        choices=["auto", "yes", "no"],
+        default=None,
+        help="Install Agent Continuity structured-document tooling. Default: profile-specific.",
+    )
+    parser.add_argument(
+        "--docs-meta",
+        choices=["auto", "yes", "no"],
+        default=None,
+        help=argparse.SUPPRESS,
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="Preview changes without writing. This is the default.")
+    mode.add_argument("--write", action="store_true", help="Write files.")
+    parser.add_argument("--force", action="store_true", help="Overwrite existing files.")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args(
+        os.environ.get("AGENT_CONTINUITY_INIT_PROG")
+        or os.environ.get("AGENT_DOCS_INIT_PROG")
+    )
+    profile_key = args.profile
+    if not profile_key:
+        if sys.stdin.isatty() and sys.stdout.isatty():
+            profile_key = choose_profile()
+        else:
+            print("--profile is required in non-interactive mode. Recommended default: --profile standard", file=sys.stderr)
+            return 2
+
+    profile = profile_for_key(profile_key)
+    if args.docs is not None and args.docs_meta is not None and args.docs != args.docs_meta:
+        print("--docs and legacy --docs-meta cannot specify different values", file=sys.stderr)
+        return 2
+    legacy_docs_meta = args.docs is None and args.docs_meta is not None
+    docs_selection = args.docs if args.docs is not None else args.docs_meta
+    docs_selection = docs_selection or "auto"
+    include_docs_tooling = profile.docs_tooling_default if docs_selection == "auto" else docs_selection == "yes"
+    write = bool(args.write)
+    if args.target:
+        target = args.target.expanduser().resolve()
+    elif sys.stdin.isatty() and sys.stdout.isatty():
+        target = choose_target().resolve()
+    else:
+        target = Path.cwd().resolve()
+    actions = profile_actions(profile, include_docs_tooling, legacy_docs_meta)
+
+    print(render_profile(profile, include_docs_tooling, target, write))
+    print("")
+
+    manifest_relpath = LEGACY_MANIFEST_PATH if legacy_docs_meta else MANIFEST_PATH
+    symlink_relpath = symlinked_target_path(target, actions, manifest_relpath)
+    if write and symlink_relpath is not None:
+        print(f"Refusing to write through symlinked target path: {symlink_relpath}", file=sys.stderr)
+        return 1
+
+    if write and include_docs_tooling and not generated_view_output_preflight(target):
+        return 1
+
+    if write and ((target / MANIFEST_PATH).exists() or (target / LEGACY_MANIFEST_PATH).exists()):
+        existing_manifest = MANIFEST_PATH if (target / MANIFEST_PATH).exists() else LEGACY_MANIFEST_PATH
+        print(f"Refusing to overwrite existing manifest: {existing_manifest}", file=sys.stderr)
+        print("Run a future baseline or upgrade command after reviewing the existing install.", file=sys.stderr)
+        return 1
+
+    existing_targets = [
+        action.relpath
+        for action in [*actions, Action(manifest_relpath)]
+        if (target / action.relpath).exists()
+    ]
+    if existing_targets:
+        print("Existing target files found:")
+        for relpath in existing_targets:
+            print(f"- {relpath}")
+        if args.force:
+            print("Write mode will overwrite these files because --force is set.")
+        else:
+            print("Write mode will refuse to overwrite these files unless --force is provided.")
+        print("")
+
+    conflicts = [] if args.force else existing_targets
+    if conflicts and write:
+        print("Refusing to overwrite existing files without --force:", file=sys.stderr)
+        for relpath in conflicts:
+            print(f"- {relpath}", file=sys.stderr)
+        return 1
+
+    verb = "Created" if write else "Would create"
+    created_paths: list[Path] = []
+    for action in actions:
+        destination = target / action.relpath
+        print(f"{verb}: {action.relpath}")
+        if not write:
+            continue
+        existed_before = destination.exists() or destination.is_symlink()
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if action.source:
+            shutil.copy2(action.source, destination)
+        else:
+            destination.write_text(action.content or "", encoding="utf-8")
+        if action.executable:
+            destination.chmod(destination.stat().st_mode | 0o111)
+        if not existed_before:
+            created_paths.append(action.relpath)
+
+    if write and include_docs_tooling:
+        existing_generated_outputs = {
+            relpath for relpath in DOCS_TOOLING_UPDATE_OUTPUTS if (target / relpath).exists() or (target / relpath).is_symlink()
+        }
+        if not run_docs_tooling_update(target):
+            generated_paths_created = [
+                relpath
+                for relpath in sorted(DOCS_TOOLING_UPDATE_OUTPUTS)
+                if relpath not in existing_generated_outputs and ((target / relpath).exists() or (target / relpath).is_symlink())
+            ]
+            remove_created_paths(target, [*generated_paths_created, *created_paths])
+            return 1
+
+    if write:
+        write_manifest(target, profile, include_docs_tooling, actions, legacy_docs_meta)
+        print(f"Created: {manifest_relpath}")
+    else:
+        print("\nDry run only. Re-run with --write to create files.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

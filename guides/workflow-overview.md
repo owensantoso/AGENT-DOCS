@@ -37,7 +37,7 @@ These describe where the repo is going:
 - `docs/IDEAS.md` as the global registry for `IDEA-####` IDs
 - `docs/SPECS.md` as the global registry for `SPEC-####` IDs
 
-When available, use `scripts/docs-meta` to derive IDs, status, registries, and todos from the repo tree instead of manually maintaining counters. Use structured `TODO-*` items for durable cross-session coordination; keep one-off local checklist items as ordinary Markdown checkboxes.
+When available, use `agent-continuity docs` to derive IDs, status, registries, and todos from the repo tree instead of manually maintaining counters. Use structured `TODO-*` items for durable cross-session coordination; keep one-off local checklist items as ordinary Markdown checkboxes.
 
 Use these to understand sequencing, target shape, and feature intent.
 
@@ -139,4 +139,4 @@ If the docs are doing their job, a fresh agent should be able to enter midstream
 
 When user feedback reveals a wrong assumption, ambiguous docs, missed rule, or tooling gap, use `reflect-and-improve`: pause, identify what made the miss likely, update the smallest durable source, and record the lesson when it should survive the chat.
 
-When moving or renaming docs, use `docs-meta move` so Markdown backlinks are updated from the same link graph that powers `backlinks`, `check-links`, `orphans`, and `normalize-links`.
+When moving or renaming docs, use `agent-continuity docs move` so Markdown backlinks are updated from the same link graph that powers `backlinks`, `check-links`, `orphans`, and `normalize-links`.

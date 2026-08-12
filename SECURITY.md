@@ -1,12 +1,12 @@
 # Security Policy
 
-AGENT-DOCS is a documentation workflow and local tooling kit. It should not
+Agent Continuity is a documentation workflow and local tooling kit. It should not
 collect credentials, require long-lived tokens in command lines, or overwrite
 project-owned Markdown without explicit user intent.
 
 ## Supported Versions
 
-Until AGENT-DOCS publishes tagged releases, security fixes apply to the `main`
+Until Agent Continuity publishes tagged releases, security fixes apply to the `main`
 branch. After tagged releases exist, this file should be updated with the
 supported release range.
 

@@ -1,17 +1,17 @@
-# Docs Meta
+# Agent Continuity Scripts
 
 This folder contains two main scripts:
 
 | Script | Purpose |
 |---|---|
 | `../install.sh` | bootstrap installer that puts `agent-continuity` plus compatibility commands on PATH |
-| `agent-docs` | compatibility command namespace for AGENT-DOCS workflows |
+| `agent-docs` | compatibility command namespace for Agent Continuity workflows |
 | `agent-docs-init` | compatibility selected scaffold installer for target repos |
-| `docs-meta` | deterministic metadata helper once docs are installed |
+| `agent-continuity-docs` | implementation behind `agent-continuity docs` |
 | `changelog-check` | changelog gate for reusable adopter-facing surfaces |
 | `release-check` | local release-readiness wrapper used by CI |
 
-## Agent Docs Init
+## Agent Continuity Init
 
 From the repo you want to document, install or update the command and preview the recommended standard footprint:
 
@@ -29,16 +29,16 @@ For private forks, authenticate with GitHub CLI and pipe the raw installer throu
 
 ```bash
 gh auth login
-gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/agent-continuity/contents/install.sh | AGENT_DOCS_REPO_URL=https://github.com/OWNER/agent-continuity.git bash -s -- --profile standard --dry-run
+gh api -H "Accept: application/vnd.github.raw" /repos/OWNER/agent-continuity/contents/install.sh | AGENT_CONTINUITY_REPO_URL=https://github.com/OWNER/agent-continuity.git bash -s -- --profile standard --dry-run
 ```
 
-Then use `agent-continuity init` to install the smallest useful AGENT-DOCS
+Then use `agent-continuity init` to install the smallest useful Agent Continuity
 footprint into another repo:
 
 ```bash
 agent-continuity init --profile standard --dry-run
 agent-continuity init --profile standard --write
-agent-continuity init --profile standard --docs-meta yes --write
+agent-continuity init --profile standard --docs yes --write
 agent-continuity init /path/to/project --profile standard --dry-run
 agent-continuity init /path/to/project --profile expanded --dry-run
 agent-continuity init /path/to/project --profile complete --dry-run
@@ -56,10 +56,10 @@ Profiles:
 
 | Profile | Meaning | Default |
 |---|---|---|
-| `core` | prototype, script, or single-person experiment | smallest flat docs, no `docs-meta` |
-| `standard` | real app with a few features and occasional agents | recommended default, no `docs-meta` |
-| `expanded` | multiple surfaces, handoffs, bugs, or decisions | selected topic folders, `docs-meta` |
-| `complete` | long-lived repo with many agents and generated views | full scaffold, `docs-meta` |
+| `core` | prototype, script, or single-person experiment | smallest flat docs, no document tooling |
+| `standard` | real app with a few features and occasional agents | recommended default, no document tooling |
+| `expanded` | multiple surfaces, handoffs, bugs, or decisions | selected topic folders, Agent Continuity document tooling |
+| `complete` | long-lived repo with many agents and generated views | full scaffold and Agent Continuity document tooling |
 
 Compatibility aliases still work for at least one release cycle: `tiny` maps to
 `core`, `small` maps to `standard`, `growing` maps to `expanded`, and `full`
@@ -72,40 +72,40 @@ files from `scaffold/`.
 
 ### Installed Manifest
 
-Explicit write installs create `.agent-docs/manifest.json`.
+Explicit write installs create `.agent-continuity/manifest.json`.
 
 Schema version 1 contains:
 
 - `schema_version`: currently `1`
 - `installed_at` and `updated_at`: UTC timestamps
-- `source`: AGENT-DOCS repository URL, ref, commit, and local source path when available
+- `source`: Agent Continuity repository URL, ref, commit, and local source path when available
 - `profile`: selected canonical profile
-- `optional_components`: currently includes `docs-meta` when selected
+- `optional_components`: includes `agent-continuity-docs` when selected by a new install
 - `files`: installed file records
 - `generated_views`: present for future generated-view tracking, empty in this slice
 
 File records use conservative ownership. Reusable tooling such as
-`scripts/docs-meta` and `tests/docs-meta-smoke.sh` is recorded as
-`agent-docs-owned` with a SHA-256 checksum and expected mode such as `755`.
+`agent-continuity docs` and `tests/agent-continuity-docs-smoke.sh` is recorded as
+`agent-continuity-owned` with a SHA-256 checksum and expected mode such as `755`.
 Starter docs and templates are recorded as `project-owned-after-install` without
 checksums, because target-repo Markdown becomes local truth after installation
 and is not an automatic upgrade target.
 
 ### Legacy Manifest Baseline
 
-Legacy installs without `.agent-docs/manifest.json` can intentionally create a
+Legacy installs without `.agent-continuity/manifest.json` can intentionally create a
 baseline manifest only after a preview:
 
 ```bash
-agent-continuity baseline --dry-run /path/to/project --profile standard --docs-meta yes
-agent-continuity baseline --write /path/to/project --profile standard --docs-meta yes
+agent-continuity baseline --dry-run /path/to/project --profile standard --docs yes
+agent-continuity baseline --write /path/to/project --profile standard --docs yes
 ```
 
 `--dry-run` is the default. `--profile` is required and uses the same profile
-keys as init. `--docs-meta` accepts `auto`, `yes`, or `no`.
+keys as init. `--docs` accepts `auto`, `yes`, or `no`.
 
-Baseline write mode creates only `.agent-docs/manifest.json` and writes it last.
-It records selected AGENT-DOCS-owned tooling only when the target file exists,
+Baseline write mode creates only `.agent-continuity/manifest.json` and writes it last.
+It records selected Agent Continuity-owned tooling only when the target file exists,
 is a regular file inside the target, does not traverse symlinks, and matches the
 current upstream checksum and exact expected mode. Starter/project docs are
 recorded as `project-owned-after-install` when present, without checksums.
@@ -124,7 +124,7 @@ agent-continuity upgrade --dry-run /path/to/project
 
 Both commands classify the target with the schema version 1 manifest. Reports
 include exact paths and reasons for healthy/current files, missing legacy
-manifests, missing AGENT-DOCS-owned tooling, checksum drift, safe automatic
+manifests, missing Agent Continuity-owned tooling, checksum drift, safe automatic
 additions, candidate tooling updates, generated-view refreshes, project-owned manual-review
 items, and refused or unknown shapes. Legacy installs without a manifest remain
 manual-review.
@@ -139,16 +139,16 @@ agent-continuity upgrade --write --tooling-only --generated-views /path/to/proje
 ```
 
 `agent-continuity upgrade --write` without `--tooling-only` exits `2`. Tooling-only
-write mode may restore missing AGENT-DOCS-owned files, update manifest-clean
+write mode may restore missing Agent Continuity-owned files, update manifest-clean
 owned files from the current upstream action set, repair a missing executable bit
 when the file content still matches the manifest, and update
-`.agent-docs/manifest.json` last. It creates backups for touched existing files
-under `.agent-docs/backups/<timestamp>/` and writes
-`.agent-docs/backups/<timestamp>/audit.json` with the touched paths, operation
+`.agent-continuity/manifest.json` last. It creates backups for touched existing files
+under `.agent-continuity/backups/<timestamp>/` and writes
+`.agent-continuity/backups/<timestamp>/audit.json` with the touched paths, operation
 kinds, and backup paths. Project-owned Markdown is report-only. Generated views
 are report-only unless `--generated-views` is explicitly combined with
 `--write --tooling-only`; that mode regenerates manifest-tracked generated views
-through supported local generators, initially `scripts/docs-meta update`.
+through supported local generators, initially `agent-continuity docs update`.
 
 Exit codes:
 
@@ -159,11 +159,11 @@ Exit codes:
 Tooling-only write mode exits with the post-write classification, so a target
 that is fully repaired by the write exits `0`.
 
-Supported platforms and prerequisites: Bash on macOS or Linux, Git for installer clone/update paths, Python 3.10 or newer, symlink support, and a user-local bin directory such as `~/.local/bin` on `PATH` or an explicit `AGENT_DOCS_BIN_DIR`.
+Supported platforms and prerequisites: Bash on macOS or Linux, Git for installer clone/update paths, Python 3.10 or newer, symlink support, and a user-local bin directory such as `~/.local/bin` on `PATH` or an explicit `AGENT_CONTINUITY_BIN_DIR`.
 
-## Docs Meta
+## Structured Document Commands
 
-`docs-meta` is a deterministic metadata helper for agent-friendly docs.
+`agent-continuity docs` is the deterministic structured-document interface.
 
 It exists to keep repository memory queryable without asking a human or AI agent to manually maintain counters, status tables, generated registries, or todo dashboards. The important rule is simple: Markdown files, filenames, and frontmatter are the source of truth. Generated files are views.
 
@@ -177,7 +177,7 @@ Agent-driven projects tend to accumulate small bits of comprehension debt:
 - todos are scattered across specs, plans, and implementation briefs
 - a future session cannot easily reconstruct what docs exist or where work stands
 
-`docs-meta` turns those into mechanical operations. It scans the repo, derives state, and either writes reproducible generated files or fails when they are stale.
+Agent Continuity turns those into mechanical operations. It scans the repo, derives state, and either writes reproducible generated files or fails when they are stale.
 
 ## Source Of Truth
 
@@ -225,11 +225,11 @@ Run the same public-readiness checks used by CI:
 scripts/release-check
 ```
 
-The wrapper runs the installer/init/docs-meta smoke tests, compiles the Python
+The wrapper runs the installer, init, document-tooling, and compatibility smoke tests, compiles the Python
 entry points, validates the adopter-facing changelog gate, checks structured
 plan metadata and repo-root links, and finishes with `git diff --check`.
 
-Run the changelog gate directly when changing reusable AGENT-DOCS surfaces:
+Run the changelog gate directly when changing reusable Agent Continuity surfaces:
 
 ```bash
 scripts/changelog-check
@@ -245,44 +245,44 @@ changed without changing adopter behavior.
 Show the next ID:
 
 ```bash
-scripts/docs-meta next spec
-scripts/docs-meta next idea
-scripts/docs-meta next rsch
-scripts/docs-meta next eval
-scripts/docs-meta next diag
-scripts/docs-meta next plan
-scripts/docs-meta next impl --plan PLAN-0001
-scripts/docs-meta next adr
-scripts/docs-meta next lrn
-scripts/docs-meta next expl
-scripts/docs-meta next qst
-scripts/docs-meta next conc
+agent-continuity docs next spec
+agent-continuity docs next idea
+agent-continuity docs next rsch
+agent-continuity docs next eval
+agent-continuity docs next diag
+agent-continuity docs next plan
+agent-continuity docs next impl --plan PLAN-0001
+agent-continuity docs next adr
+agent-continuity docs next lrn
+agent-continuity docs next expl
+agent-continuity docs next qst
+agent-continuity docs next conc
 ```
 
 Create new docs:
 
 ```bash
-scripts/docs-meta new spec "Shared Capture Workflow" --domain product --spec-type feature
-scripts/docs-meta new idea "Repo Memory Timeline" --domain product
-scripts/docs-meta new concept "Selections, Snapshots, And Dynamic Sections" --domain product
-scripts/docs-meta new research "Embedding Options Survey" --domain research
-scripts/docs-meta new eval "Embedding Model Bakeoff" --domain repo-health
-scripts/docs-meta new diag "Simulator Freeze Investigation" --domain repo-health
-scripts/docs-meta new plan "Shared Capture Implementation" --domain product --spec SPEC-0001
-scripts/docs-meta new impl "Persist Capture Drafts" --plan PLAN-0001
-scripts/docs-meta new adr "Use Append-Only Worktree Journal"
-scripts/docs-meta new learning "Why plans and specs are separate" --domain repo-health
-scripts/docs-meta new explainer "How specs and plans fit together" --domain orientation
-scripts/docs-meta new question "Should specs and plans be one-to-one?" --domain repo-health
+agent-continuity docs new spec "Shared Capture Workflow" --domain product --spec-type feature
+agent-continuity docs new idea "Repo Memory Timeline" --domain product
+agent-continuity docs new concept "Selections, Snapshots, And Dynamic Sections" --domain product
+agent-continuity docs new research "Embedding Options Survey" --domain research
+agent-continuity docs new eval "Embedding Model Bakeoff" --domain repo-health
+agent-continuity docs new diag "Simulator Freeze Investigation" --domain repo-health
+agent-continuity docs new plan "Shared Capture Implementation" --domain product --spec SPEC-0001
+agent-continuity docs new impl "Persist Capture Drafts" --plan PLAN-0001
+agent-continuity docs new adr "Use Append-Only Worktree Journal"
+agent-continuity docs new learning "Why plans and specs are separate" --domain repo-health
+agent-continuity docs new explainer "How specs and plans fit together" --domain orientation
+agent-continuity docs new question "Should specs and plans be one-to-one?" --domain repo-health
 ```
 
 Inspect or update status:
 
 ```bash
-scripts/docs-meta status
-scripts/docs-meta status PLAN-0001
-scripts/docs-meta show PLAN-0001
-scripts/docs-meta set-status PLAN-0001 in_progress
+agent-continuity docs status
+agent-continuity docs status PLAN-0001
+agent-continuity docs show PLAN-0001
+agent-continuity docs set-status PLAN-0001 in_progress
 ```
 
 `show` is the per-doc inspection command. It prints one doc's metadata, related docs from frontmatter, `linked_paths`, and local todos.
@@ -290,29 +290,29 @@ scripts/docs-meta set-status PLAN-0001 in_progress
 List todos:
 
 ```bash
-scripts/docs-meta todos
-scripts/docs-meta todos PLAN-0001
-scripts/docs-meta todos --all
-scripts/docs-meta todos --status ready
-scripts/docs-meta todos --owner main-agent
-scripts/docs-meta todos --agent 019dc454-98e1-7b22-9e79-56226fba0039
-scripts/docs-meta todos --skill docs-writer
-scripts/docs-meta todos --plan PLAN-0001
-scripts/docs-meta todos TODO-0001 --all
-scripts/docs-meta todos --json
-scripts/docs-meta check-todos
-scripts/docs-meta check-todos --strict
-scripts/docs-meta next todo
+agent-continuity docs todos
+agent-continuity docs todos PLAN-0001
+agent-continuity docs todos --all
+agent-continuity docs todos --status ready
+agent-continuity docs todos --owner main-agent
+agent-continuity docs todos --agent 019dc454-98e1-7b22-9e79-56226fba0039
+agent-continuity docs todos --skill docs-writer
+agent-continuity docs todos --plan PLAN-0001
+agent-continuity docs todos TODO-0001 --all
+agent-continuity docs todos --json
+agent-continuity docs check-todos
+agent-continuity docs check-todos --strict
+agent-continuity docs next todo
 ```
 
 Show the open-loop review queue:
 
 ```bash
-scripts/docs-meta review
-scripts/docs-meta review --type audit-findings
-scripts/docs-meta review --status open
-scripts/docs-meta review --severity high
-scripts/docs-meta review --json
+agent-continuity docs review
+agent-continuity docs review --type audit-findings
+agent-continuity docs review --status open
+agent-continuity docs review --severity high
+agent-continuity docs review --json
 ```
 
 `review` is read-only. It parses audit finding registers, validates finding lifecycle rules, resolves routed follow-up targets, and surfaces blocked or stale open-loop docs and structured todos. Use it when you want the repo to answer "what needs attention next?" without hand-scanning audits, plans, questions, diagnostics, research, evaluations, and TODOs.
@@ -326,7 +326,7 @@ Structured todo syntax stays Markdown-readable:
 ```markdown
 - [ ] TODO-0001 [ready] [skill:docs-writer] [plan:PLAN-0002] Define stable todo lifecycle states.
 - [ ] TODO-0002 [blocked] [blocker:TODO-0001] [brief:IMPL-0002-01] Add todo validation checks.
-- [x] TODO-0003 [done] [verification:tests/docs-meta-smoke.sh] Document AGENTS.md routing rules.
+- [x] TODO-0003 [done] [verification:tests/agent-continuity-docs-smoke.sh] Document AGENTS.md routing rules.
 ```
 
 Allowed lifecycle states:
@@ -386,7 +386,7 @@ Use these edits on the source checkbox line:
 
 | Action | Required update |
 |---|---|
-| Create | Add `TODO-#### [backlog]` or `[ready]` in the owning doc. Use `scripts/docs-meta next todo` for the next ID. |
+| Create | Add `TODO-#### [backlog]` or `[ready]` in the owning doc. Use `agent-continuity docs next todo` for the next ID. |
 | Claim | Change status to `[in_progress]` and add `owner:`, `agent:`, and `updated:`. |
 | Block | Change status to `[blocked]` and add `blocker:`, `blocked_by:`, or `reason:`. |
 | Send to review | Change status to `[review]` and refresh `updated:`. |
@@ -398,7 +398,7 @@ IMPORTANT: edit the source doc, not `TODOS.md`. `TODOS.md` is generated from sou
 
 Source docs remain canonical. `TODOS.md` is a generated dashboard; regenerate it instead of editing it by hand.
 
-Source-code TODO comments are intentionally not scanned by `docs-meta`. Keep inline TODO comments for local implementation notes that only matter near that code. If an inline TODO needs ownership, delegation, review, cross-session tracking, or commit/PR/session-log references, promote it to a structured Markdown `TODO-*` in the relevant plan, implementation brief, checklist, or state doc, and leave a short code comment pointing to that ID only when it helps the next reader.
+Source-code TODO comments are intentionally not scanned by Agent Continuity. Keep inline TODO comments for local implementation notes that only matter near that code. If an inline TODO needs ownership, delegation, review, cross-session tracking, or commit/PR/session-log references, promote it to a structured Markdown `TODO-*` in the relevant plan, implementation brief, checklist, or state doc, and leave a short code comment pointing to that ID only when it helps the next reader.
 
 When a commit, PR, issue, or session log is todo-backed, cite the `TODO-*` ID there too. Use source-doc metadata such as `issue:#123`, `pr:#456`, and `session:repo-health/session-logs/YYYY-MM-DD-session-title.md` when it helps future lookup, but do not make GitHub the only source of task truth.
 
@@ -411,11 +411,11 @@ Use `LRN-*` learning records for lessons learned: durable corrected assumptions,
 Create one when the lesson should survive the chat:
 
 ```bash
-scripts/docs-meta new learning "Why specs and plans are not one-to-one" --domain repo-health
-scripts/docs-meta next lrn
-scripts/docs-meta view learnings
-scripts/docs-meta view explainers
-scripts/docs-meta view questions
+agent-continuity docs new learning "Why specs and plans are not one-to-one" --domain repo-health
+agent-continuity docs next lrn
+agent-continuity docs view learnings
+agent-continuity docs view explainers
+agent-continuity docs view questions
 ```
 
 Do not use learning records for routine implementation narration. Use session logs for what happened, ADRs for durable decisions, research notes for investigations, specs for requirements, and plans or briefs for execution scope.
@@ -437,8 +437,8 @@ Use `DIAG-*` diagnostic records when a real run, crash, freeze, slow flow, or fl
 Regenerate and check generated views:
 
 ```bash
-scripts/docs-meta update
-scripts/docs-meta check
+agent-continuity docs update
+agent-continuity docs check
 ```
 
 `check` also validates frontmatter contracts for known doc types, type-specific statuses, ID/filename agreement, implementation-to-parent-plan ID agreement, and whether generated registry files are stale.
@@ -446,12 +446,12 @@ scripts/docs-meta check
 Inspect docs links:
 
 ```bash
-scripts/docs-meta links
-scripts/docs-meta links docs/README.md
-scripts/docs-meta backlinks docs/README.md
-scripts/docs-meta check-links
-scripts/docs-meta orphans
-scripts/docs-meta orphans --exclude 'repo-health/session-logs/*'
+agent-continuity docs links
+agent-continuity docs links docs/README.md
+agent-continuity docs backlinks docs/README.md
+agent-continuity docs check-links
+agent-continuity docs orphans
+agent-continuity docs orphans --exclude 'repo-health/session-logs/*'
 ```
 
 `links` parses standard Markdown links, Markdown image links, path-like autolinks, and Obsidian-style wikilinks. Standard Markdown links are the canonical format; wikilinks are reported for visibility but are not rewritten.
@@ -463,10 +463,10 @@ scripts/docs-meta orphans --exclude 'repo-health/session-logs/*'
 Normalize or move docs safely:
 
 ```bash
-scripts/docs-meta normalize-links --style relative --dry-run
-scripts/docs-meta normalize-links --style relative --write
-scripts/docs-meta move docs/old.md docs/new.md --dry-run
-scripts/docs-meta move docs/old.md docs/new.md --write
+agent-continuity docs normalize-links --style relative --dry-run
+agent-continuity docs normalize-links --style relative --write
+agent-continuity docs move docs/old.md docs/new.md --dry-run
+agent-continuity docs move docs/old.md docs/new.md --write
 ```
 
 Mutating commands are dry-run-first. They preserve link labels and fragments, rewrite only structured Markdown hrefs, and report prose mentions separately for human review.
@@ -474,10 +474,10 @@ Mutating commands are dry-run-first. They preserve link labels and fragments, re
 Show advisory docs-health warnings:
 
 ```bash
-scripts/docs-meta health
-scripts/docs-meta health --stale-days 30 --commit-threshold 20 --audit-days 45
-scripts/docs-meta health --json
-scripts/docs-meta health --write
+agent-continuity docs health
+agent-continuity docs health --stale-days 30 --commit-threshold 20 --audit-days 45
+agent-continuity docs health --json
+agent-continuity docs health --write
 ```
 
 `health` is intentionally softer than `check`. It flags docs that may be worth reviewing because they are old, still in an open status, missing a review commit, many commits behind `repo_state.last_reviewed_commit`, because the repo has no recent completed repo-health audit, or because link-health signals deserve review. It exits successfully even when warnings exist; treat the output as a review queue, not a CI failure. Running it also refreshes `docs/HEALTH.md`.
@@ -485,9 +485,9 @@ scripts/docs-meta health --write
 Show or write the plan roadmap view:
 
 ```bash
-scripts/docs-meta roadmap
-scripts/docs-meta roadmap --json
-scripts/docs-meta roadmap --write
+agent-continuity docs roadmap
+agent-continuity docs roadmap --json
+agent-continuity docs roadmap --write
 ```
 
 `roadmap` sorts `type: plan` docs by `sequence` frontmatter. In normal pre-implementation planning, `PLAN-*` numbering and `sequence` order should agree; if execution order changes, move or renumber the docs rather than relying on hidden dependencies. After commits, PRs, or session logs point at a plan, keep the ID stable and record any ordering correction in the docs. Running it also refreshes `docs/ROADMAP-VIEW.md`.
@@ -495,25 +495,25 @@ scripts/docs-meta roadmap --write
 Print and refresh any generated Markdown view:
 
 ```bash
-scripts/docs-meta view ideas
-scripts/docs-meta view specs
-scripts/docs-meta view learnings
-scripts/docs-meta view explainers
-scripts/docs-meta view questions
-scripts/docs-meta view registry
-scripts/docs-meta view todos
-scripts/docs-meta view areas
-scripts/docs-meta view audits
-scripts/docs-meta view roadmap
-scripts/docs-meta view health
+agent-continuity docs view ideas
+agent-continuity docs view specs
+agent-continuity docs view learnings
+agent-continuity docs view explainers
+agent-continuity docs view questions
+agent-continuity docs view registry
+agent-continuity docs view todos
+agent-continuity docs view areas
+agent-continuity docs view audits
+agent-continuity docs view roadmap
+agent-continuity docs view health
 ```
 
 Generated views include YAML frontmatter with `type: generated-view`, `status: generated`, and `updated_at`. The `updated_at` field changes whenever the view is regenerated.
 
-Run the smoke test after changing `docs-meta` behavior:
+Run the smoke test after changing `agent-continuity docs` behavior:
 
 ```bash
-tests/docs-meta-smoke.sh
+tests/agent-continuity-docs-smoke.sh
 ```
 
 ## Naming Model
@@ -583,19 +583,19 @@ Use this to understand which repository state a spec, plan, or implementation br
 
 ## Adoption
 
-Copy `scripts/docs-meta` into a repo that uses this docs workflow. Then:
+Install Agent Continuity document tooling in a repo that uses this workflow. Then:
 
 1. Ensure idea, research, evaluation, diagnostic, spec, plan, implementation brief, and ADR templates have `id`, `type`, `status`, `created_at`, `updated_at`, and relationship frontmatter.
-2. Prefer `scripts/docs-meta new ...` for new ideas, research surveys, evaluations, diagnostics, specs, plans, implementation briefs, and ADRs.
-3. Run `scripts/docs-meta update` after meaningful doc changes.
-4. Run `scripts/docs-meta check` before committing docs workflow changes.
-5. Run `scripts/docs-meta check-todos` when the repo uses structured `TODO-*` items for durable coordination.
+2. Prefer `agent-continuity docs new ...` for new ideas, research surveys, evaluations, diagnostics, specs, plans, implementation briefs, and ADRs.
+3. Run `agent-continuity docs update` after meaningful doc changes.
+4. Run `agent-continuity docs check` before committing docs workflow changes.
+5. Run `agent-continuity docs check-todos` when the repo uses structured `TODO-*` items for durable coordination.
 
-For stricter repos, wire `scripts/docs-meta check`, `scripts/docs-meta check-links`, and `scripts/docs-meta check-todos` into CI or a pre-commit hook. Keep hooks as verification; do not hide surprising doc or todo rewrites inside an automatic commit step.
+For stricter repos, wire `agent-continuity docs check`, `agent-continuity docs check-links`, and `agent-continuity docs check-todos` into CI or a pre-commit hook. Keep hooks as verification; do not hide surprising doc or todo rewrites inside an automatic commit step.
 
 ## Limits
 
-`docs-meta` is intentionally small and conservative.
+The structured-document implementation is intentionally small and conservative.
 
 - It uses simple frontmatter parsing, not a full YAML parser.
 - It does not decide what a spec or plan should say.

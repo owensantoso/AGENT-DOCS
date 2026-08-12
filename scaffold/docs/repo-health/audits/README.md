@@ -33,19 +33,19 @@ Recommended cadence:
 
 ## Workflow
 
-Use `scripts/docs-meta new audit "<Title>" --kind <audit-kind>` when possible. It creates `repo-health/audits/AUDT-####-<slug>.md` with the required stable audit ID. When drafting by hand, start from `AUDT-0000-repo-health-audit.md` and replace `AUDT-0000` before committing.
+Use `agent-continuity docs new audit "<Title>" --kind <audit-kind>` when possible. It creates `repo-health/audits/AUDT-####-<slug>.md` with the required stable audit ID. When drafting by hand, start from `AUDT-0000-repo-health-audit.md` and replace `AUDT-0000` before committing.
 
 Before reviewing, choose `audit_kind` and identify the matching reusable guide. Do not read every audit guide for every audit.
 
 Start read-only:
 
 ```bash
-scripts/docs-meta check
+agent-continuity docs check
 ```
 
 Then add project-specific checks such as tests, lint, build, architecture review, duplication search, dependency checks, or manual review.
 
-Write-mode cleanup commands such as `scripts/docs-meta health --write` or `scripts/docs-meta roadmap --write` belong in docs-health or paper-trail cleanup only when the audit scope explicitly includes cleanup.
+Write-mode cleanup commands such as `agent-continuity docs health --write` or `agent-continuity docs roadmap --write` belong in docs-health or paper-trail cleanup only when the audit scope explicitly includes cleanup.
 
 An audit is complete only when every finding is resolved, routed to a follow-up artifact, deferred with reason, accepted as risk, or archived.
 
@@ -56,4 +56,4 @@ Audits do not block unrelated implementation by default. Pause related implement
 - Last completed audit:
 - Next suggested audit:
 
-Update these pointers after completing a meaningful audit. `docs-meta health` can also flag when completed audits are missing or old.
+Update these pointers after completing a meaningful audit. `agent-continuity docs health` can also flag when completed audits are missing or old.

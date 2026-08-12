@@ -26,8 +26,8 @@
 
 ```bash
 git log --oneline --decorate -20
-scripts/docs-meta recent
-scripts/docs-meta todos --all
+agent-continuity docs recent
+agent-continuity docs todos --all
 ```
 
 Use equivalent commands when unavailable.
