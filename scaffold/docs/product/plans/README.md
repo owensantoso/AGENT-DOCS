@@ -24,6 +24,7 @@ agent-continuity docs new spec "<title>" --domain product --spec-type feature
 agent-continuity docs new idea "<title>" --domain product
 agent-continuity docs new plan "<title>" --domain product --spec SPEC-0000
 agent-continuity docs new impl "<title>" --plan PLAN-0000
+agent-continuity docs retire-id IMPL-0000-01 --plan PLAN-0000 --reason "<reason>" --source-type conversation --source-notes "<provenance>"
 agent-continuity docs set-status PLAN-0000 in_progress
 agent-continuity docs todos
 agent-continuity docs update
@@ -32,6 +33,13 @@ agent-continuity docs roadmap --write
 ```
 
 Do not ask agents to guess the next ID when the repo can derive it.
+
+If the current next `IMPL-*` ID must never be reused even though no live brief
+was created, use `agent-continuity docs retire-id`. Review its default preview,
+then add `--write`. The resulting project-owned tombstone lives under
+`docs/id-retirements/`, advances allocation, and appears only in the global docs
+registry. It is not live work and cannot satisfy plan, brief, TODO, or audit
+references.
 
 ## Topic-first planning
 

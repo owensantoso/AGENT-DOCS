@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-agent_continuity="$repo_root/scripts/agent-continuity"
+agent_continuity_docs="$repo_root/scripts/agent-continuity-docs"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -11,7 +11,13 @@ repo_commit="$(git -C "$repo_root" rev-parse HEAD)"
 mkdir -p "$docs_root/architecture/areas"
 
 run_meta() {
-  "$agent_continuity" docs --root "$docs_root" "$@"
+  "$agent_continuity_docs" --root "$docs_root" "$@"
+}
+
+run_meta_root() {
+  local root="$1"
+  shift
+  "$agent_continuity_docs" --root "$root" "$@"
 }
 
 require_file() {
@@ -33,6 +39,15 @@ require_contains() {
   local pattern="$2"
   if ! grep -Fq "$pattern" "$file"; then
     echo "Expected $file to contain: $pattern" >&2
+    exit 1
+  fi
+}
+
+require_not_contains() {
+  local file="$1"
+  local pattern="$2"
+  if grep -Fq "$pattern" "$file"; then
+    echo "Expected $file not to contain: $pattern" >&2
     exit 1
   fi
 }
@@ -119,6 +134,363 @@ require_contains "$completed_audit_path" "id: AUDT-0002"
 require_contains "$completed_audit_path" "status: completed"
 require_contains "$completed_audit_path" "audit_started_at: \""
 require_contains "$completed_audit_path" "audit_ended_at: \""
+
+retirement_id="IMPL-0001-02"
+retirement_path="$docs_root/id-retirements/$retirement_id.md"
+retirement_reason="The implementation slice was withdrawn before creation."
+retirement_source_type="codex-task"
+retirement_source_link="codex://threads/retirement-smoke"
+
+if run_meta retire-id IMPL-0001-03 --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" \
+  >$tmpdir/docs-meta-retire-future.out 2>&1; then
+  echo "Expected retirement beyond the current next IMPL ID to fail" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-future.out "current next IMPL ID"
+require_absent "$retirement_path"
+
+for missing_case in reason source-type provenance; do
+  case "$missing_case" in
+    reason)
+      retire_args=(--plan PLAN-0001 --source-type "$retirement_source_type" --source-link "$retirement_source_link")
+      ;;
+    source-type)
+      retire_args=(--plan PLAN-0001 --reason "$retirement_reason" --source-link "$retirement_source_link")
+      ;;
+    provenance)
+      retire_args=(--plan PLAN-0001 --reason "$retirement_reason" --source-type "$retirement_source_type")
+      ;;
+  esac
+  if run_meta retire-id "$retirement_id" "${retire_args[@]}" >"$tmpdir/docs-meta-retire-missing-$missing_case.out" 2>&1; then
+    echo "Expected retirement without $missing_case to fail" >&2
+    exit 1
+  fi
+done
+require_absent "$retirement_path"
+
+if run_meta retire-id "$retirement_id" --plan PLAN-9999 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" \
+  >$tmpdir/docs-meta-retire-missing-plan.out 2>&1; then
+  echo "Expected retirement with a missing parent plan to fail" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-missing-plan.out "live primary plan"
+
+if run_meta retire-id IMPL-0002-01 --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" \
+  >$tmpdir/docs-meta-retire-plan-number.out 2>&1; then
+  echo "Expected retirement with a mismatched plan number to fail" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-plan-number.out "does not match"
+
+collision_path="$docs_root/collision-$retirement_id.md"
+printf '# scanner collision\n' >"$collision_path"
+if run_meta retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" \
+  >$tmpdir/docs-meta-retire-collision.out 2>&1; then
+  echo "Expected scanner-recognized retirement collision to fail" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-collision.out "collision"
+require_absent "$retirement_path"
+rm "$collision_path"
+
+run_meta retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" \
+  >$tmpdir/docs-meta-retire-preview.out
+require_contains $tmpdir/docs-meta-retire-preview.out "PREVIEW"
+require_contains $tmpdir/docs-meta-retire-preview.out "$retirement_path"
+require_absent "$retirement_path"
+
+run_meta retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" --write \
+  >$tmpdir/docs-meta-retire-write.out
+require_file "$retirement_path"
+require_contains "$retirement_path" "type: id-retirement"
+require_contains "$retirement_path" "id: $retirement_id"
+require_contains "$retirement_path" "status: retired"
+require_contains "$retirement_path" "parent_plan: PLAN-0001"
+require_contains "$retirement_path" "reason: \"$retirement_reason\""
+require_contains "$retirement_path" "type: \"$retirement_source_type\""
+require_contains "$retirement_path" "link: \"$retirement_source_link\""
+
+perl -0pi -e 's/created_at: "[^"]+"/created_at: "2025-01-01 00:00:00 JST +0900"/' "$retirement_path"
+retirement_hash_before="$(shasum -a 256 "$retirement_path")"
+run_meta retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" --write \
+  >$tmpdir/docs-meta-retire-idempotent.out
+retirement_hash_after="$(shasum -a 256 "$retirement_path")"
+if [[ "$retirement_hash_before" != "$retirement_hash_after" ]]; then
+  echo "Expected exact retirement repeat to preserve bytes" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-idempotent.out "ALREADY RETIRED"
+
+if run_meta retire-id "$retirement_id" --plan PLAN-0001 --reason "Different reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" --write \
+  >$tmpdir/docs-meta-retire-conflict.out 2>&1; then
+  echo "Expected conflicting retirement repeat to fail" >&2
+  exit 1
+fi
+if [[ "$retirement_hash_before" != "$(shasum -a 256 "$retirement_path")" ]]; then
+  echo "Expected conflicting retirement repeat to preserve bytes" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-conflict.out "conflicts"
+
+cat >>"$retirement_path" <<'RETIREMENT_FIXTURES'
+
+## Immutable fixture content
+
+- [ ] TODO-9998 [blocked] Tombstone-only todo must never enter live work surfaces
+- [Spec](/product/specs/SPEC-0001-shared-capture-workflow.md)
+- [Exact immutable target](../link-fixtures/immutable-target.md)
+- [Nested immutable target](../link-fixtures/immutable-dir/nested.md)
+RETIREMENT_FIXTURES
+
+run_meta show "$retirement_id" >$tmpdir/docs-meta-retire-show.out
+require_contains $tmpdir/docs-meta-retire-show.out "Tombstone-only todo"
+run_meta status "$retirement_id" >$tmpdir/docs-meta-retire-status.out
+require_contains $tmpdir/docs-meta-retire-status.out "$retirement_id"
+
+next_todo_without_tombstone="$(run_meta next todo)"
+if [[ "$next_todo_without_tombstone" != "TODO-0001" ]]; then
+  echo "Expected tombstone TODO to leave next TODO at TODO-0001, got $next_todo_without_tombstone" >&2
+  exit 1
+fi
+run_meta todos --all >$tmpdir/docs-meta-retire-global-todos.out
+require_not_contains $tmpdir/docs-meta-retire-global-todos.out "Tombstone-only todo"
+if ! run_meta check-todos >$tmpdir/docs-meta-retire-check-todos.out 2>&1; then
+  cat $tmpdir/docs-meta-retire-check-todos.out >&2
+  echo "Expected check-todos to ignore tombstone TODOs" >&2
+  exit 1
+fi
+run_meta review >$tmpdir/docs-meta-retire-review.out
+require_not_contains $tmpdir/docs-meta-retire-review.out "Tombstone-only todo"
+
+next_impl="$(run_meta next impl --plan PLAN-0001)"
+if [[ "$next_impl" != "IMPL-0001-03" ]]; then
+  echo "Expected tombstone to advance next IMPL ID to IMPL-0001-03, got $next_impl" >&2
+  exit 1
+fi
+impl_after_retirement="$(run_meta new impl "Continue Capture Work" --domain product --plan PLAN-0001)"
+if [[ "$impl_after_retirement" != *"/IMPL-0001-03-"* ]]; then
+  echo "Expected new impl after retirement to use IMPL-0001-03, got $impl_after_retirement" >&2
+  exit 1
+fi
+
+retired_reference_fixture="$docs_root/retired-reference-fixture.md"
+cat >"$retired_reference_fixture" <<EOF
+- [ ] TODO-9001 [ready] [skill:docs-writer] [plan:PLAN-0001] [brief:$retirement_id] Retired brief must not satisfy a live reference
+EOF
+if run_meta check-todos >$tmpdir/docs-meta-retired-reference.out 2>&1; then
+  echo "Expected a tombstone not to satisfy a live brief reference" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retired-reference.out "references missing brief $retirement_id"
+rm "$retired_reference_fixture"
+
+if run_meta set-status "$retirement_id" archived >$tmpdir/docs-meta-retire-set-status.out 2>&1; then
+  echo "Expected set-status to refuse id-retirement tombstones" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-set-status.out "immutable"
+if run_meta move "id-retirements/$retirement_id.md" "id-retirements/$retirement_id-moved.md" --write \
+  >$tmpdir/docs-meta-retire-move.out 2>&1; then
+  echo "Expected docs move --write to refuse an id-retirement source" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-move.out "immutable"
+require_file "$retirement_path"
+
+retirement_hash_before_directory_move="$(shasum -a 256 "$retirement_path")"
+if run_meta move id-retirements relocated-retirements --write \
+  >$tmpdir/docs-meta-retire-directory-move.out 2>&1; then
+  echo "Expected docs move --write to refuse a directory containing an id-retirement tombstone" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-directory-move.out "immutable"
+if [[ "$retirement_hash_before_directory_move" != "$(shasum -a 256 "$retirement_path")" ]]; then
+  echo "Expected refused retirement directory move to preserve tombstone bytes" >&2
+  exit 1
+fi
+
+collision_path="$docs_root/another-$retirement_id.md"
+printf '# scanner collision\n' >"$collision_path"
+if run_meta check >$tmpdir/docs-meta-retire-check-collision.out 2>&1; then
+  echo "Expected docs check to reject scanner-recognized retirement collision" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-collision.out "collision"
+rm "$collision_path"
+
+attack_plan_rel="product/plans/PLAN-0001-attack/PLAN-0001-attack.md"
+make_attack_root() {
+  local root="$1"
+  mkdir -p "$root/$(dirname "$attack_plan_rel")"
+  cp "$plan_path" "$root/$attack_plan_rel"
+  cp "$impl_path" "$root/$(dirname "$attack_plan_rel")/$(basename "$impl_path")"
+}
+
+malformed_repeat_root="$tmpdir/malformed-repeat-root"
+make_attack_root "$malformed_repeat_root"
+mkdir -p "$malformed_repeat_root/id-retirements"
+malformed_repeat_path="$malformed_repeat_root/id-retirements/$retirement_id.md"
+cat >"$malformed_repeat_path" <<EOF
+---
+type: id-retirement
+title: Retired ID $retirement_id
+status: retired
+parent_plan: PLAN-0001
+reason: "$retirement_reason"
+source:
+  type: "$retirement_source_type"
+  link: "$retirement_source_link"
+  notes: ""
+created_at: "2026-08-16 00:00:00 JST +0900"
+updated_at: "2026-08-16 00:00:00 JST +0900"
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
+# Retired ID $retirement_id
+EOF
+malformed_repeat_hash="$(shasum -a 256 "$malformed_repeat_path")"
+if run_meta_root "$malformed_repeat_root" retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" --write \
+  >$tmpdir/docs-meta-retire-malformed-repeat.out 2>&1; then
+  echo "Expected malformed existing tombstone to fail instead of returning ALREADY RETIRED" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-malformed-repeat.out "invalid"
+if [[ "$malformed_repeat_hash" != "$(shasum -a 256 "$malformed_repeat_path")" ]]; then
+  echo "Expected malformed existing tombstone bytes to remain unchanged" >&2
+  exit 1
+fi
+
+symlink_root_real="$tmpdir/symlink-root-real"
+make_attack_root "$symlink_root_real"
+ln -s "$symlink_root_real" "$tmpdir/symlink-docs-root"
+if run_meta_root "$tmpdir/symlink-docs-root" retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" --write \
+  >$tmpdir/docs-meta-retire-symlink-root.out 2>&1; then
+  echo "Expected a symlinked docs root to be refused" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-symlink-root.out "symlinked docs root"
+require_absent "$symlink_root_real/id-retirements/$retirement_id.md"
+
+symlink_parent_root="$tmpdir/symlink-parent-root"
+make_attack_root "$symlink_parent_root"
+mkdir -p "$tmpdir/outside-retirements"
+ln -s "$tmpdir/outside-retirements" "$symlink_parent_root/id-retirements"
+if run_meta_root "$symlink_parent_root" retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" --write \
+  >$tmpdir/docs-meta-retire-symlink-parent.out 2>&1; then
+  echo "Expected a symlinked id-retirements component to be refused" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-symlink-parent.out "symlinked id-retirements"
+require_absent "$tmpdir/outside-retirements/$retirement_id.md"
+
+non_directory_root="$tmpdir/non-directory-root"
+make_attack_root "$non_directory_root"
+printf 'not a directory\n' >"$non_directory_root/id-retirements"
+if run_meta_root "$non_directory_root" retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" --write \
+  >$tmpdir/docs-meta-retire-non-directory.out 2>&1; then
+  echo "Expected a non-directory id-retirements parent to be refused" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-non-directory.out "not a directory"
+
+target_symlink_root="$tmpdir/target-symlink-root"
+make_attack_root "$target_symlink_root"
+mkdir -p "$target_symlink_root/id-retirements"
+printf 'outside sentinel\n' >"$tmpdir/outside-target"
+ln -s "$tmpdir/outside-target" "$target_symlink_root/id-retirements/$retirement_id.md"
+if run_meta_root "$target_symlink_root" retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" --write \
+  >$tmpdir/docs-meta-retire-target-symlink.out 2>&1; then
+  echo "Expected a symlink tombstone target to be refused" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-target-symlink.out "target symlink"
+require_contains "$tmpdir/outside-target" "outside sentinel"
+
+target_fifo_root="$tmpdir/target-fifo-root"
+make_attack_root "$target_fifo_root"
+mkdir -p "$target_fifo_root/id-retirements"
+mkfifo "$target_fifo_root/id-retirements/$retirement_id.md"
+if run_meta_root "$target_fifo_root" retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" --write \
+  >$tmpdir/docs-meta-retire-target-fifo.out 2>&1; then
+  echo "Expected a non-regular tombstone target to be refused" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-target-fifo.out "not a regular file"
+
+target_regular_root="$tmpdir/target-regular-root"
+make_attack_root "$target_regular_root"
+mkdir -p "$target_regular_root/id-retirements"
+printf 'project-authored content\n' >"$target_regular_root/id-retirements/$retirement_id.md"
+target_regular_hash="$(shasum -a 256 "$target_regular_root/id-retirements/$retirement_id.md")"
+if run_meta_root "$target_regular_root" retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-link "$retirement_source_link" --write \
+  >$tmpdir/docs-meta-retire-target-regular.out 2>&1; then
+  echo "Expected a conflicting regular tombstone target to be refused" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-target-regular.out "conflicts"
+if [[ "$target_regular_hash" != "$(shasum -a 256 "$target_regular_root/id-retirements/$retirement_id.md")" ]]; then
+  echo "Expected conflicting regular target bytes to remain unchanged" >&2
+  exit 1
+fi
+
+atomic_publish_root="$tmpdir/atomic-publish-root"
+mkdir -p "$atomic_publish_root/id-retirements"
+python3 - "$repo_root/scripts/agent-continuity-docs" "$atomic_publish_root/id-retirements" "$retirement_id" <<'PY'
+import pathlib
+import runpy
+import sys
+
+api = runpy.run_path(sys.argv[1])
+retirements_dir = pathlib.Path(sys.argv[2])
+target = retirements_dir / f"{sys.argv[3]}.md"
+concurrent_content = b"concurrent complete tombstone\n"
+
+def publish_competitor() -> None:
+    target.write_bytes(concurrent_content)
+
+try:
+    api["exclusive_publish_retirement"](
+        retirements_dir,
+        target,
+        b"staged complete tombstone\n",
+        publish_competitor,
+    )
+except SystemExit as exc:
+    if "appeared during publication" not in str(exc):
+        raise
+else:
+    raise SystemExit("Expected exclusive publication to refuse a concurrent target")
+
+if target.read_bytes() != concurrent_content:
+    raise SystemExit("Exclusive publication overwrote the concurrent target")
+if list(retirements_dir.glob(".*.tmp")):
+    raise SystemExit("Exclusive publication left a staging file after refusal")
+PY
+
+notes_only_root="$tmpdir/notes-only-root"
+make_attack_root "$notes_only_root"
+run_meta_root "$notes_only_root" retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reason" \
+  --source-type "$retirement_source_type" --source-notes "Reviewed retirement evidence" --write \
+  >$tmpdir/docs-meta-retire-notes-only.out
+require_file "$notes_only_root/id-retirements/$retirement_id.md"
+require_contains "$notes_only_root/id-retirements/$retirement_id.md" "notes: \"Reviewed retirement evidence\""
 
 mkdir -p "$tmpdir/app/src"
 touch "$tmpdir/app/src/todo.ts"
@@ -207,6 +579,7 @@ next_audit_due:
 | FINDING-011 | medium | routed | Markdown follow-up title should still resolve | PLAN | [Plan](../../product/plans/PLAN-0001-shared-capture-implementation/PLAN-0001-shared-capture-implementation.md#plan-0001-shared-capture-implementation "Open plan") |  |
 | FINDING-012 | low | routed | External Markdown issue link should be accepted | PLAN | [Issue](https://github.com/owensantoso/agent-continuity/issues/1 "Issue") |  |
 | FINDING-013 | medium | routed | Route mismatch should stay visible | DIAG | PLAN-0001 |  |
+| FINDING-014 | medium | routed | Retired brief must not resolve as live work | IMPL | IMPL-0001-02 |  |
 
 ```md
 | ID | Severity | Status | Finding | Route | Follow-up | Resolution |
@@ -344,6 +717,7 @@ require_contains $tmpdir/docs-meta-review.out "invalid-follow-up"
 require_contains $tmpdir/docs-meta-review.out "missing-anchor"
 require_contains $tmpdir/docs-meta-review.out "Someone should look into this"
 require_contains $tmpdir/docs-meta-review.out "Route DIAG does not match follow-up PLAN-0001"
+require_contains $tmpdir/docs-meta-review.out "Missing follow-up IMPL-0001-02"
 require_contains $tmpdir/docs-meta-review.out "Other open audit findings"
 if grep -Fq "Other review items" $tmpdir/docs-meta-review.out; then
   echo "Expected every smoke review item to be grouped into a known urgency bucket" >&2
@@ -405,7 +779,12 @@ if grep -Fq "Missing follow-up [Issue](https://github.com/owensantoso/agent-cont
 fi
 run_meta set-status PLAN-0001 draft >/dev/null
 
+retirement_hash_before_update="$(shasum -a 256 "$retirement_path")"
 run_meta update
+if [[ "$retirement_hash_before_update" != "$(shasum -a 256 "$retirement_path")" ]]; then
+  echo "Expected docs update to preserve project-owned tombstone bytes" >&2
+  exit 1
+fi
 require_file "$docs_root/IDEAS.md"
 require_file "$docs_root/SPECS.md"
 require_file "$docs_root/LEARNINGS.md"
@@ -433,6 +812,12 @@ require_contains "$docs_root/CONCEPTS.md" "Selections Snapshots And Dynamic Sect
 require_contains "$docs_root/DOCS-REGISTRY.md" "RSCH-0001"
 require_contains "$docs_root/DOCS-REGISTRY.md" "EVAL-0001"
 require_contains "$docs_root/DOCS-REGISTRY.md" "DIAG-0001"
+require_contains "$docs_root/DOCS-REGISTRY.md" "$retirement_id"
+require_contains "$docs_root/DOCS-REGISTRY.md" "id-retirement"
+require_not_contains "$docs_root/TODOS.md" "Tombstone-only todo"
+for type_registry in IDEAS.md SPECS.md LEARNINGS.md EXPLAINERS.md QUESTIONS.md CONCEPTS.md AREAS.md AUDITS.md ROADMAP-VIEW.md; do
+  require_not_contains "$docs_root/$type_registry" "$retirement_id"
+done
 require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001"
 require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001-shared-capture-implementation"
 require_contains "$docs_root/ROADMAP-VIEW.md" "type: generated-view"
@@ -441,6 +826,168 @@ require_contains "$docs_root/TODOS.md" "Define owner boundaries"
 require_contains "$docs_root/TODOS.md" "Structured Todos"
 require_contains "$docs_root/TODOS.md" "TODO-0001"
 require_contains "$docs_root/TODOS.md" "Local task with a \\| pipe"
+
+valid_retirement_frontmatter() {
+  local target_id="$1"
+  local parent_plan="$2"
+  cat <<EOF
+---
+type: id-retirement
+id: $target_id
+title: Retired ID $target_id
+status: retired
+parent_plan: $parent_plan
+reason: "Retired by validation fixture."
+source:
+  type: "test"
+  link: "test://retirement"
+  notes: ""
+created_at: "2026-08-16 00:00:00 JST +0900"
+updated_at: "2026-08-16 00:00:00 JST +0900"
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+
+# Retired ID $target_id
+EOF
+}
+
+invalid_retirement="$docs_root/id-retirements/IMPL-0001-90.md"
+cat >"$invalid_retirement" <<'EOF'
+---
+type: id-retirement
+title: Missing ID
+status: retired
+parent_plan: PLAN-0001
+reason: "Missing the frontmatter ID."
+source:
+  type: "test"
+  link: "test://retirement"
+  notes: ""
+created_at: "2026-08-16 00:00:00 JST +0900"
+updated_at: "2026-08-16 00:00:00 JST +0900"
+repo_state:
+  based_on_commit:
+  last_reviewed_commit:
+---
+EOF
+if run_meta check >$tmpdir/docs-meta-retire-check-missing-id.out 2>&1; then
+  echo "Expected docs check to reject a tombstone without frontmatter id" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-missing-id.out "Missing frontmatter field 'id'"
+rm "$invalid_retirement"
+
+mkdir -p "$docs_root/misplaced"
+invalid_retirement="$docs_root/misplaced/IMPL-0001-91.md"
+valid_retirement_frontmatter IMPL-0001-91 PLAN-0001 >"$invalid_retirement"
+if run_meta check >$tmpdir/docs-meta-retire-check-path.out 2>&1; then
+  echo "Expected docs check to reject a tombstone outside the fixed path" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-path.out "must live at id-retirements/IMPL-0001-91.md"
+rm "$invalid_retirement"
+
+invalid_retirement="$docs_root/id-retirements/IMPL-0002-01.md"
+valid_retirement_frontmatter IMPL-0002-01 PLAN-0001 >"$invalid_retirement"
+if run_meta check >$tmpdir/docs-meta-retire-check-plan-number.out 2>&1; then
+  echo "Expected docs check to reject a tombstone whose plan number differs" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-plan-number.out "does not match parent_plan PLAN-0001"
+rm "$invalid_retirement"
+
+invalid_retirement="$docs_root/id-retirements/IMPL-9999-01.md"
+valid_retirement_frontmatter IMPL-9999-01 PLAN-9999 >"$invalid_retirement"
+if run_meta check >$tmpdir/docs-meta-retire-check-missing-parent.out 2>&1; then
+  echo "Expected docs check to reject a tombstone with a missing live parent" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-missing-parent.out "must reference a live primary plan"
+rm "$invalid_retirement"
+
+invalid_retirement="$docs_root/id-retirements/IMPL-0001-92.md"
+valid_retirement_frontmatter IMPL-0001-92 PLAN-0001 >"$invalid_retirement"
+perl -0pi -e 's/reason: "Retired by validation fixture\."/reason: ""/' "$invalid_retirement"
+if run_meta check >$tmpdir/docs-meta-retire-check-reason.out 2>&1; then
+  echo "Expected docs check to reject an empty retirement reason" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-reason.out "must include a non-empty reason"
+rm "$invalid_retirement"
+
+invalid_retirement="$docs_root/id-retirements/IMPL-0001-93.md"
+valid_retirement_frontmatter IMPL-0001-93 PLAN-0001 >"$invalid_retirement"
+perl -0pi -e 's/type: "test"/type: ""/; s/link: "test:\/\/retirement"/link: ""/' "$invalid_retirement"
+if run_meta check >$tmpdir/docs-meta-retire-check-provenance.out 2>&1; then
+  echo "Expected docs check to reject missing retirement provenance" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-provenance.out "source.type"
+require_contains $tmpdir/docs-meta-retire-check-provenance.out "source.link or source.notes"
+rm "$invalid_retirement"
+
+invalid_retirement="$docs_root/id-retirements/IMPL-0001-94.md"
+valid_retirement_frontmatter IMPL-0001-94 PLAN-0001 >"$invalid_retirement"
+perl -0pi -e 's/status: retired/status: active/' "$invalid_retirement"
+if run_meta check >$tmpdir/docs-meta-retire-check-status.out 2>&1; then
+  echo "Expected docs check to reject an invalid retirement status" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-status.out "Unknown status 'active' for type 'id-retirement'"
+rm "$invalid_retirement"
+
+invalid_retirement="$docs_root/id-retirements/IMPL-0001-96.md"
+valid_retirement_frontmatter IMPL-0001-96 PLAN-0001 >"$invalid_retirement"
+perl -0pi -e 's/status: retired/status: ""/' "$invalid_retirement"
+if run_meta check >$tmpdir/docs-meta-retire-check-empty-status.out 2>&1; then
+  echo "Expected docs check to reject an empty retirement status" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-empty-status.out "must use status retired"
+rm "$invalid_retirement"
+
+invalid_retirement="$docs_root/id-retirements/IMPL-0001-95.md"
+valid_retirement_frontmatter IMPL-0001-95 PLAN-0001 >"$invalid_retirement"
+perl -0pi -e 's/type: id-retirement/type: plan/' "$invalid_retirement"
+if run_meta check >$tmpdir/docs-meta-retire-check-type.out 2>&1; then
+  echo "Expected docs check to reject the wrong type in id-retirements" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-type.out "must use type 'id-retirement'"
+rm "$invalid_retirement"
+
+wrong_type_parent="$docs_root/product/specs/PLAN-0099-wrong-type.md"
+cat >"$wrong_type_parent" <<'EOF'
+---
+type: spec
+id: PLAN-0099
+title: Wrong Type Parent
+status: draft
+---
+EOF
+invalid_retirement="$docs_root/id-retirements/IMPL-0099-01.md"
+valid_retirement_frontmatter IMPL-0099-01 PLAN-0099 >"$invalid_retirement"
+if run_meta check >$tmpdir/docs-meta-retire-check-parent-type.out 2>&1; then
+  echo "Expected docs check to require a parent of type plan" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-parent-type.out "must reference a live primary plan"
+rm "$invalid_retirement" "$wrong_type_parent"
+
+frontmatter_collision="$docs_root/frontmatter-retirement-collision.md"
+cat >"$frontmatter_collision" <<EOF
+---
+id: $retirement_id
+---
+EOF
+if run_meta check >$tmpdir/docs-meta-retire-check-frontmatter-collision.out 2>&1; then
+  echo "Expected docs check to reject a frontmatter retirement collision" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-retire-check-frontmatter-collision.out "collision"
+rm "$frontmatter_collision"
 
 mkdir -p "$docs_root/research"
 cat > "$docs_root/research/bad-research-without-id.md" <<'BADRESEARCH'
@@ -576,6 +1123,13 @@ mkdir -p "$docs_root/link-fixtures"
 cat > "$docs_root/link-fixtures/target.md" <<'TARGET'
 # Target
 TARGET
+cat > "$docs_root/link-fixtures/immutable-target.md" <<'IMMUTABLE_TARGET'
+# Immutable Target
+IMMUTABLE_TARGET
+mkdir -p "$docs_root/link-fixtures/immutable-dir"
+cat > "$docs_root/link-fixtures/immutable-dir/nested.md" <<'IMMUTABLE_NESTED_TARGET'
+# Immutable Nested Target
+IMMUTABLE_NESTED_TARGET
 cat > "$docs_root/link-fixtures/source.md" <<'SOURCE'
 # Source
 
@@ -610,15 +1164,66 @@ if ! run_meta check-links >$tmpdir/docs-meta-check-links-clean.out 2>&1; then
   echo "Expected check-links to pass after removing missing link" >&2
   exit 1
 fi
+
+retirement_hash_before_targeted_moves="$(shasum -a 256 "$retirement_path")"
+immutable_target_hash="$(shasum -a 256 "$docs_root/link-fixtures/immutable-target.md")"
+if run_meta move link-fixtures/immutable-target.md link-fixtures/moved/immutable-target-new.md --write \
+  >$tmpdir/docs-meta-move-immutable-target.out 2>&1; then
+  echo "Expected move to refuse a source linked from an immutable tombstone" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-move-immutable-target.out "immutable id-retirement"
+require_contains $tmpdir/docs-meta-move-immutable-target.out "links to the move source"
+require_file "$docs_root/link-fixtures/immutable-target.md"
+require_absent "$docs_root/link-fixtures/moved/immutable-target-new.md"
+if [[ "$immutable_target_hash" != "$(shasum -a 256 "$docs_root/link-fixtures/immutable-target.md")" ]]; then
+  echo "Expected refused exact-target move to preserve source bytes" >&2
+  exit 1
+fi
+
+immutable_nested_hash="$(shasum -a 256 "$docs_root/link-fixtures/immutable-dir/nested.md")"
+if run_meta move link-fixtures/immutable-dir link-fixtures/moved/immutable-dir --write \
+  >$tmpdir/docs-meta-move-immutable-directory-target.out 2>&1; then
+  echo "Expected directory move to refuse a nested target linked from an immutable tombstone" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-move-immutable-directory-target.out "immutable id-retirement"
+require_contains $tmpdir/docs-meta-move-immutable-directory-target.out "beneath the move source"
+require_file "$docs_root/link-fixtures/immutable-dir/nested.md"
+require_absent "$docs_root/link-fixtures/moved/immutable-dir"
+if [[ "$immutable_nested_hash" != "$(shasum -a 256 "$docs_root/link-fixtures/immutable-dir/nested.md")" ]]; then
+  echo "Expected refused directory-target move to preserve source bytes" >&2
+  exit 1
+fi
+if [[ "$retirement_hash_before_targeted_moves" != "$(shasum -a 256 "$retirement_path")" ]]; then
+  echo "Expected refused targeted moves to preserve tombstone bytes" >&2
+  exit 1
+fi
+if ! run_meta check-links >$tmpdir/docs-meta-check-links-after-refused-moves.out 2>&1; then
+  cat $tmpdir/docs-meta-check-links-after-refused-moves.out >&2
+  echo "Expected check-links to remain green after refused targeted moves" >&2
+  exit 1
+fi
+
 run_meta normalize-links --style relative --dry-run >$tmpdir/docs-meta-normalize-dry-run.out
 require_contains $tmpdir/docs-meta-normalize-dry-run.out "/product/specs/SPEC-0001-shared-capture-workflow.md -> ../product/specs/SPEC-0001-shared-capture-workflow.md"
+retirement_hash_before_normalize="$(shasum -a 256 "$retirement_path")"
 run_meta normalize-links --style relative --write >$tmpdir/docs-meta-normalize-write.out
 require_contains "$docs_root/link-fixtures/source.md" "../product/specs/SPEC-0001-shared-capture-workflow.md"
+if [[ "$retirement_hash_before_normalize" != "$(shasum -a 256 "$retirement_path")" ]]; then
+  echo "Expected normalize-links --write to preserve tombstone bytes" >&2
+  exit 1
+fi
 run_meta move link-fixtures/target.md link-fixtures/moved/target-new.md --dry-run >$tmpdir/docs-meta-move-dry-run.out
 require_contains $tmpdir/docs-meta-move-dry-run.out "target.md -> moved/target-new.md"
+retirement_hash_before_other_move="$(shasum -a 256 "$retirement_path")"
 run_meta move link-fixtures/target.md link-fixtures/moved/target-new.md --write >$tmpdir/docs-meta-move-write.out
 require_file "$docs_root/link-fixtures/moved/target-new.md"
 require_contains "$docs_root/link-fixtures/source.md" "moved/target-new.md"
+if [[ "$retirement_hash_before_other_move" != "$(shasum -a 256 "$retirement_path")" ]]; then
+  echo "Expected moving another doc to preserve tombstone bytes" >&2
+  exit 1
+fi
 run_meta backlinks link-fixtures/moved/target-new.md >$tmpdir/docs-meta-backlinks-moved.out
 require_contains $tmpdir/docs-meta-backlinks-moved.out "link-fixtures/source.md"
 run_meta orphans --exclude 'link-fixtures/*' >$tmpdir/docs-meta-orphans.out
@@ -664,5 +1269,29 @@ if run_meta check >$tmpdir/docs-meta-bad-status.out 2>&1; then
   exit 1
 fi
 require_contains $tmpdir/docs-meta-bad-status.out "Unknown status 'accepted' for type 'plan'"
+
+if [[ "${AGENT_CONTINUITY_DOCS_SKIP_ADOPTER_PORTABILITY_CHECK:-}" != "1" ]]; then
+  adopter_root="$tmpdir/adopter-fixture"
+  mkdir -p "$adopter_root/scripts" "$adopter_root/tests"
+  cp "$repo_root/scripts/agent-continuity-docs" "$adopter_root/scripts/agent-continuity-docs"
+  cp "$repo_root/tests/agent-continuity-docs-smoke.sh" "$adopter_root/tests/agent-continuity-docs-smoke.sh"
+  require_absent "$adopter_root/scripts/agent-continuity"
+  git -C "$adopter_root" init -q
+  git -C "$adopter_root" add scripts/agent-continuity-docs tests/agent-continuity-docs-smoke.sh
+  git -C "$adopter_root" \
+    -c user.name="Agent Continuity Smoke" \
+    -c user.email="smoke@example.invalid" \
+    commit -qm "Create adopter smoke fixture"
+  if ! (
+    cd "$adopter_root"
+    AGENT_CONTINUITY_DOCS_SKIP_ADOPTER_PORTABILITY_CHECK=1 \
+      tests/agent-continuity-docs-smoke.sh
+  ) >$tmpdir/docs-meta-adopter-portability.out 2>&1; then
+    cat $tmpdir/docs-meta-adopter-portability.out >&2
+    echo "Expected vendored docs smoke test to pass without the agent-continuity dispatcher" >&2
+    exit 1
+  fi
+  require_contains $tmpdir/docs-meta-adopter-portability.out "agent-continuity docs smoke test passed"
+fi
 
 echo "agent-continuity docs smoke test passed"

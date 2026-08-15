@@ -8,6 +8,18 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ### For adopters
 
+- Added preview-first `agent-continuity docs retire-id` for permanently retiring
+  the current next `IMPL-*` ID of a live plan. Explicit `--write` creates a
+  typed, provenance-bearing tombstone under `docs/id-retirements/`; it advances
+  allocation and the global registry without becoming live work.
+- Retirement tombstones are immutable through supported status and move
+  commands, directory moves, and link rewrites; they reject collisions and
+  unsafe path shapes, remain project-owned through init/doctor/update, and are
+  ignored by live TODO and audit references. Moves that would break a resolved
+  link from an immutable tombstone are refused before mutation.
+- The reusable structured-docs smoke test now invokes the vendored
+  `scripts/agent-continuity-docs` executable directly and verifies that the
+  executable plus copied smoke test pass without the top-level dispatcher.
 - Structured-document operations now live under `agent-continuity docs`. Fresh
   installs use `--docs`, install `scripts/agent-continuity-docs`, record the
   `agent-continuity-docs` optional component, and emit the
@@ -76,6 +88,13 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ### Tooling changes
 
+- Added retirement validation and smoke coverage for preview/write behavior,
+  current-next bounds, exact and conflicting repeats, target-path atomic
+  no-overwrite publication, path containment, live-reference and TODO exclusion,
+  immutable link-rewrite sources, generated registries, and byte preservation
+  through init, doctor, and docs update. Repository-wide concurrent allocation
+  remains governed by exclusive branch and owner discipline rather than a
+  global lock.
 - Added `agent-continuity init ...` as the canonical initializer; `agent-docs`
   and `agent-docs-init` remain compatibility aliases.
 - Added exit-code semantics for doctor/dry-run reports: `0` healthy/current,

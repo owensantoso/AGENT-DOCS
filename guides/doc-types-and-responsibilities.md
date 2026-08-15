@@ -324,6 +324,32 @@ Naming:
 
 Read the parent `PLAN-*` before implementing from an `IMPL-*` brief.
 
+## `id-retirement` Tombstone
+
+Purpose:
+
+- permanently prevent reuse of an uncreated `IMPL-*` identifier
+- preserve why and where the retirement was authorized without representing
+  live implementation work
+
+Create one only through `agent-continuity docs retire-id`. The command supports
+the current next IMPL ID for a live parent plan, previews by default, and writes
+only with `--write`. Tombstones live at
+`docs/id-retirements/<IMPL-ID>.md`, use `type: id-retirement` and `status:
+retired`, and require a reason plus source provenance.
+
+The primary ID deliberately participates in allocation and the global docs
+registry. Live plan, brief, TODO, relationship, and audit-follow-up resolution
+must ignore it. Do not move it, change its status, or treat it as a replacement
+for a missing implementation brief. Link normalization and moves of other docs
+must not rewrite its bytes. Supported CLI immutability plus Git history is the
+permanence boundary; Agent Continuity does not install a deletion daemon.
+
+Publication is atomic and no-overwrite only at the fixed tombstone target path.
+V1 does not serialize allocation across the wider repository IMPL namespace,
+so concurrent allocators still require ordinary exclusive branch and owner
+discipline.
+
 ## Codebase map
 
 Purpose:

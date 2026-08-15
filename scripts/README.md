@@ -276,6 +276,39 @@ agent-continuity docs new explainer "How specs and plans fit together" --domain 
 agent-continuity docs new question "Should specs and plans be one-to-one?" --domain repo-health
 ```
 
+Retire the current next implementation-brief ID without creating live work:
+
+```bash
+agent-continuity docs retire-id IMPL-0017-03 \
+  --plan PLAN-0017 \
+  --reason "The proposed slice was withdrawn before its brief was created." \
+  --source-type codex-task \
+  --source-link codex://threads/<thread-id>
+```
+
+`retire-id` is preview-only unless `--write` is passed. V1 supports `IMPL-*`
+only and requires the target to equal `agent-continuity docs next impl --plan
+PLAN-####` for a live primary plan. Provenance requires a non-empty
+`--source-type` plus at least one non-empty `--source-link` or
+`--source-notes`.
+
+The write creates exactly one project-owned typed tombstone at
+`docs/id-retirements/<IMPL-ID>.md`. Exact repeats are byte-preserving and
+idempotent; conflicting repeats, live collisions, future jumps, unsafe path
+shapes, status changes, and direct or containing-directory moves are refused.
+Link-rewrite operations exclude tombstones as source documents while continuing
+to process other docs. Tombstones count for allocation and `DOCS-REGISTRY.md`
+only. They do not satisfy live doc or TODO references, contribute global TODO
+items, or appear in type-specific registries. “Permanent” means immutable
+through supported Agent Continuity commands plus normal Git governance; manual
+deletion remains visible to Git and is not intercepted by a background service.
+
+The publication guarantee is target-path atomic no-overwrite: the command
+stages one complete tombstone, performs a final rescan, and exclusively
+publishes it only while that exact path remains absent. V1 does not lock or
+serialize the wider repository IMPL namespace. Repository-level concurrent
+allocators still require ordinary exclusive branch and owner discipline.
+
 Inspect or update status:
 
 ```bash
@@ -441,7 +474,7 @@ agent-continuity docs update
 agent-continuity docs check
 ```
 
-`check` also validates frontmatter contracts for known doc types, type-specific statuses, ID/filename agreement, implementation-to-parent-plan ID agreement, and whether generated registry files are stale.
+`check` also validates frontmatter contracts for known doc types, type-specific statuses, ID/filename agreement, implementation-to-parent-plan ID agreement, retirement tombstone paths, provenance, parent plans and scanner collisions, and whether generated registry files are stale.
 
 Inspect docs links:
 

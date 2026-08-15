@@ -115,6 +115,7 @@ Common commands:
 agent-continuity docs next spec
 agent-continuity docs next todo
 agent-continuity docs new plan "Title" --domain product --spec SPEC-0001
+agent-continuity docs retire-id IMPL-0001-02 --plan PLAN-0001 --reason "Reason" --source-type conversation --source-notes "Provenance"
 agent-continuity docs todos --status ready
 agent-continuity docs review
 agent-continuity docs check-todos
@@ -144,5 +145,6 @@ Expected convention:
 - Do not create extra doc layers when an existing doc type already owns the job.
 - Do not use structured `TODO-*` items for tiny local chores.
 - Do not hand-edit generated views except to recover from tooling failure.
+- Retire only the current next `IMPL-*` ID through `agent-continuity docs retire-id`; tombstones are allocation records, not live briefs or reference targets.
 - Do not implement from an `IMPL-*` brief alone without first reading its parent `PLAN-*`.
 - Do not confuse reusable `AGENTS.md` templates with environment-provided Codex skills.

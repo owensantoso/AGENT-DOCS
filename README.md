@@ -447,6 +447,7 @@ This exists because agents are good at synthesis but unreliable at bookkeeping. 
 |---|---|
 | Create a doc | `agent-continuity docs new <family> "<title>" --domain <domain>` |
 | Find next ID | `agent-continuity docs next <family>` |
+| Retire the current next IMPL ID | `agent-continuity docs retire-id IMPL-####-## --plan PLAN-#### --reason "..." --source-type <type> --source-link <link>` |
 | Update generated views | `agent-continuity docs update` |
 | Validate metadata and generated views | `agent-continuity docs check` |
 | Validate structured todos | `agent-continuity docs check-todos` |
@@ -456,6 +457,20 @@ This exists because agents are good at synthesis but unreliable at bookkeeping. 
 | Check freshness | `agent-continuity docs health --write` |
 
 Supported stable-ID families include `IDEA`, `RSCH`, `EVAL`, `DIAG`, `CONC`, `SPEC`, `PLAN`, `IMPL`, `ADR`, `LRN`, `EXPL`, `QST`, and `TODO`.
+
+When an uncreated implementation-brief ID must never be reused,
+`agent-continuity docs retire-id` creates a typed tombstone at
+`docs/id-retirements/<IMPL-ID>.md`. Retirement is preview-first, applies only to
+the current next ID for a live parent plan, and becomes immutable through the
+supported CLI after `--write`. The tombstone advances allocation and appears in
+the global docs registry, but it is not live work and cannot satisfy plan,
+brief, TODO, or audit-follow-up references.
+
+Publication is atomic and no-overwrite at the tombstone target path: the command
+stages one complete file, performs a final rescan, and publishes only if that
+path is still absent. V1 does not serialize the wider repository IMPL namespace.
+Concurrent allocators still require ordinary exclusive branch and owner
+discipline.
 
 Generated files such as `IDEAS.md`, `CONCEPTS.md`, `SPECS.md`, `DOCS-REGISTRY.md`, `TODOS.md`, `AREAS.md`, `AUDITS.md`, `ROADMAP-VIEW.md`, and `HEALTH.md` are views, not separate state. Fix the source docs, then regenerate.
 

@@ -133,6 +133,24 @@ body = sys.argv[3]
 PY
 }
 
+retirement_doctor_target="$tmpdir/retirement-doctor"
+retirement_doctor_docs="$retirement_doctor_target/docs"
+"$repo_root/scripts/agent-continuity" docs --root "$retirement_doctor_docs" new plan "Retirement Doctor Preservation" --domain product \
+  >$tmpdir/retirement-doctor-plan.out
+"$repo_root/scripts/agent-continuity" docs --root "$retirement_doctor_docs" new impl "Live First Slice" --plan PLAN-0001 \
+  >$tmpdir/retirement-doctor-impl.out
+"$repo_root/scripts/agent-continuity" docs --root "$retirement_doctor_docs" retire-id IMPL-0001-02 --plan PLAN-0001 \
+  --reason "Preserve this project-owned tombstone through doctor." --source-type test --source-notes "doctor preservation" --write \
+  >$tmpdir/retirement-doctor-write.out
+retirement_doctor_path="$retirement_doctor_docs/id-retirements/IMPL-0001-02.md"
+retirement_doctor_hash="$(shasum -a 256 "$retirement_doctor_path")"
+"$installer" "$retirement_doctor_target" --profile small --docs-meta yes --write >$tmpdir/retirement-doctor-install.out
+require_exit 0 "$tmpdir/retirement-doctor.out" "$agent_docs" doctor "$retirement_doctor_target"
+if [[ "$retirement_doctor_hash" != "$(shasum -a 256 "$retirement_doctor_path")" ]]; then
+  echo "Expected doctor to preserve project-owned retirement tombstone bytes" >&2
+  exit 1
+fi
+
 healthy_target="$tmpdir/healthy"
 "$installer" "$healthy_target" --profile small --docs-meta yes --write >"$tmpdir/healthy-install.out"
 healthy_target_resolved="$(cd "$healthy_target" && pwd -P)"

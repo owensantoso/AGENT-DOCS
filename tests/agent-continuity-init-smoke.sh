@@ -29,6 +29,24 @@ require_contains() {
   fi
 }
 
+retirement_preserve_target="$tmpdir/retirement-preserve-app"
+retirement_docs="$retirement_preserve_target/docs"
+"$repo_root/scripts/agent-continuity" docs --root "$retirement_docs" new plan "Retirement Preservation" --domain product \
+  >$tmpdir/retirement-preserve-plan.out
+"$repo_root/scripts/agent-continuity" docs --root "$retirement_docs" new impl "Live First Slice" --plan PLAN-0001 \
+  >$tmpdir/retirement-preserve-impl.out
+"$repo_root/scripts/agent-continuity" docs --root "$retirement_docs" retire-id IMPL-0001-02 --plan PLAN-0001 \
+  --reason "Preserve this project-owned tombstone through init." --source-type test --source-notes "init preservation" --write \
+  >$tmpdir/retirement-preserve-write.out
+retirement_preserve_path="$retirement_docs/id-retirements/IMPL-0001-02.md"
+retirement_preserve_hash="$(shasum -a 256 "$retirement_preserve_path")"
+"$installer" "$retirement_preserve_target" --profile standard --docs yes --write >$tmpdir/retirement-preserve-init.out
+if [[ "$retirement_preserve_hash" != "$(shasum -a 256 "$retirement_preserve_path")" ]]; then
+  echo "Expected init to preserve project-owned retirement tombstone bytes" >&2
+  exit 1
+fi
+require_contains "$retirement_docs/DOCS-REGISTRY.md" "IMPL-0001-02"
+
 small_target="$tmpdir/small-app"
 "$installer" "$small_target" --profile standard --dry-run >"$tmpdir/small-dry-run.out"
 require_contains "$tmpdir/small-dry-run.out" "Profile: standard"
