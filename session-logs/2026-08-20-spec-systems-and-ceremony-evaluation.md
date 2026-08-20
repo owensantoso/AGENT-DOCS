@@ -4,7 +4,7 @@ title: Spec Systems And Ceremony Evaluation
 domain: agent-continuity
 status: completed
 created_at: "2026-08-20 17:13:32 JST +0900"
-updated_at: "2026-08-20 23:45:02 JST +0900"
+updated_at: "2026-08-21 00:14:44 JST +0900"
 started_at: "2026-08-20 17:13:32 JST +0900"
 ended_at: "2026-08-20 17:29:44 JST +0900"
 timezone: "JST +0900"
@@ -155,3 +155,11 @@ Verification:
 - Rendered composition and delivered readability were not run: `owen-storage-history pressure-status --quiet` returned critical-pressure exit `12`, and no already-installed Mermaid renderer was available. No package or browser download was attempted.
 - The earlier session caveat about unsupported whole-repository metadata checks and legacy `linked_paths` debt still applies; the supported release suite is the verification authority used here.
 - No schema, tooling, or corpus migration was implemented.
+
+## Follow-Up Requirement - 2026-08-21 00:14 JST
+
+Owen clarified why reciprocal relationship fields were originally attractive: entering through either endpoint should reveal the relationship neighborhood. In `A depends_on B`, a reader starting from B must be able to discover that A depends on it even when the edge is authored only on A.
+
+The proposed response separates authorship from presentation. Store one canonical directed edge, then require the resolved node view used for execution to include outgoing and incoming edges. Predicate-specific inverse labels present the same assertion from either endpoint; `depends_on` becomes static `depended_on_by` from the target, while `blocks` is reserved for a status-dependent presentation. The resolver can scan Markdown on demand, so a generated SQLite index remains an optimization.
+
+Raw single-file self-containment, single authorship, and the absence of any resolver or generated material cannot all hold simultaneously. The remaining open product decision is whether ordinary raw Markdown on a Git host must show incoming relationships. If so, use a mechanically refreshed, explicitly non-canonical generated block; otherwise the repository-scanning node view is the execution entry point. No tooling behavior changed in this follow-up.

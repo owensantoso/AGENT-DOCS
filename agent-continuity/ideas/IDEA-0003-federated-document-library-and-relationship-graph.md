@@ -5,7 +5,7 @@ title: Federated Document Library And Canonical Relationship Graph
 domain: agent-continuity
 status: exploring
 created_at: "2026-08-07 15:49:57 JST +0900"
-updated_at: "2026-08-20 23:45:02 JST +0900"
+updated_at: "2026-08-21 00:14:44 JST +0900"
 owner: Codex main agent
 source:
   type: conversation
@@ -33,7 +33,7 @@ linked_paths: []
 promoted_to: []
 repo_state:
   based_on_commit: 9750871c50443d669e20be01e684fa8c1ce8b37b
-  last_reviewed_commit: 41f4df26c82a555e127372c3ac5576614051cbea
+  last_reviewed_commit: 55934bad325ed71ffda183e8d0ca9dd443105c1c
 ---
 
 # IDEA-0003 - Federated Document Library And Canonical Relationship Graph
@@ -132,6 +132,40 @@ flowchart TD
 ```
 
 The normalized design does not mean the graph and Markdown compete as sources of truth. The Markdown file is the authored node record. A directed relationship is stored once on its source, while inverse labels and backlinks are projections. Logical separation does not require a second physical node file or one operating-system file per edge.
+
+## Local Legibility Without Duplicate Authorship
+
+Confirmed requirement: when a human or agent opens a document as execution context, the document's resolved view must reveal both outgoing and incoming typed relationships. If `A depends_on B`, someone entering through B must be able to discover that A depends on it even though B does not author a reciprocal edge.
+
+Three properties cannot all be provided without derived materialization:
+
+1. B's raw Markdown file alone contains its complete relationship neighborhood.
+2. The relationship is authored only once.
+3. No wider corpus scan, resolver, generated block, or index is used.
+
+The proposed default keeps single authorship and deliberately uses a resolver: author once, then resolve the neighborhood automatically. The read contract is:
+
+- Authors store `A depends_on B` once on A.
+- A node resolver scans the corpus or queries the disposable index whenever a document is opened for context.
+- The resolved node view always includes both outgoing edges and incoming edges.
+- A predicate registry supplies direction-aware labels. From A, the edge reads `depends_on B`; from B, the same edge reads `depended_on_by A`. Use `blocks A` only as a status-dependent presentation when B is incomplete and the workflow semantics justify it.
+- Cold-agent execution should enter through a resolver command or application view that returns the node plus its neighborhood, rather than treating a raw file read as complete graph context.
+- The resolver may scan Markdown on demand; a prebuilt database is an optimization, not a correctness requirement.
+
+For example:
+
+```text
+Canonical authored edge:
+A --depends_on--> B
+
+Resolved view of A:
+Outgoing: depends_on B
+
+Resolved view of B:
+Incoming: depended_on_by A
+```
+
+If one-file raw-Markdown self-containment becomes a hard requirement, the honest fallback is a clearly marked generated incoming-relationships block that is never independently edited and whose freshness is checked mechanically. That adds Git churn and merge surface, so it is not the proposed default.
 
 ## Identity Is Not The Filename
 
@@ -547,6 +581,7 @@ cross-project views over them.
 
 ## Questions
 
+- Does “open a document” require complete incoming relationships in the raw Markdown file on an ordinary Git host, or is a repository-scanning Agent Continuity node view the accepted execution entry point?
 - Which intrinsic frontmatter fields must accompany UUIDv7 for offline recovery and validation?
 - Which first real relationship requires the optional source-sharded overlay instead of one-sided typed frontmatter?
 - When does an assertion need its own UUID rather than tuple identity because it has independent provenance, lifecycle, annotation, or references?
