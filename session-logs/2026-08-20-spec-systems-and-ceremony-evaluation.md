@@ -4,7 +4,7 @@ title: Spec Systems And Ceremony Evaluation
 domain: agent-continuity
 status: completed
 created_at: "2026-08-20 17:13:32 JST +0900"
-updated_at: "2026-08-20 22:33:40 JST +0900"
+updated_at: "2026-08-20 23:45:02 JST +0900"
 started_at: "2026-08-20 17:13:32 JST +0900"
 ended_at: "2026-08-20 17:29:44 JST +0900"
 timezone: "JST +0900"
@@ -14,6 +14,9 @@ participants:
   - delegated landscape researcher
   - delegated topology reviewer
   - delegated architecture red-team reviewer
+  - delegated relation-storage reviewer
+  - delegated graph-database reviewer
+  - delegated plan-and-brief reviewer
 areas:
   - agent-continuity
   - spec-driven-development
@@ -126,4 +129,29 @@ These are research and protocol decisions. No durable product architecture decis
 
 The breadth of the comparison became cognitively expensive before it produced a necessary implementation decision. Source: orchestration and presentation scope, not a failure of the underlying research.
 
-Owen selected the native Agent Continuity direction for continued design. `RSCH-0010` and `EVAL-0002` are now parked references with explicit reopen triggers rather than active gates. `IDEA-0003` now separates immutable UUID identity, mutable filename locators, Markdown content, document-node records, canonical relationship assertions, and derived graph projections. No schema or corpus migration was implemented in this follow-up.
+Owen selected the native Agent Continuity direction for continued design. `RSCH-0010` and `EVAL-0002` are now parked references with explicit reopen triggers rather than active gates. This checkpoint proposed separate document-node records; the later 23:31 correction supersedes that physical model while retaining UUID identity, mutable filename locators, typed relationships, and derived graph projections. No schema or corpus migration was implemented in this follow-up.
+
+## Follow-Up Correction - 2026-08-20 23:31 JST
+
+What happened: a later explanation changed the existing subject-sharded relationship proposal into one YAML file per relationship and drew the Markdown file plus a separate node YAML as two canonical objects. That would create hundreds of tiny files in the current corpus and introduce a new one-to-one identity and locator synchronization burden.
+
+What led to it: logical graph records were conflated with their physical filesystem serialization. Source: agent modeling assumption and presentation ambiguity. The prior durable proposal itself already said one relation file per subject, not one file per edge.
+
+What changed:
+
+- Owen selected UUIDv7 for immutable document identity. UUIDv7 does not encode workflow order; explicit dependency relationships do.
+- The Markdown record is now the proposed authored graph node. It owns UUIDv7, intrinsic metadata, content, and ordinary outgoing typed relationships.
+- Reciprocal fields are not stored. Inverses such as `contains` and `blocks` are generated.
+- A separate relation overlay is optional and source-sharded: at most one YAML file per subject when a relation needs independent visibility, provenance, authorization, lifecycle, or a non-document source. One-file-per-edge is rejected as the default.
+- Ordinary edge identity is the tuple `(subject UUID, predicate, object UUID)`. An edge gains its own UUID only if it becomes independently addressable.
+- SQLite remains a disposable projection. A canonical graph database is deferred until transactional concurrent writes, application-owned authoring, measured traversal limits, or database-level permissions make it necessary.
+- PLAN and IMPL remain separate semantic types, but IMPL is optional. Zero briefs is valid for a directly executable plan; multiple briefs require independently ownable, dependency-addressable, verifiable, stable slices and a concrete coordination benefit.
+
+Verification:
+
+- Three independent reviews converged on the storage correction, graph-database deferral, and adaptive PLAN/IMPL distinction; a fourth diff review caught edge-identity, privacy, parser-compatibility, cycle, and legacy-numbering ambiguities before commit.
+- `scripts/release-check` passed. A pre-existing ignored `scripts/__pycache__` directory was moved aside for the hygiene gate and restored immediately afterward.
+- Strict static Mermaid layout lint passed for the three materially changed diagrams.
+- Rendered composition and delivered readability were not run: `owen-storage-history pressure-status --quiet` returned critical-pressure exit `12`, and no already-installed Mermaid renderer was available. No package or browser download was attempted.
+- The earlier session caveat about unsupported whole-repository metadata checks and legacy `linked_paths` debt still applies; the supported release suite is the verification authority used here.
+- No schema, tooling, or corpus migration was implemented.

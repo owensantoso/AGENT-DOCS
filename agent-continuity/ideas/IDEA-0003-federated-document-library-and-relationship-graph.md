@@ -5,7 +5,7 @@ title: Federated Document Library And Canonical Relationship Graph
 domain: agent-continuity
 status: exploring
 created_at: "2026-08-07 15:49:57 JST +0900"
-updated_at: "2026-08-20 22:33:40 JST +0900"
+updated_at: "2026-08-20 23:45:02 JST +0900"
 owner: Codex main agent
 source:
   type: conversation
@@ -33,7 +33,7 @@ linked_paths: []
 promoted_to: []
 repo_state:
   based_on_commit: 9750871c50443d669e20be01e684fa8c1ce8b37b
-  last_reviewed_commit: 0de3c733c69f706dbd04ba6ce40879bb739f5f08
+  last_reviewed_commit: 41f4df26c82a555e127372c3ac5576614051cbea
 ---
 
 # IDEA-0003 - Federated Document Library And Canonical Relationship Graph
@@ -49,7 +49,8 @@ The current convention stores identity, lifecycle state, and many relationships 
 The proposed rule is **one canonical owner per fact**:
 
 - A Markdown document owns its content and intrinsic properties.
-- A relationship store owns each explicit typed edge exactly once.
+- The directed source owns each ordinary explicit typed edge exactly once; the edge may remain in that source document.
+- An optional relationship overlay owns only edges that need a different visibility, provenance, authorization, or lifecycle boundary.
 - Generated indexes and user interfaces derive both directions, backlinks, groups, and health warnings.
 - External systems continue to own their native facts, such as GitHub issue state or an agent session transcript.
 
@@ -57,16 +58,16 @@ The proposed rule is **one canonical owner per fact**:
 
 The external framework comparison is parked. Agent Continuity remains the selected design direction because its broader project memory, provenance, evidence, and cross-document graph are intentional capabilities rather than gaps that either OpenSpec or Spec Kit fully covers. [RSCH-0010](../../research/RSCH-0010-spec-systems-and-agent-continuity-fit.md) and [EVAL-0002](../../repo-health/evaluations/EVAL-0002-documentation-ceremony-and-recovery-value.md) remain archived references to reopen if ceremony or token cost becomes a demonstrated problem.
 
-The native direction separates four things that the current filename and frontmatter model partially conflates:
+The native direction separates four concepts without turning them into four physical records:
 
-1. **Identity** - an immutable, branch-safe UUIDv7 that means only “this entity.”
+1. **Identity** - an immutable, branch-safe UUIDv7 that means only “this entity.” Owen selected UUIDv7 for the future schema.
 2. **Locator** - a human filename such as `PLAN-canonical-relationship-graph.md`; its type prefix and descriptive slug aid browsing but do not identify or order the document.
-3. **Content** - the Markdown heading and body, plus the minimum embedded UUID anchor needed to reconnect a moved file to its graph node.
-4. **Graph records** - canonical document-node metadata and explicit typed relationship assertions, each stored once and addressed by UUID.
+3. **Authored node record** - the Markdown file itself, containing the UUIDv7, intrinsic properties, H1, body, and ordinary outgoing typed edges.
+4. **Graph projection** - the generated node and edge records used for validation, traversal, search, backlinks, and user interfaces.
 
-Workflow order belongs in typed relationships, not identifiers or filenames. Containment uses `part_of`; implementation uses `implements`; supersession uses `supersedes`; evidence uses `evidenced_by`; and only `depends_on` is required to form a directed acyclic graph (DAG), meaning a dependency graph with no route that loops back to its starting node.
+Workflow order belongs in typed relationships, not identifiers or filenames. Containment uses `part_of`; implementation uses `implements`; supersession uses `supersedes`; and evidence uses `evidenced_by`. Predicate-specific validation applies: `depends_on`, `part_of`, and `supersedes` must be irreflexive and acyclic. `depends_on` therefore forms the execution directed acyclic graph (DAG), meaning a dependency graph with no route that loops back to its starting node.
 
-This is a proposal checkpoint, not an implemented schema or migration approval. The first implementation should be a compatibility-first fixture: add UUIDs and legacy aliases, prove rename recovery, and migrate one relationship family before changing the corpus broadly.
+This is a confirmed identity choice and a proposed storage direction, not an implemented schema or migration approval. The first implementation should be a compatibility-first fixture: add UUIDv7 values and legacy aliases, prove rename recovery, and migrate one relationship family before changing the corpus broadly.
 
 ## How The Idea Evolved
 
@@ -118,19 +119,19 @@ flowchart TD
         A1 <-->|"Duplicate assertion"| B1
     end
 
-    subgraph Normalized["One canonical<br/>relationship assertion"]
+    subgraph Normalized["One canonical outgoing assertion"]
         direction TB
-        A2["Plan A<br/>identity + content"]
-        EDGE{"B part_of A<br/>stored once"}
-        B2["Brief B<br/>identity + content"]
+        A2["Plan A Markdown<br/>node"]
+        EDGE{"B part_of A<br/>stored on B once"}
+        B2["Brief B Markdown<br/>node"]
         VIEW["Generated views<br/>parent + children + backlinks"]
-        B2 -->|"Is source of"| EDGE
+        B2 -->|"Owns outgoing edge"| EDGE
         EDGE -->|"Targets"| A2
         EDGE -->|"Read by"| VIEW
     end
 ```
 
-The normalized design does not mean the graph and Markdown compete as sources of truth. They own different facts. The document owns what it says; the relationship record owns how two identified things are related.
+The normalized design does not mean the graph and Markdown compete as sources of truth. The Markdown file is the authored node record. A directed relationship is stored once on its source, while inverse labels and backlinks are projections. Logical separation does not require a second physical node file or one operating-system file per edge.
 
 ## Identity Is Not The Filename
 
@@ -149,105 +150,86 @@ flowchart LR
 
 The filename remains useful to a human and to ordinary repository browsing, but it is only a mutable locator. A UUIDv7 is a universally unique identifier whose timestamp-ordered layout helps files and records sort approximately by creation time without requiring a shared counter. It is still opaque identity, not workflow rank.
 
-The Markdown file should retain the UUID anchor even if other metadata moves into graph records. Without that anchor, a free rename would require every edit to pass through one tool or would depend on Git's heuristic rename detection. With it, a scanner can find the same document after a move and repair the node's current locator deterministically.
+The Markdown file retains the UUIDv7 as its identity. A scanner can therefore find the same document after a move without depending on Git's heuristic rename detection or maintaining a second authored locator.
 
-The document node owns the identity. The same UUID in Markdown is a foreign-key-style binding to that node, not a second independently editable identity assertion. A mismatch is invalid. Likewise, the `PLAN-` prefix is a human hint that validation should compare with the node's `kind`; changing the prefix does not silently change the document type. The descriptive slug may be renamed freely. If two documents would collide in one directory, prefer a more specific human slug rather than restoring a global sequence number.
+The Markdown record is the document node and owns the identity. The `PLAN-` prefix is a human hint that validation should compare with the document's `type`; changing the prefix does not silently change the document type. The descriptive slug may be renamed freely. If two documents would collide in one directory, prefer a more specific human slug rather than restoring a global sequence number.
 
 ## Candidate Metadata Split
 
 | Owner | Canonical facts | Examples |
 |---|---|---|
-| Markdown document | Binding reference and authored words | UUID reference, H1 title, body, inline citations |
-| Document node record | Immutable identity, operational metadata, and current locator | UUID, `kind`, lifecycle `status`, current path, legacy aliases, provenance |
-| Relationship assertion | One explicit typed relationship between identified entities | `part_of`, `depends_on`, `implements`, `supersedes`, `evidenced_by` |
+| Markdown document node | Identity, intrinsic metadata, authored words, and ordinary outgoing relationships | UUIDv7, `type`, `status`, aliases, H1, body, `part_of`, `depends_on` |
+| Filesystem scan | Current locator | Path at which the UUID-bearing Markdown record was found |
+| Optional relation overlay | Relationships requiring independent visibility, provenance, authorization, or lifecycle | A private plan relates to a public specification without modifying the public repository |
 | External system | Facts originating outside Agent Continuity | GitHub issue state, commit identity, agent transcript |
 | Generated index | Rebuildable projections and search data | Backlinks, child lists, related-doc suggestions, full-text index, communities |
 
-A future minimum Markdown header could therefore be closer to:
+A future minimum Markdown header could therefore be:
 
 ```yaml
 ---
 id: 019d2f60-7d3a-7bb0-bf46-ae03ee6b6472
+type: spec
+status: draft
+aliases:
+  - SPEC-0012
 ---
 
 # Global Tab Surface
 ```
 
-Its corresponding node record would own the non-content metadata:
-
-```yaml
-schema_version: 1
-id: 019d2f60-7d3a-7bb0-bf46-ae03ee6b6472
-kind: spec
-status: draft
-locator: specs/SPEC-global-tab-surface.md
-aliases:
-  - SPEC-0012
-```
-
-The H1 is the canonical human title. A generated index may cache it, and a rename tool may suggest a matching slug, but neither the node record nor filename needs a second editable title field.
+The H1 is the canonical human title. A generated index may cache it, and a rename tool may suggest a matching slug, but the filename does not need a second editable title field and the path does not need a second canonical locator field.
 
 This is still **one source of truth per fact**, not one source for every fact. Moving the Markdown body into a graph database would weaken plain-text recovery, Git review, and ordinary agent editing without solving a current problem.
 
 ## Candidate Relationship Format
 
-The canonical graph does not initially require a graph database. A Git-reviewable representation could live under `.agent-continuity/graph/`, with one node record per document and relation files sharded by subject to reduce unrelated merge conflicts:
-
-```text
-.agent-continuity/
-  graph/
-    nodes/
-      019d2f60-7d3a-7bb0-bf46-ae03ee6b6472.yaml
-    relations/
-      019d2f62-a44e-75cb-98c9-38e95b8980d3.yaml
-```
-
-A subject-sharded relation file can contain independently identified assertions:
+The canonical graph does not initially require a graph database or a relationship sidecar. Ordinary outgoing typed edges can be stored once in the source Markdown record:
 
 ```yaml
-schema_version: 1
-subject: 019d2f62-a44e-75cb-98c9-38e95b8980d3
-edges:
-  - id: 019d2f64-0b4c-79ca-880b-731480aa88b6
-    predicate: part_of
-    object: 019d2f60-7d3a-7bb0-bf46-ae03ee6b6472
+---
+id: 019d2f62-a44e-75cb-98c9-38e95b8980d3
+type: implementation-brief
+status: ready
+part_of:
+  - 019d2f60-7d3a-7bb0-bf46-ae03ee6b6472
+depends_on:
+  - 019d2f5b-92e0-7444-9a3a-313bd0069f24
+---
 ```
 
 The parent would not also store a `children` list. The Agent Continuity application would derive “contains” as the inverse view. A generated SQLite database could index nodes and assertions for fast joins and search without becoming canonical.
 
+If a relationship needs a separate repository or file-ownership boundary, place it in an optional source-sharded overlay with **one YAML file per subject document**, not one file per relationship. A flat v1 overlay gets provenance from Git history; edge-specific lifecycle, annotations, or authorization require a later structured assertion schema. The tuple `(subject UUID, predicate, object UUID)` identifies an ordinary semantic edge. A generated index may separately identify each source assertion occurrence; give an authored assertion its own UUID only if it later needs independent lifecycle, annotations, provenance, or references.
+
 For a genuinely symmetric predicate such as `related_to`, store one assertion using canonical UUID ordering. Prefer precise directional predicates whenever the relation affects workflow; `related_to` should remain a navigation hint, not a scheduling primitive.
 
-Cross-repository directed edges should normally be owned by the source repository. Truly workspace-level assertions with no natural source repository may live in a separate private workspace catalog. This distinction needs to be tested with real examples.
+Within one visibility boundary, directed edges should normally be owned by their source. Across boundaries, the edge must live at the most restrictive visibility of both endpoints and the relationship fact itself; a public source must never reveal a private target or private relationship. Truly workspace-level assertions with no natural authorized source repository may live in a separate private workspace catalog. Filter unauthorized edges before generating backlinks, counts, inferred neighborhoods, or exports. This distinction needs to be tested with real examples.
 
 ## Canonical Graph And Derived Views
 
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph AUTHORED["Canonical authored records"]
-        PLAN_MD["Plan Markdown<br/>UUID binding + H1 + body"]
-        BRIEF_MD["Brief Markdown<br/>UUID binding + H1 + body"]
-        PLAN_NODE["Plan node<br/>kind, status, locator"]
-        BRIEF_NODE["Brief node<br/>kind, status, locator"]
-        REL["Relationship assertion<br/>brief part_of plan<br/>stored once"]
-
-        PLAN_NODE -->|"Locates"| PLAN_MD
-        BRIEF_NODE -->|"Locates"| BRIEF_MD
-        BRIEF_NODE -->|"Subject"| REL
-        REL -->|"Object"| PLAN_NODE
+        direction TB
+        PLAN_MD["Plan Markdown node<br/>UUIDv7 + properties<br/>+ H1 + body"]
+        BRIEF_MD["Brief Markdown node<br/>UUIDv7 + properties + H1 + body<br/>+ part_of plan"]
+        OVERLAY["Optional relation overlay<br/>private or independently owned edges"]
     end
 
     subgraph DERIVED["Rebuildable projections"]
+        direction TB
         INDEX["SQLite index<br/>content + metadata + one edge<br/>search + validation + inverses"]
         VIEW["Control plane<br/>parent, children, backlinks"]
-        INDEX --> VIEW
+        INDEX -->|"Serves views"| VIEW
     end
 
     PLAN_MD --> INDEX
     BRIEF_MD --> INDEX
-    PLAN_NODE --> INDEX
-    BRIEF_NODE --> INDEX
-    REL --> INDEX
+    OVERLAY --> INDEX
 ```
+
+Every incoming arrow means that the disposable index reads the named canonical source. The arrows do not imply push, polling, or write-back.
 
 Graphify remains optional analysis over a sanitized projection. It may suggest candidate edges, but it does not own document nodes, accepted relationships, workflow state, or identity.
 
@@ -259,7 +241,7 @@ Graphify remains optional analysis over a sanitized projection. It may suggest c
 |---|---|---|
 | A plan, spec, person, project, repository, or evidence artifact | Node when it needs stable identity and relationships | It can be addressed and connected independently |
 | `kind: plan` or `status: draft` | Controlled property on the document node | It has no independent lifecycle in the current model |
-| `brief part_of plan` | First-class relationship assertion with its own UUID | It needs one owner, direction, provenance, validation, and possibly history |
+| `brief part_of plan` | Directed typed edge identified by its tuple | It needs one owner, direction, and validation; add an assertion UUID only if independent lifecycle or provenance later requires it |
 | A Markdown link occurrence | Content-local reference plus derived index entry | Its location and surrounding prose matter |
 | A Graphify suggestion | Candidate assertion in a review queue | Inference is not canonical authority |
 
@@ -271,14 +253,14 @@ Promote a property into its own node only when it acquires at least one of these
 flowchart TD
     subgraph R1["Repository A - portable source"]
         direction LR
-        D1["Markdown docs"]
-        E1["Explicit edge files"]
+        D1["Markdown nodes<br/>+ outgoing edges"]
+        E1["Optional relation overlay"]
     end
 
     subgraph R2["Repository B - portable source"]
         direction LR
-        D2["Markdown docs"]
-        E2["Explicit edge files"]
+        D2["Markdown nodes<br/>+ outgoing edges"]
+        E2["Optional relation overlay"]
     end
 
     CATALOG["Private workspace catalog<br/>optional cross-repo assertions"]
@@ -321,7 +303,7 @@ Agent Continuity can use the same separation:
 flowchart TD
     subgraph LOCAL["Local repository client"]
         direction LR
-        FILES["Markdown docs<br/>relation files"]
+        FILES["Markdown nodes<br/>optional relation overlays"]
         JJ["Jujutsu client<br/>optional workflow"]
         GIT["Git-compatible<br/>commit storage"]
         FILES -->|"Versioned through"| JJ
@@ -477,7 +459,7 @@ canonical graph + code/docs -> Graphify projection and analysis
 
 Suggested Graphify edges should enter a review queue as `inferred` or `ambiguous`. Only accepted explicit assertions should affect workflow state.
 
-[RSCH-0009](../../research/RSCH-0009-graphify-and-canonical-relationship-store-fit.md) verifies this boundary against current Graphify and proposes source-sharded canonical relation files, a generated SQLite assertion index, and a migration sequence.
+[RSCH-0009](../../research/RSCH-0009-graphify-and-canonical-relationship-store-fit.md) verifies this boundary against current Graphify and recommends one-sided typed relationships in Markdown, optional source-sharded overlays where separation has a concrete job, a generated SQLite assertion index, and a migration sequence.
 
 ## One System And Its Responsibilities
 
@@ -565,10 +547,10 @@ cross-project views over them.
 
 ## Questions
 
-- Should the UUID binding anchor be the only required frontmatter field, or should schema version remain beside it for offline recovery?
-- Should node records and assertions use subject-sharded YAML, one-file-per-assertion YAML, or append-only JSON Lines (JSONL)?
-- Does an assertion need a UUID from the first schema version, or can its canonical tuple identify it until provenance history requires more?
-- How should a scan reconcile a moved Markdown file with a concurrently edited node locator?
+- Which intrinsic frontmatter fields must accompany UUIDv7 for offline recovery and validation?
+- Which first real relationship requires the optional source-sharded overlay instead of one-sided typed frontmatter?
+- When does an assertion need its own UUID rather than tuple identity because it has independent provenance, lifecycle, annotation, or references?
+- How should a scan reconcile two files that accidentally declare the same UUIDv7 after concurrent moves or copies?
 - Which node properties need temporal history beyond ordinary Git history?
 - How are symmetric assertions such as `related_to` stored once and displayed in both neighborhoods?
 - Where should private cross-repository assertions live?
@@ -587,10 +569,10 @@ cross-project views over them.
 
 1. Add a UUIDv7 field and legacy-ID alias to a disposable fixture without renaming any current corpus files.
 2. Create two documents with human filenames such as `PLAN-canonical-relationship-graph.md` and `IMPL-prove-rename-recovery.md`.
-3. Create their node records and one `brief part_of plan` assertion addressed only by UUID.
-4. Rename both files outside the Agent Continuity tool, rescan, and prove their nodes, legacy aliases, and relationship endpoints remain intact.
+3. Store one `brief part_of plan` outgoing assertion on the brief, addressed only by UUID; do not create separate node files or one edge file.
+4. Rename both files outside the Agent Continuity tool, rescan, and prove their node identities, legacy aliases, and relationship endpoints remain intact.
 5. Generate `contains` as the inverse of `part_of`; do not store a reciprocal child list.
-6. Attempt concurrent branch additions and renames, then verify that UUID generation needs no allocator and graph conflicts are limited to genuinely shared facts.
+6. Attempt concurrent branch additions and renames, then verify that UUIDv7 generation needs no allocator and graph conflicts are limited to genuinely shared source documents.
 7. Build a disposable SQLite projection and focused neighborhood view from the same fixture.
 8. Only after the fixture passes, add UUIDs to current documents while preserving every numeric ID as a legacy alias. Migrate one relationship family before considering filename renames.
 

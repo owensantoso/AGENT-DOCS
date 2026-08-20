@@ -5,7 +5,7 @@ title: Semantic History And Work Projections
 domain: agent-continuity
 status: captured
 created_at: "2026-08-08 16:20:26 JST +0900"
-updated_at: "2026-08-08 16:36:45 JST +0900"
+updated_at: "2026-08-20 23:45:02 JST +0900"
 owner: Codex main agent
 source:
   type: conversation
@@ -26,11 +26,12 @@ related_explainers:
   - ../../docs/orientation/explainers/EXPL-0002-documents-work-delivery-and-semantic-history.md
 related_sessions:
   - ../../session-logs/2026-08-08-semantic-history-and-work-projections.md
+  - ../../session-logs/2026-08-20-spec-systems-and-ceremony-evaluation.md
 linked_paths: []
 promoted_to: []
 repo_state:
   based_on_commit: 9750871c50443d669e20be01e684fa8c1ce8b37b
-  last_reviewed_commit: 9750871c50443d669e20be01e684fa8c1ce8b37b
+  last_reviewed_commit: 41f4df26c82a555e127372c3ac5576614051cbea
 ---
 
 # IDEA-0004 - Semantic History And Work Projections
@@ -225,6 +226,21 @@ The application should make a brief feel like an optional child view inside a pl
 - putting the detail in the parent plan would make it noisy
 
 Otherwise, use the plan directly or let a small issue own the small task.
+
+Use zero, one, or several briefs adaptively:
+
+- **Zero briefs** - the plan is one coherent owner, seam, and verification bundle and can be executed directly.
+- **One brief** - the work remains one coherent slice, but delegation, resumability, or tricky verification makes a handoff packet valuable.
+- **Several briefs** - two or more independently valid slices exist and the split creates safe parallelism, independent review or retry, materially different risk or verification, or a distinct integration unit.
+
+Every proposed brief must pass four validity gates before it is split out:
+
+1. One accountable owner can claim it without ambiguous shared hot-file ownership.
+2. Its start condition is explicit; `depends_on` predecessors are required only when predecessors actually exist.
+3. It has its own observable done condition and focused verification.
+4. Its outcome boundary does not depend on unresolved implementation choices in sibling briefs.
+
+If any gate fails, group the work with the adjacent slice. UUIDv7 owns future brief identity, legacy numeric IDs remain aliases, and explicit `depends_on` relationships own execution order.
 
 ## The Structured Todo Conflict
 
