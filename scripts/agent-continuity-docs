@@ -2,7 +2,8 @@
 """Structured-document tooling for Agent Continuity repositories.
 
 The repo tree is the source of truth. This tool scans Markdown filenames and
-frontmatter, then derives next IDs, registries, status tables, and todo views.
+frontmatter, then derives legacy compatibility IDs, registries, status tables,
+and todo views.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ import argparse
 import datetime as dt
 import errno
 import fnmatch
+import hashlib
 import json
 import os
 import re
@@ -19,10 +21,18 @@ import shutil
 import stat
 import subprocess
 import sys
+import time
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import quote, unquote
 
+
+DOCUMENT_FORMAT_VERSION = 2
+DOCUMENT_MIGRATION_SCHEMA_VERSION = 1
+DOCUMENT_MIGRATION_TYPE = "agent-continuity-document-uuid-v2"
+DEFAULT_MIGRATION_EXCLUDES = ["scaffold/**"]
+MIGRATION_SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 ID_PATTERNS = {
     "idea": re.compile(r"\bIDEA-(\d{4})\b"),
@@ -285,11 +295,41 @@ class Doc:
     ids: list[str] = field(default_factory=list)
 
     @property
-    def primary_id(self) -> str:
+    def document_format_version(self) -> int:
+        value = self.frontmatter.get("document_format_version")
+        if value in (None, ""):
+            return 1
+        try:
+            return int(str(value))
+        except ValueError:
+            return 0
+
+    @property
+    def aliases(self) -> list[str]:
+        value = self.frontmatter.get("aliases")
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        if isinstance(value, str) and value.strip():
+            return [value.strip()]
+        return []
+
+    @property
+    def canonical_id(self) -> str:
         value = self.frontmatter.get("id")
         if isinstance(value, str) and value:
             return value
         return self.ids[0] if self.ids else ""
+
+    @property
+    def primary_id(self) -> str:
+        if self.document_format_version == DOCUMENT_FORMAT_VERSION and self.aliases:
+            return self.aliases[0]
+        return self.canonical_id
+
+    @property
+    def identity_keys(self) -> list[str]:
+        values = [self.canonical_id, *self.aliases, *self.ids]
+        return list(dict.fromkeys(value for value in values if value))
 
     @property
     def doc_type(self) -> str:
@@ -480,7 +520,7 @@ def parse_args() -> argparse.Namespace:
 
     sub = parser.add_subparsers(dest="command", required=True)
 
-    next_cmd = sub.add_parser("next", help="Print next ID for a doc family.")
+    next_cmd = sub.add_parser("next", help="Print the next legacy numeric ID for a doc family.")
     next_cmd.add_argument("family", choices=["idea", "rsch", "eval", "diag", "spec", "plan", "impl", "adr", "lrn", "expl", "qst", "conc", "audt", "todo"])
     next_cmd.add_argument("--plan", help="Required for impl IDs, e.g. PLAN-0034")
 
@@ -520,7 +560,7 @@ def parse_args() -> argparse.Namespace:
     new_cmd.add_argument("--owner", default="")
     new_cmd.add_argument("--source-type", default="conversation")
     new_cmd.add_argument("--source-link", default="")
-    new_cmd.add_argument("--plan", help="Parent plan for impl docs, e.g. PLAN-0034")
+    new_cmd.add_argument("--plan", help="Parent plan UUID or legacy alias for impl docs")
     new_cmd.add_argument("--spec", action="append", default=[], help="Related SPEC-* ID. Repeatable.")
     new_cmd.add_argument("--kind", "--audit-kind", dest="audit_kind", choices=sorted(AUDIT_KINDS), help="Audit kind for repo-health audit docs.")
 
@@ -532,6 +572,18 @@ def parse_args() -> argparse.Namespace:
     retire_cmd.add_argument("--source-link", default="", help="Provenance link; required unless --source-notes is non-empty.")
     retire_cmd.add_argument("--source-notes", default="", help="Provenance notes; required unless --source-link is non-empty.")
     retire_cmd.add_argument("--write", action="store_true", help="Write the tombstone. Preview is the default.")
+
+    format_cmd = sub.add_parser("format-status", help="Report document-format versions and UUID migration readiness.")
+    format_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+    format_cmd.add_argument("--exclude", action="append", default=[], help="Glob-style docs-root path to ignore. Repeatable.")
+
+    migrate_cmd = sub.add_parser("migrate-uuids", help="Prepare or apply a committed document-format-v2 UUID migration plan.")
+    migrate_mode = migrate_cmd.add_mutually_exclusive_group(required=True)
+    migrate_mode.add_argument("--prepare-plan", help="Create an immutable migration plan at this repository-relative path.")
+    migrate_mode.add_argument("--plan", help="Preview or apply this committed migration plan.")
+    migrate_cmd.add_argument("--exclude", action="append", default=[], help="Glob-style docs-root path to ignore while preparing. Repeatable.")
+    migrate_cmd.add_argument("--write", action="store_true", help="Write the plan or apply the migration. Preview is the default.")
+    migrate_cmd.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
 
     status_cmd = sub.add_parser("status", help="Show doc statuses.")
     status_cmd.add_argument("id", nargs="?")
@@ -628,19 +680,34 @@ def docs_root(value: str) -> Path:
     return root
 
 
-def read_docs(root: Path) -> list[Doc]:
+def read_docs(root: Path, *, skip_decode_errors: bool = False, skip_symlinks: bool = False) -> list[Doc]:
     docs: list[Doc] = []
     if not root.exists():
         return docs
     for path in sorted(root.rglob("*.md")):
         if any(part in {".git", "node_modules", ".generated"} for part in path.parts):
             continue
-        text = path.read_text(encoding="utf-8")
+        if skip_symlinks and path.is_symlink():
+            continue
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            if skip_decode_errors and not path.read_bytes().startswith(b"---\n"):
+                continue
+            raise
         frontmatter, content = parse_frontmatter(text)
         frontmatter_id = frontmatter.get("id")
         ids = find_ids(path.name)
         if isinstance(frontmatter_id, str):
             ids.extend(find_ids(frontmatter_id))
+        aliases = frontmatter.get("aliases")
+        if isinstance(aliases, list):
+            for alias in aliases:
+                ids.extend(find_ids(str(alias)))
+        elif isinstance(aliases, str):
+            ids.extend(find_ids(aliases))
         ids = sorted(set(ids))
         docs.append(Doc(path=path, relpath=path.relative_to(root).as_posix(), frontmatter=frontmatter, content=content, ids=ids))
     return docs
@@ -1215,9 +1282,32 @@ def now_string() -> str:
     return now.strftime(f"%Y-%m-%d %H:%M:%S {zone} {offset}")
 
 
-def git_head() -> str:
+def new_uuid7() -> str:
+    """Return an RFC 9562 UUIDv7 without requiring Python 3.14."""
+    unix_ms = int(time.time() * 1000) & ((1 << 48) - 1)
+    rand_a = secrets.randbits(12)
+    rand_b = secrets.randbits(62)
+    value = (unix_ms << 80) | (0x7 << 76) | (rand_a << 64) | (0b10 << 62) | rand_b
+    return str(uuid.UUID(int=value))
+
+
+def is_uuid7(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
     try:
-        result = subprocess.run(["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True)
+        parsed = uuid.UUID(value)
+    except ValueError:
+        return False
+    return parsed.version == 7 and parsed.variant == uuid.RFC_4122 and str(parsed) == value.lower()
+
+
+def sha256_bytes(value: bytes) -> str:
+    return f"sha256:{hashlib.sha256(value).hexdigest()}"
+
+
+def git_head(cwd: Path | None = None) -> str:
+    try:
+        result = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, check=True, capture_output=True, text=True)
         return result.stdout.strip()
     except Exception:
         return ""
@@ -1231,6 +1321,501 @@ def git_commit_count_since(commit: str) -> int | None:
         return int(result.stdout.strip())
     except Exception:
         return None
+
+
+def git_repo_root(root: Path) -> Path:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root.resolve()), "rev-parse", "--show-toplevel"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        detail = exc.stderr.strip() or exc.stdout.strip()
+        raise SystemExit(f"UUID migration requires a Git repository: {detail}") from exc
+    return Path(result.stdout.strip()).resolve()
+
+
+def repo_relative_path(value: str, repo_root: Path) -> tuple[Path, str]:
+    candidate = Path(value)
+    if not candidate.is_absolute():
+        candidate = repo_root / candidate
+    resolved = candidate.resolve()
+    try:
+        relative = resolved.relative_to(repo_root).as_posix()
+    except ValueError as exc:
+        raise SystemExit(f"Refusing migration path outside repository: {value}") from exc
+    return resolved, relative
+
+
+def atomic_write_bytes(path: Path, value: bytes, refuse_existing: bool = False) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if refuse_existing and path.exists():
+        raise SystemExit(f"Refusing to overwrite existing file: {path}")
+    mode = stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o644
+    temporary = path.with_name(f".{path.name}.tmp-{new_uuid7()}")
+    try:
+        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+        try:
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(value)
+                handle.flush()
+                os.fsync(handle.fileno())
+        except Exception:
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
+            raise
+        os.replace(temporary, path)
+        directory_fd = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+    finally:
+        try:
+            temporary.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def migration_excluded(relpath: str, excludes: list[str]) -> bool:
+    patterns = [*DEFAULT_MIGRATION_EXCLUDES, *excludes]
+    return any(fnmatch.fnmatch(relpath, pattern) for pattern in patterns)
+
+
+def format_docs(root: Path, excludes: list[str]) -> list[Doc]:
+    return [
+        doc
+        for doc in read_docs(root, skip_decode_errors=True, skip_symlinks=True)
+        if doc.doc_type in KNOWN_DOC_TYPES
+        and doc.doc_type != "generated-view"
+        and not migration_excluded(doc.relpath, excludes)
+    ]
+
+
+def format_status_payload(root: Path, excludes: list[str]) -> dict[str, object]:
+    documents: list[dict[str, object]] = []
+    counts = {"v1": 0, "v2": 0, "invalid": 0}
+    for doc in format_docs(root, excludes):
+        errors = validate_document_identity(doc)
+        if doc.document_format_version == 1:
+            state = "v1"
+        elif doc.document_format_version == DOCUMENT_FORMAT_VERSION and not errors:
+            state = "v2"
+        else:
+            state = "invalid"
+        counts[state] += 1
+        documents.append(
+            {
+                "path": doc.relpath,
+                "state": state,
+                "id": doc.canonical_id,
+                "aliases": doc.aliases,
+                "errors": errors,
+            }
+        )
+    return {
+        "target_version": DOCUMENT_FORMAT_VERSION,
+        "counts": counts,
+        "migration_required": bool(counts["v1"] or counts["invalid"]),
+        "documents": documents,
+    }
+
+
+def format_status_text(payload: dict[str, object]) -> str:
+    counts = payload["counts"]
+    assert isinstance(counts, dict)
+    return (
+        f"Document format target: v{payload['target_version']}\n"
+        f"v1: {counts['v1']}\n"
+        f"v2: {counts['v2']}\n"
+        f"invalid: {counts['invalid']}\n"
+        f"migration_required: {str(payload['migration_required']).lower()}"
+    )
+
+
+def v1_aliases(doc: Doc) -> list[str]:
+    aliases = list(doc.aliases)
+    value = doc.frontmatter.get("id")
+    if isinstance(value, str) and value and value not in aliases:
+        aliases.insert(0, value)
+    return aliases
+
+
+def migrate_document_text(text: str, canonical_id: str, aliases: list[str]) -> str:
+    if not text.startswith("---\n"):
+        raise SystemExit("Cannot migrate a document without YAML frontmatter")
+    end = text.find("\n---", 4)
+    if end == -1:
+        raise SystemExit("Cannot migrate a document with unterminated YAML frontmatter")
+    lines = text[4:end].splitlines()
+    stripped: list[str] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if line.startswith("aliases:"):
+            index += 1
+            while index < len(lines) and (lines[index].startswith("  ") or not lines[index].strip()):
+                index += 1
+            continue
+        if line.startswith("document_format_version:"):
+            index += 1
+            continue
+        stripped.append(line)
+        index += 1
+
+    identity_lines = [
+        f"document_format_version: {DOCUMENT_FORMAT_VERSION}",
+        f"id: {canonical_id}",
+    ]
+    if aliases:
+        identity_lines.append("aliases:")
+        identity_lines.extend(f"  - {json.dumps(alias, ensure_ascii=False)}" for alias in aliases)
+    else:
+        identity_lines.append("aliases: []")
+
+    id_index = next((i for i, line in enumerate(stripped) if line.startswith("id:")), None)
+    if id_index is not None:
+        stripped[id_index : id_index + 1] = identity_lines
+    else:
+        type_index = next((i for i, line in enumerate(stripped) if line.startswith("type:")), -1)
+        insertion = type_index + 1
+        stripped[insertion:insertion] = identity_lines
+    return "---\n" + "\n".join(stripped) + text[end:]
+
+
+def git_worktree_inventory(repo_root: Path) -> list[dict[str, str]]:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "worktree", "list", "--porcelain"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    rows: list[dict[str, str]] = []
+    current: dict[str, str] = {}
+    for line in [*result.stdout.splitlines(), ""]:
+        if not line:
+            if current:
+                rows.append(current)
+                current = {}
+            continue
+        key, _, value = line.partition(" ")
+        if key == "HEAD":
+            current["head"] = value
+        elif key == "branch":
+            current["branch"] = value.removeprefix("refs/heads/")
+        elif key == "detached":
+            current["branch"] = "(detached)"
+    return rows
+
+
+def prepare_uuid_migration(root: Path, plan_value: str, excludes: list[str], write: bool) -> dict[str, object]:
+    repo_root = git_repo_root(root)
+    plan_path, plan_rel = repo_relative_path(plan_value, repo_root)
+    source_root = root.resolve().relative_to(repo_root).as_posix() or "."
+    candidates = [doc for doc in format_docs(root, excludes) if doc.document_format_version == 1]
+    invalid = [
+        doc
+        for doc in format_docs(root, excludes)
+        if doc.document_format_version not in {1, DOCUMENT_FORMAT_VERSION}
+        or (doc.document_format_version == DOCUMENT_FORMAT_VERSION and validate_document_identity(doc))
+    ]
+    if invalid:
+        raise SystemExit("Refusing UUID plan because invalid document formats exist: " + ", ".join(doc.relpath for doc in invalid))
+    identity_errors = validate_identity_graph(format_docs(root, excludes))
+    if identity_errors:
+        raise SystemExit("Refusing UUID plan because identities are ambiguous: " + "; ".join(identity_errors))
+
+    documents: list[dict[str, object]] = []
+    for doc in candidates:
+        canonical_id = new_uuid7()
+        aliases = v1_aliases(doc)
+        preimage = doc.path.read_bytes()
+        postimage = migrate_document_text(preimage.decode("utf-8"), canonical_id, aliases).encode("utf-8")
+        documents.append(
+            {
+                "path": doc.path.resolve().relative_to(repo_root).as_posix(),
+                "preimage_sha256": sha256_bytes(preimage),
+                "postimage_sha256": sha256_bytes(postimage),
+                "uuid": canonical_id,
+                "aliases": aliases,
+            }
+        )
+
+    payload: dict[str, object] = {
+        "schema_version": DOCUMENT_MIGRATION_SCHEMA_VERSION,
+        "migration_type": DOCUMENT_MIGRATION_TYPE,
+        "migration_id": new_uuid7(),
+        "document_format_from": 1,
+        "document_format_to": DOCUMENT_FORMAT_VERSION,
+        "prepared_at": dt.datetime.now().astimezone().isoformat(),
+        "prepared_base_commit": git_head(repo_root),
+        "source_root": source_root,
+        "excludes": [*DEFAULT_MIGRATION_EXCLUDES, *excludes],
+        "inventoried_worktrees": git_worktree_inventory(repo_root),
+        "receipt_path": f"{plan_rel}.receipt.json",
+        "documents": documents,
+    }
+    if write:
+        atomic_write_bytes(plan_path, (json.dumps(payload, indent=2) + "\n").encode("utf-8"), refuse_existing=True)
+    return payload
+
+
+def load_migration_plan(plan_path: Path) -> dict[str, object]:
+    try:
+        payload = json.loads(plan_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise SystemExit(f"Migration plan does not exist: {plan_path}") from exc
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"Invalid migration plan JSON: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise SystemExit("Migration plan must be a JSON object")
+    if payload.get("schema_version") != DOCUMENT_MIGRATION_SCHEMA_VERSION:
+        raise SystemExit(f"Unsupported migration plan schema_version: {payload.get('schema_version')!r}")
+    if payload.get("migration_type") != DOCUMENT_MIGRATION_TYPE:
+        raise SystemExit(f"Unsupported migration type: {payload.get('migration_type')!r}")
+    if not is_uuid7(payload.get("migration_id")):
+        raise SystemExit("Migration plan must contain a UUIDv7 migration_id")
+    documents = payload.get("documents")
+    if not isinstance(documents, list):
+        raise SystemExit("Migration plan documents must be a list")
+    return payload
+
+
+def git_plan_commit(repo_root: Path, plan_rel: str) -> str:
+    tracked = subprocess.run(
+        ["git", "-C", str(repo_root), "ls-files", "--error-unmatch", "--", plan_rel],
+        capture_output=True,
+        text=True,
+    )
+    if tracked.returncode != 0:
+        raise SystemExit("Migration plan must be committed before --write")
+    for args in (["diff", "--quiet", "--", plan_rel], ["diff", "--cached", "--quiet", "--", plan_rel]):
+        if subprocess.run(["git", "-C", str(repo_root), *args]).returncode != 0:
+            raise SystemExit("Migration plan must be committed without staged or unstaged changes before --write")
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "log", "-1", "--format=%H", "--", plan_rel],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    commit = result.stdout.strip()
+    if not commit:
+        raise SystemExit("Migration plan must be committed before --write")
+    return commit
+
+
+def require_ancestor(repo_root: Path, ancestor: str, label: str) -> None:
+    if not ancestor:
+        raise SystemExit(f"Migration plan is missing {label}")
+    result = subprocess.run(["git", "-C", str(repo_root), "merge-base", "--is-ancestor", ancestor, "HEAD"])
+    if result.returncode != 0:
+        raise SystemExit(f"Migration {label} {ancestor} is not an ancestor of HEAD")
+
+
+def migration_receipt_valid(receipt_path: Path, migration_id: str, plan_sha256: str) -> bool:
+    if not receipt_path.exists():
+        return False
+    try:
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"Invalid migration receipt JSON: {exc}") from exc
+    if receipt.get("migration_id") != migration_id or receipt.get("plan_sha256") != plan_sha256:
+        raise SystemExit(f"Migration receipt does not match plan: {receipt_path}")
+    return True
+
+
+def validate_migration_plan(
+    plan: dict[str, object],
+    repo_root: Path,
+    root: Path,
+    plan_rel: str,
+    receipt_rel: str,
+) -> None:
+    if plan.get("document_format_from") != 1 or plan.get("document_format_to") != DOCUMENT_FORMAT_VERSION:
+        raise SystemExit("Migration plan document-format transition is unsupported")
+    excludes = plan.get("excludes", [])
+    if not isinstance(excludes, list) or not all(isinstance(item, str) for item in excludes):
+        raise SystemExit("Migration plan excludes must be a list of strings")
+    if plan_rel == receipt_rel:
+        raise SystemExit("Migration plan and receipt paths must be distinct")
+    documents = plan["documents"]
+    assert isinstance(documents, list)
+    seen_paths: set[str] = set()
+    seen_identities: dict[str, str] = {}
+    planned_identities: dict[str, list[str]] = {}
+    for entry in documents:
+        if not isinstance(entry, dict):
+            raise SystemExit("Migration plan document entries must be objects")
+        path_value = entry.get("path")
+        if not isinstance(path_value, str) or not path_value or Path(path_value).is_absolute():
+            raise SystemExit("Migration plan document entry must use a repository-relative path")
+        path, relative = repo_relative_path(path_value, repo_root)
+        if relative != path_value or path.suffix != ".md":
+            raise SystemExit(f"Migration plan document path is not a normalized Markdown path: {path_value}")
+        try:
+            path.relative_to(root.resolve())
+        except ValueError as exc:
+            raise SystemExit(f"Migration plan document is outside source_root: {path_value}") from exc
+        if relative in {plan_rel, receipt_rel} or relative in seen_paths:
+            raise SystemExit(f"Migration plan contains a duplicate or reserved document path: {path_value}")
+        seen_paths.add(relative)
+        if path.is_symlink() or not path.is_file():
+            raise SystemExit(f"Migration plan document path is not a regular file: {path_value}")
+        if not MIGRATION_SHA256_RE.fullmatch(str(entry.get("preimage_sha256", ""))):
+            raise SystemExit(f"Migration plan has an invalid preimage hash for {path_value}")
+        if not MIGRATION_SHA256_RE.fullmatch(str(entry.get("postimage_sha256", ""))):
+            raise SystemExit(f"Migration plan has an invalid postimage hash for {path_value}")
+        canonical_id = entry.get("uuid")
+        aliases = entry.get("aliases")
+        if not is_uuid7(canonical_id) or not isinstance(aliases, list):
+            raise SystemExit(f"Migration plan has an invalid identity mapping for {path_value}")
+        if not all(isinstance(alias, str) and alias.strip() == alias and alias for alias in aliases):
+            raise SystemExit(f"Migration plan has an invalid alias for {path_value}")
+        if len(aliases) != len(set(aliases)) or canonical_id in aliases:
+            raise SystemExit(f"Migration plan has duplicate or self-referential aliases for {path_value}")
+        identities = [str(canonical_id), *aliases]
+        planned_identities[relative] = identities
+        for identity in identities:
+            previous = seen_identities.get(identity)
+            if previous:
+                raise SystemExit(f"Migration plan identity {identity} is ambiguous between {previous} and {path_value}")
+            seen_identities[identity] = path_value
+
+    corpus_paths: set[str] = set()
+    final_lookup: dict[str, str] = {}
+    for doc in format_docs(root, excludes):
+        relative = doc.path.resolve().relative_to(repo_root).as_posix()
+        corpus_paths.add(relative)
+        if relative not in planned_identities:
+            if doc.document_format_version == 1:
+                raise SystemExit(f"Migration plan does not cover v1 document added after preparation: {relative}")
+            identity_errors = validate_document_identity(doc)
+            if identity_errors:
+                raise SystemExit("Migration plan found an invalid unplanned document: " + "; ".join(identity_errors))
+        identities = planned_identities.get(relative, doc.identity_keys)
+        for identity in identities:
+            previous = final_lookup.get(identity)
+            if previous:
+                raise SystemExit(f"Migration plan final identity {identity} is ambiguous between {previous} and {relative}")
+            final_lookup[identity] = relative
+    missing = sorted(seen_paths - corpus_paths)
+    if missing:
+        raise SystemExit("Migration plan includes documents outside the authored corpus: " + ", ".join(missing))
+
+
+def migration_document_states(repo_root: Path, plan: dict[str, object]) -> list[dict[str, object]]:
+    states: list[dict[str, object]] = []
+    documents = plan["documents"]
+    assert isinstance(documents, list)
+    for entry in documents:
+        if not isinstance(entry, dict):
+            raise SystemExit("Migration plan document entries must be objects")
+        path_value = entry.get("path")
+        if not isinstance(path_value, str):
+            raise SystemExit("Migration plan document entry is missing path")
+        path, relative = repo_relative_path(path_value, repo_root)
+        try:
+            current = path.read_bytes()
+        except FileNotFoundError as exc:
+            raise SystemExit(f"UUID migration preimage conflict: missing {relative}") from exc
+        current_hash = sha256_bytes(current)
+        if current_hash == entry.get("preimage_sha256"):
+            state = "preimage"
+        elif current_hash == entry.get("postimage_sha256"):
+            state = "postimage"
+        else:
+            state = "conflict"
+        states.append({"path": relative, "absolute_path": path, "state": state, "current_sha256": current_hash, "entry": entry})
+    return states
+
+
+def apply_uuid_migration(root: Path, plan_value: str, write: bool) -> dict[str, object]:
+    repo_root = git_repo_root(root)
+    plan_path, plan_rel = repo_relative_path(plan_value, repo_root)
+    plan_bytes = plan_path.read_bytes() if plan_path.exists() else b""
+    plan = load_migration_plan(plan_path)
+    plan_sha256 = sha256_bytes(plan_bytes)
+    source_root = str(plan.get("source_root", "."))
+    expected_root = (repo_root / source_root).resolve()
+    if expected_root != root.resolve():
+        raise SystemExit(f"Migration plan source_root {source_root!r} does not match --root {root}")
+    receipt_value = plan.get("receipt_path")
+    if not isinstance(receipt_value, str):
+        raise SystemExit("Migration plan is missing receipt_path")
+    receipt_path, receipt_rel = repo_relative_path(receipt_value, repo_root)
+    validate_migration_plan(plan, repo_root, root, plan_rel, receipt_rel)
+    states = migration_document_states(repo_root, plan)
+    conflicts = [item for item in states if item["state"] == "conflict"]
+    if conflicts:
+        raise SystemExit("UUID migration preimage conflict: " + ", ".join(str(item["path"]) for item in conflicts))
+
+    migration_id = str(plan["migration_id"])
+    receipt_valid = migration_receipt_valid(receipt_path, migration_id, plan_sha256)
+    remaining = sum(1 for item in states if item["state"] == "preimage")
+    if remaining:
+        state = "in_progress" if remaining < len(states) else "ready"
+    else:
+        state = "completed" if receipt_valid else "in_progress"
+
+    if write:
+        plan_commit = git_plan_commit(repo_root, plan_rel)
+        require_ancestor(repo_root, plan_commit, "plan commit")
+        require_ancestor(repo_root, str(plan.get("prepared_base_commit", "")), "prepared base commit")
+        for item in states:
+            if item["state"] != "preimage":
+                continue
+            entry = item["entry"]
+            assert isinstance(entry, dict)
+            path = item["absolute_path"]
+            assert isinstance(path, Path)
+            aliases = entry.get("aliases", [])
+            if not isinstance(aliases, list) or not is_uuid7(entry.get("uuid")):
+                raise SystemExit(f"Invalid identity mapping for {item['path']}")
+            current = path.read_text(encoding="utf-8")
+            postimage = migrate_document_text(current, str(entry["uuid"]), [str(alias) for alias in aliases]).encode("utf-8")
+            if sha256_bytes(postimage) != entry.get("postimage_sha256"):
+                raise SystemExit(f"Migration plan postimage mismatch for {item['path']}")
+            atomic_write_bytes(path, postimage)
+
+        plan_excludes = plan.get("excludes", [])
+        assert isinstance(plan_excludes, list)
+        migrated_docs = format_docs(root, [str(item) for item in plan_excludes])
+        validation_errors = validate_identity_graph(migrated_docs)
+        for doc in migrated_docs:
+            validation_errors.extend(validate_document_identity(doc))
+        if validation_errors:
+            raise SystemExit("UUID migration validation failed before receipt: " + "; ".join(validation_errors))
+        final_states = migration_document_states(repo_root, plan)
+        if any(item["state"] != "postimage" for item in final_states):
+            raise SystemExit("UUID migration did not reach all expected postimages")
+        if not receipt_valid:
+            receipt = {
+                "schema_version": 1,
+                "migration_type": DOCUMENT_MIGRATION_TYPE,
+                "migration_id": migration_id,
+                "plan_path": plan_rel,
+                "plan_sha256": plan_sha256,
+                "plan_commit": plan_commit,
+                "applied_on_head": git_head(repo_root),
+                "completed_at": dt.datetime.now().astimezone().isoformat(),
+                "document_count": len(final_states),
+            }
+            atomic_write_bytes(receipt_path, (json.dumps(receipt, indent=2) + "\n").encode("utf-8"), refuse_existing=True)
+        states = final_states
+        state = "completed"
+
+    return {
+        "state": state,
+        "migration_id": migration_id,
+        "plan_path": plan_rel,
+        "plan_sha256": plan_sha256,
+        "receipt_path": receipt_rel,
+        "documents": [{"path": item["path"], "state": item["state"]} for item in states],
+    }
 
 
 def next_id(family: str, docs: list[Doc], plan: str | None = None) -> str:
@@ -1350,7 +1935,7 @@ def validate_retirement_request(
     if not re.fullmatch(r"PLAN-\d{4}", plan):
         raise SystemExit("--plan must use PLAN-####")
     parent = find_doc(docs, plan)
-    if not parent or parent.primary_id != plan or parent.doc_type != "plan":
+    if not parent or plan not in parent.identity_keys or parent.doc_type != "plan":
         raise SystemExit(f"--plan must reference a live primary plan document: {plan}")
     if impl_match.group(1) != plan.split("-")[1]:
         raise SystemExit(f"Target ID {target_id} does not match --plan {plan}")
@@ -1480,7 +2065,7 @@ def retire_id(args: argparse.Namespace, root: Path) -> int:
         print(f"ALREADY RETIRED\t{target}")
         return 0
 
-    body = retirement_doc(stable_inputs, now_string(), git_head())
+    body = v2_document_body(retirement_doc(stable_inputs, now_string(), git_head()), target_id)
     if not args.write:
         print(f"PREVIEW\t{target}")
         print(body, end="")
@@ -1518,10 +2103,11 @@ def live_docs(docs: list[Doc]) -> list[Doc]:
 
 
 def find_any_doc(docs: list[Doc], doc_id: str) -> Doc | None:
-    for doc in docs:
-        if doc.primary_id == doc_id:
-            return doc
-    return None
+    matches = [doc for doc in docs if doc_id in doc.identity_keys]
+    if len(matches) > 1:
+        paths = ", ".join(doc.relpath for doc in matches)
+        raise SystemExit(f"Ambiguous document identity or alias {doc_id}: {paths}")
+    return matches[0] if matches else None
 
 
 def find_doc(docs: list[Doc], doc_id: str) -> Doc | None:
@@ -1577,7 +2163,10 @@ def relation_summary(doc: Doc, docs: list[Doc]) -> list[dict[str, str]]:
 
 def show_doc(doc: Doc, docs: list[Doc], root: Path) -> dict[str, object]:
     return {
-        "id": doc.primary_id,
+        "id": doc.canonical_id,
+        "display_id": doc.primary_id,
+        "aliases": doc.aliases,
+        "document_format_version": doc.document_format_version,
         "type": doc.doc_type,
         "title": doc.title,
         "status": doc.status,
@@ -1591,6 +2180,8 @@ def show_doc(doc: Doc, docs: list[Doc], root: Path) -> dict[str, object]:
 def show_doc_text(payload: dict[str, object]) -> str:
     lines = [
         f"ID:\t{payload.get('id', '')}",
+        f"Display ID:\t{payload.get('display_id', '')}",
+        f"Aliases:\t{', '.join(str(item) for item in payload.get('aliases', []))}",
         f"Type:\t{payload.get('type', '')}",
         f"Title:\t{payload.get('title', '')}",
         f"Status:\t{payload.get('status', '')}",
@@ -1632,73 +2223,77 @@ def show_doc_text(payload: dict[str, object]) -> str:
     return "\n".join(lines)
 
 
+def v2_document_body(body: str, generated_id: str) -> str:
+    canonical_id = generated_id if is_uuid7(generated_id) else new_uuid7()
+    marker = f"id: {generated_id}\n"
+    if marker not in body:
+        raise SystemExit(f"Generated document is missing expected identity field: {generated_id}")
+    aliases = f"aliases:\n  - {generated_id}\n" if not is_uuid7(generated_id) else "aliases: []\n"
+    body = body.replace(
+        marker,
+        f"document_format_version: {DOCUMENT_FORMAT_VERSION}\nid: {canonical_id}\n{aliases}",
+        1,
+    )
+    body = re.sub(rf"^#\s+{re.escape(generated_id)}\s+-\s+", "# ", body, count=1, flags=re.MULTILINE)
+    return body
+
+
 def new_doc(args: argparse.Namespace, root: Path, docs: list[Doc]) -> Path:
     title = args.title
     slug = slugify(title)
     timestamp = now_string()
     commit = git_head()
+    doc_id = new_uuid7()
 
     if args.family == "idea":
-        doc_id = next_id("idea", docs)
-        path = root / args.domain / "ideas" / f"{doc_id}-{slug}.md"
+        path = root / args.domain / "ideas" / f"IDEA-{slug}.md"
         body = idea_doc(doc_id, title, args, timestamp, commit)
     elif args.family in {"research", "rsch"}:
-        doc_id = next_id("rsch", docs)
-        path = root / "research" / f"{doc_id}-{slug}.md"
+        path = root / "research" / f"RSCH-{slug}.md"
         body = research_survey_doc(doc_id, title, args, timestamp, commit)
     elif args.family in {"eval", "evaluation"}:
-        doc_id = next_id("eval", docs)
-        path = root / "repo-health" / "evaluations" / f"{doc_id}-{slug}.md"
+        path = root / "repo-health" / "evaluations" / f"EVAL-{slug}.md"
         body = evaluation_doc(doc_id, title, args, timestamp, commit)
     elif args.family in {"diag", "diagnostic"}:
-        doc_id = next_id("diag", docs)
-        path = root / "repo-health" / "debugging" / "diagnostics" / f"{doc_id}-{slug}.md"
+        path = root / "repo-health" / "debugging" / "diagnostics" / f"DIAG-{slug}.md"
         body = diagnostic_doc(doc_id, title, args, timestamp, commit)
     elif args.family in {"concept", "conc"}:
-        doc_id = next_id("conc", docs)
-        path = root / args.domain / "concepts" / f"{doc_id}-{slug}.md"
+        path = root / args.domain / "concepts" / f"CONC-{slug}.md"
         body = concept_doc(doc_id, title, args, timestamp, commit)
     elif args.family == "audit":
         if not args.audit_kind:
             raise SystemExit("--kind is required for audit docs")
-        doc_id = next_id("audt", docs)
-        path = root / "repo-health" / "audits" / f"{doc_id}-{slug}.md"
+        path = root / "repo-health" / "audits" / f"AUDT-{slug}.md"
         body = audit_doc(doc_id, title, args, timestamp, commit)
     elif args.family == "spec":
-        doc_id = next_id("spec", docs)
-        path = root / args.domain / "specs" / f"{doc_id}-{slug}.md"
+        path = root / args.domain / "specs" / f"SPEC-{slug}.md"
         body = spec_doc(doc_id, title, args, timestamp, commit)
     elif args.family == "plan":
-        doc_id = next_id("plan", docs)
-        path = root / args.domain / "plans" / f"{doc_id}-{slug}" / f"{doc_id}-{slug}.md"
+        path = root / args.domain / "plans" / f"PLAN-{slug}" / f"PLAN-{slug}.md"
         body = plan_doc(doc_id, title, args, timestamp, commit)
     elif args.family == "impl":
         if not args.plan:
-            raise SystemExit("--plan PLAN-#### is required for impl docs")
-        doc_id = next_id("impl", docs, args.plan)
+            raise SystemExit("--plan <plan UUID or legacy alias> is required for impl docs")
         parent = find_doc(docs, args.plan)
         if not parent or parent.doc_type != "plan":
             raise SystemExit(f"--plan must reference a live primary plan document: {args.plan}")
         base = parent.path.parent if parent else root / args.domain / "plans" / args.plan
-        path = base / f"{doc_id}-{slug}.md"
+        path = base / f"IMPL-{slug}.md"
         body = impl_doc(doc_id, title, args, timestamp, commit)
     elif args.family == "adr":
-        doc_id = next_id("adr", docs)
-        path = root / "decisions" / "adr" / f"{doc_id}-{slug}.md"
+        path = root / "decisions" / "adr" / f"ADR-{slug}.md"
         body = adr_doc(doc_id, title, args, timestamp, commit)
     elif args.family in {"learning", "lrn"}:
-        doc_id = next_id("lrn", docs)
-        path = root / "decisions" / "learnings" / f"{doc_id}-{slug}.md"
+        path = root / "decisions" / "learnings" / f"LRN-{slug}.md"
         body = learning_doc(doc_id, title, args, timestamp, commit)
     elif args.family in {"explainer", "expl"}:
-        doc_id = next_id("expl", docs)
-        path = root / "orientation" / "explainers" / f"{doc_id}-{slug}.md"
+        path = root / "orientation" / "explainers" / f"EXPL-{slug}.md"
         body = explainer_doc(doc_id, title, args, timestamp, commit)
     else:
-        doc_id = next_id("qst", docs)
-        path = root / "decisions" / "questions" / f"{doc_id}-{slug}.md"
+        path = root / "decisions" / "questions" / f"QST-{slug}.md"
         body = question_doc(doc_id, title, args, timestamp, commit)
 
+    body = v2_document_body(body, doc_id)
     if path.exists():
         raise SystemExit(f"Refusing to overwrite existing file: {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -2596,7 +3191,7 @@ def normalize_generated_view(text: str) -> str:
 
 
 def ideas_markdown(docs: list[Doc]) -> str:
-    ideas = sorted((doc for doc in live_docs(docs) if doc.primary_id.startswith("IDEA-")), key=lambda d: d.primary_id)
+    ideas = sorted((doc for doc in live_docs(docs) if doc.doc_type == "idea"), key=lambda d: d.primary_id)
     lines = [
         "# Idea Registry",
         "",
@@ -2624,7 +3219,7 @@ def ideas_markdown(docs: list[Doc]) -> str:
 
 
 def concepts_markdown(docs: list[Doc]) -> str:
-    concepts = sorted((doc for doc in live_docs(docs) if doc.primary_id.startswith("CONC-")), key=lambda d: d.primary_id)
+    concepts = sorted((doc for doc in live_docs(docs) if doc.doc_type == "concept"), key=lambda d: d.primary_id)
     lines = [
         "# Concept Registry",
         "",
@@ -2654,7 +3249,7 @@ def concepts_markdown(docs: list[Doc]) -> str:
 
 
 def specs_markdown(docs: list[Doc]) -> str:
-    specs = sorted((doc for doc in live_docs(docs) if doc.primary_id.startswith("SPEC-")), key=lambda d: d.primary_id)
+    specs = sorted((doc for doc in live_docs(docs) if doc.doc_type == "spec"), key=lambda d: d.primary_id)
     lines = [
         "# Spec Registry",
         "",
@@ -2682,7 +3277,7 @@ def specs_markdown(docs: list[Doc]) -> str:
 
 
 def learnings_markdown(docs: list[Doc]) -> str:
-    learnings = sorted((doc for doc in live_docs(docs) if doc.primary_id.startswith("LRN-")), key=lambda d: d.primary_id)
+    learnings = sorted((doc for doc in live_docs(docs) if doc.doc_type == "learning"), key=lambda d: d.primary_id)
     lines = [
         "# Learning Registry",
         "",
@@ -2712,7 +3307,7 @@ def learnings_markdown(docs: list[Doc]) -> str:
 
 
 def explainers_markdown(docs: list[Doc]) -> str:
-    explainers = sorted((doc for doc in live_docs(docs) if doc.primary_id.startswith("EXPL-")), key=lambda d: d.primary_id)
+    explainers = sorted((doc for doc in live_docs(docs) if doc.doc_type == "explainer"), key=lambda d: d.primary_id)
     lines = [
         "# Explainer Registry",
         "",
@@ -2742,7 +3337,7 @@ def explainers_markdown(docs: list[Doc]) -> str:
 
 
 def questions_markdown(docs: list[Doc]) -> str:
-    questions = sorted((doc for doc in live_docs(docs) if doc.primary_id.startswith("QST-")), key=lambda d: d.primary_id)
+    questions = sorted((doc for doc in live_docs(docs) if doc.doc_type == "question"), key=lambda d: d.primary_id)
     lines = [
         "# Question Registry",
         "",
@@ -3217,15 +3812,15 @@ def write_generated_view(root: Path, name: str, docs: list[Doc], args: argparse.
 
 
 def update(root: Path, docs: list[Doc]) -> None:
-    if any(doc.primary_id.startswith("IDEA-") for doc in docs) or (root / "IDEAS.md").exists():
+    if any(doc.doc_type == "idea" for doc in docs) or (root / "IDEAS.md").exists():
         write_generated_view(root, "ideas", docs)
-    if any(doc.primary_id.startswith("CONC-") for doc in docs) or (root / "CONCEPTS.md").exists():
+    if any(doc.doc_type == "concept" for doc in docs) or (root / "CONCEPTS.md").exists():
         write_generated_view(root, "concepts", docs)
-    if any(doc.primary_id.startswith("LRN-") for doc in docs) or (root / "LEARNINGS.md").exists():
+    if any(doc.doc_type == "learning" for doc in docs) or (root / "LEARNINGS.md").exists():
         write_generated_view(root, "learnings", docs)
-    if any(doc.primary_id.startswith("EXPL-") for doc in docs) or (root / "EXPLAINERS.md").exists():
+    if any(doc.doc_type == "explainer" for doc in docs) or (root / "EXPLAINERS.md").exists():
         write_generated_view(root, "explainers", docs)
-    if any(doc.primary_id.startswith("QST-") for doc in docs) or (root / "QUESTIONS.md").exists():
+    if any(doc.doc_type == "question" for doc in docs) or (root / "QUESTIONS.md").exists():
         write_generated_view(root, "questions", docs)
     write_generated_view(root, "specs", docs)
     write_generated_view(root, "registry", docs)
@@ -3239,20 +3834,21 @@ def update(root: Path, docs: list[Doc]) -> None:
 
 
 def check(root: Path, docs: list[Doc]) -> int:
-    errors: list[str] = []
+    errors: list[str] = validate_identity_graph(docs)
     seen: dict[str, str] = {}
     for doc in docs:
         doc_id = doc.primary_id
         if doc.relpath.startswith("id-retirements/") and doc.doc_type != "id-retirement":
             errors.append(f"Document in id-retirements must use type 'id-retirement': {doc.relpath}")
         if not doc_id:
-            if doc.doc_type in {"research-survey", "evaluation", "diagnostic-record", "repo-health-audit", "id-retirement"}:
+            if doc.doc_type:
                 errors.extend(validate_frontmatter(doc, docs))
+                errors.extend(validate_linked_paths(doc, root))
             continue
-        if doc_id in seen:
+        if doc.document_format_version == 1 and doc_id in seen:
             errors.append(f"Duplicate ID {doc_id}: {seen[doc_id]} and {doc.relpath}")
         seen[doc_id] = doc.relpath
-        if doc_id not in doc.path.name:
+        if doc.document_format_version == 1 and doc_id not in doc.path.name:
             errors.append(f"ID {doc_id} is not present in filename: {doc.relpath}")
         errors.extend(validate_frontmatter(doc, docs))
         errors.extend(validate_linked_paths(doc, root))
@@ -3260,26 +3856,26 @@ def check(root: Path, docs: list[Doc]) -> int:
     for doc in docs:
         if not doc.is_id_retirement:
             continue
-        frontmatter_id = doc.frontmatter.get("id")
-        if not isinstance(frontmatter_id, str) or not frontmatter_id:
+        retired_id = doc.primary_id
+        if not retired_id:
             continue
-        for collision in retirement_collisions(docs, frontmatter_id, doc.path):
-            errors.append(f"Retirement collision for {frontmatter_id}: {doc.relpath} and {collision}")
+        for collision in retirement_collisions(docs, retired_id, doc.path):
+            errors.append(f"Retirement collision for {retired_id}: {doc.relpath} and {collision}")
 
     generated = {
         root / "SPECS.md": specs_markdown(docs),
         root / "DOCS-REGISTRY.md": registry_markdown(docs),
         root / "TODOS.md": todos_markdown(docs),
     }
-    if any(doc.primary_id.startswith("IDEA-") for doc in docs) or (root / "IDEAS.md").exists():
+    if any(doc.doc_type == "idea" for doc in docs) or (root / "IDEAS.md").exists():
         generated[root / "IDEAS.md"] = ideas_markdown(docs)
-    if any(doc.primary_id.startswith("CONC-") for doc in docs) or (root / "CONCEPTS.md").exists():
+    if any(doc.doc_type == "concept" for doc in docs) or (root / "CONCEPTS.md").exists():
         generated[root / "CONCEPTS.md"] = concepts_markdown(docs)
-    if any(doc.primary_id.startswith("LRN-") for doc in docs) or (root / "LEARNINGS.md").exists():
+    if any(doc.doc_type == "learning" for doc in docs) or (root / "LEARNINGS.md").exists():
         generated[root / "LEARNINGS.md"] = learnings_markdown(docs)
-    if any(doc.primary_id.startswith("EXPL-") for doc in docs) or (root / "EXPLAINERS.md").exists():
+    if any(doc.doc_type == "explainer" for doc in docs) or (root / "EXPLAINERS.md").exists():
         generated[root / "EXPLAINERS.md"] = explainers_markdown(docs)
-    if any(doc.primary_id.startswith("QST-") for doc in docs) or (root / "QUESTIONS.md").exists():
+    if any(doc.doc_type == "question" for doc in docs) or (root / "QUESTIONS.md").exists():
         generated[root / "QUESTIONS.md"] = questions_markdown(docs)
     if any(doc.doc_type == "repo-health-audit" for doc in docs) or (root / "AUDITS.md").exists():
         generated[root / "AUDITS.md"] = audits_markdown(docs)
@@ -3302,7 +3898,11 @@ def todo_validation_issues(docs: list[Doc], strict: bool = False) -> tuple[list[
     items = todo_items(docs, include_done=True)
     structured = [item for item in items if item.structured]
     by_id: dict[str, TodoItem] = {}
-    live_by_id = {doc.primary_id: doc for doc in live_docs(docs) if doc.primary_id}
+    live_by_id = {
+        identity: doc
+        for doc in live_docs(docs)
+        for identity in doc.identity_keys
+    }
 
     for item in structured:
         where = f"{item.path}:{item.line}"
@@ -3865,6 +4465,44 @@ def review_sort_key(item: ReviewItem) -> tuple[int, int, int, float, str, str, s
     )
 
 
+def validate_document_identity(doc: Doc) -> list[str]:
+    errors: list[str] = []
+    raw_version = doc.frontmatter.get("document_format_version")
+    if raw_version in (None, ""):
+        return errors
+    if doc.document_format_version != DOCUMENT_FORMAT_VERSION:
+        errors.append(
+            f"Unsupported document_format_version {raw_version!r} in {doc.relpath}; expected {DOCUMENT_FORMAT_VERSION}"
+        )
+        return errors
+    if not is_uuid7(doc.canonical_id):
+        errors.append(f"Document format v2 requires an RFC UUIDv7 id in {doc.relpath}")
+    aliases = doc.frontmatter.get("aliases")
+    if not isinstance(aliases, list):
+        errors.append(f"Document format v2 requires an aliases list in {doc.relpath}")
+    elif len(doc.aliases) != len(set(doc.aliases)):
+        errors.append(f"Document format v2 contains duplicate aliases in {doc.relpath}")
+    return errors
+
+
+def validate_identity_graph(docs: list[Doc]) -> list[str]:
+    errors: list[str] = []
+    canonical: dict[str, str] = {}
+    lookup: dict[str, str] = {}
+    for doc in docs:
+        if doc.canonical_id:
+            previous = canonical.get(doc.canonical_id)
+            if previous:
+                errors.append(f"Duplicate canonical ID {doc.canonical_id}: {previous} and {doc.relpath}")
+            canonical[doc.canonical_id] = doc.relpath
+        for identity in doc.identity_keys:
+            previous = lookup.get(identity)
+            if previous:
+                errors.append(f"Ambiguous document identity or alias {identity}: {previous} and {doc.relpath}")
+            lookup[identity] = doc.relpath
+    return errors
+
+
 def format_review_items(items: list[ReviewItem], width: int | None = None) -> str:
     if not items:
         return "No review items found."
@@ -3907,6 +4545,8 @@ def validate_frontmatter(doc: Doc, docs: list[Doc] | None = None) -> list[str]:
         errors.append(f"Unknown frontmatter type {doc_type!r} in {doc.relpath}")
         return errors
 
+    errors.extend(validate_document_identity(doc))
+
     required = REQUIRED_FIELDS_BY_TYPE.get(doc_type, set())
     missing = sorted(field for field in required if field not in doc.frontmatter)
     for field in missing:
@@ -3922,7 +4562,7 @@ def validate_frontmatter(doc: Doc, docs: list[Doc] | None = None) -> list[str]:
             errors.append(f"Architecture area ID {doc_id} must match filename stem in {doc.relpath}")
 
     frontmatter_id = doc.frontmatter.get("id")
-    if isinstance(frontmatter_id, str) and frontmatter_id:
+    if doc.document_format_version == 1 and isinstance(frontmatter_id, str) and frontmatter_id:
         filename_ids = set(find_ids(doc.path.name))
         family = frontmatter_id.split("-", 1)[0]
         mismatches = sorted(doc_id for doc_id in filename_ids if doc_id.startswith(f"{family}-") and doc_id != frontmatter_id)
@@ -3938,24 +4578,24 @@ def validate_frontmatter(doc: Doc, docs: list[Doc] | None = None) -> list[str]:
                 errors.append(f"Implementation ID {doc_id} does not match parent_plan {parent} in {doc.relpath}")
 
     if doc_type == "id-retirement":
-        frontmatter_id = doc.frontmatter.get("id")
-        if not isinstance(frontmatter_id, str) or not re.fullmatch(r"IMPL-\d{4}-\d{2}", frontmatter_id):
+        retired_id = doc.primary_id
+        if not re.fullmatch(r"IMPL-\d{4}-\d{2}", retired_id):
             errors.append(f"ID retirement {doc.relpath} must use id IMPL-####-##")
         else:
-            expected_path = f"id-retirements/{frontmatter_id}.md"
+            expected_path = f"id-retirements/{retired_id}.md"
             if doc.relpath != expected_path:
-                errors.append(f"ID retirement {frontmatter_id} must live at {expected_path}")
+                errors.append(f"ID retirement {retired_id} must live at {expected_path}")
         if doc.status != "retired":
             errors.append(f"ID retirement {doc.primary_id or doc.relpath} must use status retired")
         parent = doc.frontmatter.get("parent_plan")
         if not isinstance(parent, str) or not re.fullmatch(r"PLAN-\d{4}", parent):
             errors.append(f"ID retirement {doc.primary_id or doc.relpath} must include parent_plan PLAN-####")
         else:
-            if isinstance(frontmatter_id, str) and re.fullmatch(r"IMPL-\d{4}-\d{2}", frontmatter_id):
-                if frontmatter_id.split("-")[1] != parent.split("-")[1]:
-                    errors.append(f"ID retirement {frontmatter_id} does not match parent_plan {parent}")
+            if re.fullmatch(r"IMPL-\d{4}-\d{2}", retired_id):
+                if retired_id.split("-")[1] != parent.split("-")[1]:
+                    errors.append(f"ID retirement {retired_id} does not match parent_plan {parent}")
             parent_doc = find_doc(docs or [], parent)
-            if not parent_doc or parent_doc.primary_id != parent or parent_doc.doc_type != "plan":
+            if not parent_doc or parent not in parent_doc.identity_keys or parent_doc.doc_type != "plan":
                 errors.append(f"ID retirement {doc.primary_id or doc.relpath} must reference a live primary plan: {parent}")
         reason = doc.frontmatter.get("reason")
         if not isinstance(reason, str) or not reason.strip():
@@ -3992,8 +4632,8 @@ def validate_frontmatter(doc: Doc, docs: list[Doc] | None = None) -> list[str]:
                 errors.append(f"Superseded question {doc.primary_id or doc.relpath} must include superseded_by or reason in {doc.relpath}")
 
     if doc_type == "repo-health-audit":
-        doc_id = doc.frontmatter.get("id")
-        if not isinstance(doc_id, str) or not re.fullmatch(r"AUDT-\d{4}", doc_id):
+        doc_id = doc.primary_id
+        if not re.fullmatch(r"AUDT-\d{4}", doc_id):
             errors.append(f"Audit {doc.relpath} must use id AUDT-####")
         audit_kind = doc.frontmatter.get("audit_kind")
         if audit_kind not in AUDIT_KINDS:
@@ -4016,6 +4656,27 @@ def validate_linked_paths(doc: Doc, root: Path) -> list[str]:
 def main() -> int:
     args = parse_args()
     root = docs_root(args.root)
+    if args.command == "format-status":
+        payload = format_status_payload(root, args.exclude)
+        print_json_or_text(payload, format_status_text(payload), args.json)
+        return 0
+    if args.command == "migrate-uuids":
+        if args.prepare_plan:
+            payload = prepare_uuid_migration(root, args.prepare_plan, args.exclude, bool(args.write))
+            summary = (
+                f"{'WROTE' if args.write else 'PREVIEW'} migration plan {args.prepare_plan}\n"
+                f"Documents: {len(payload['documents'])}\n"
+                f"Migration ID: {payload['migration_id']}"
+            )
+        else:
+            payload = apply_uuid_migration(root, args.plan, bool(args.write))
+            summary = (
+                f"Migration state: {payload['state']}\n"
+                f"Plan: {payload['plan_path']}\n"
+                f"Receipt: {payload['receipt_path']}"
+            )
+        print_json_or_text(payload, summary, args.json)
+        return 0
     if args.command == "retire-id":
         return retire_id(args, root)
     docs = read_docs(root)

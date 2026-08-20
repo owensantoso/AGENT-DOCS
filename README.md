@@ -81,7 +81,7 @@ Agent-driven projects usually do not fail because nobody wrote notes. They fail 
 |---|---|
 | Current reality is inferred from code and stale chat | `CURRENT_STATE.md` is the first truth page |
 | Ideas, specs, plans, and decisions blur together | Each doc type has one job and one owner of truth |
-| Agents guess the next ID or hand-edit registries | `agent-continuity docs` derives IDs and generated views from source docs |
+| Branches compete for numbered document identity | `agent-continuity docs` assigns UUIDv7 identity and derives generated views from source docs |
 | Bug evidence disappears into pasted logs | `DIAG-*` records preserve sanitized run evidence |
 | Research, benchmarks, and decisions get mixed | `RSCH-*`, `EVAL-*`, and `ADR-*` stay separate |
 | Plans become too large to hand off safely | `PLAN-*` owns scope; `IMPL-*` owns bounded execution |
@@ -170,9 +170,9 @@ agent-continuity init
 The installer is idempotent around existing project files: it may create missing docs inside an existing `docs/` folder, but it lists exact file conflicts and refuses to overwrite those files in write mode unless `--force` is explicitly provided.
 
 Explicit write installs create `.agent-continuity/manifest.json`. Manifest schema
-version 1 records the Agent Continuity source repo/ref/commit when available, the
-selected profile, optional components such as `agent-continuity-docs`, installed file
-records, generated views produced by Agent Continuity, and timestamps. Only reusable tooling such as
+version 2 records the named Agent Continuity release, document-format target,
+source repo/ref/commit when available, selected profile, optional components such
+as `agent-continuity-docs`, installed file records, generated views, and timestamps. Only reusable tooling such as
 `scripts/agent-continuity-docs` and `tests/agent-continuity-docs-smoke.sh` is checksummed and given an
 expected file mode as `agent-continuity-owned`; starter Markdown is recorded as
 `project-owned-after-install` so future update tooling does not treat target
@@ -250,20 +250,11 @@ If you have cloned this repo and want to run the script directly during developm
 
 `core` and `standard` synthesize smaller flat files such as `docs/CURRENT_STATE.md` and `docs/ARCHITECTURE.md`. `expanded` and `complete` copy selected files from the full scaffold, where current-state and architecture docs live under `docs/orientation/`. This keeps smaller project docs lighter without duplicating the whole scaffold tree.
 
-Manual install still works if you want the full scaffold plus deterministic metadata tooling:
-
-```bash
-AGENT_CONTINUITY_SOURCE=/path/to/agent-continuity
-cp "$AGENT_CONTINUITY_SOURCE/scaffold/AGENTS.md" ./AGENTS.md
-mkdir -p docs
-rsync -av "$AGENT_CONTINUITY_SOURCE/scaffold/docs/" ./docs/
-mkdir -p scripts tests
-cp "$AGENT_CONTINUITY_SOURCE/scripts/agent-continuity-docs" ./scripts/agent-continuity-docs
-cp "$AGENT_CONTINUITY_SOURCE/tests/agent-continuity-docs-smoke.sh" ./tests/agent-continuity-docs-smoke.sh
-chmod +x ./scripts/agent-continuity-docs ./tests/agent-continuity-docs-smoke.sh
-```
-
-Then adapt placeholders, delete irrelevant examples, and make `AGENTS.md` plus the current-state doc truthful for that repo.
+Use `agent-continuity init` rather than copying `scaffold/` directly. The
+initializer omits legacy numbered example records, assigns UUIDv7 identity to
+starter records, and regenerates derived views. The source scaffold retains
+migration fixtures and reference material that should not become new project
+state verbatim.
 
 Reusable global and surface-level agent instructions live under [scaffold/agent-instructions/](scaffold/agent-instructions/). These are reusable `AGENTS.md` templates, not Codex `SKILL.md` skills. Repo-local skills live under [skills/](skills/), while [scaffold/skills/](scaffold/skills/) contains copies intended for target repos.
 
@@ -336,26 +327,26 @@ Use the smallest durable doc that answers the actual question.
 | Session log | Receipt | what happened in a meaningful session | Future readers need timeline, verification, and decisions |
 | Audit | Repo-health check | docs/tooling/codebase workflow health | The repo needs periodic drift or hygiene review |
 
-## Stable File Naming
+## Stable Identity And Human File Naming
 
-Agent Continuity artifacts use uppercase stable IDs in both frontmatter and filenames.
-Do not create generic source docs like `plan.md`, `spec.md`, or `brief.md` when
-the artifact has an ID family.
+Document format v2 uses UUID version 7 (UUIDv7) as canonical identity. Filenames
+use an uppercase type prefix plus a descriptive slug; they are mutable locators,
+not identity or workflow order. Migrated numeric IDs remain aliases for old links.
+Fresh documents use `aliases: []`.
 
 Required patterns:
 
 ```text
-docs/<domain>/specs/SPEC-0001-<slug>.md
-docs/<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
-docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
+docs/<domain>/specs/SPEC-<slug>.md
+docs/<domain>/plans/PLAN-<slug>/PLAN-<slug>.md
+docs/<domain>/plans/PLAN-<slug>/IMPL-<brief-slug>.md
 ```
 
-The parent plan folder and parent plan filename must repeat the same `PLAN-####`
-ID and slug. Implementation briefs live in that plan folder and use
-`IMPL-<plan-id>-<sequence>-<slug>.md`.
+The parent plan folder and parent plan filename repeat the same human slug.
+Implementation briefs live beside their parent plan and refer to its UUID.
 
-When `agent-continuity docs` exists, prefer it over guessing IDs or paths. When it
-does not exist, inspect existing docs and preserve the same uppercase ID pattern.
+When `agent-continuity docs` exists, use it to generate UUIDv7 metadata and the
+type-plus-slug locator. Do not allocate a numeric alias for a new document.
 
 ## Folder Model
 
@@ -441,13 +432,15 @@ The [scaffold/](scaffold/) folder is shaped like the docs tree it creates. Copy 
 
 `agent-continuity docs` scans Markdown filenames and frontmatter as the source of truth, then creates generated views from that state. The installed implementation lives at [scripts/agent-continuity-docs](scripts/agent-continuity-docs).
 
-This exists because agents are good at synthesis but unreliable at bookkeeping. They can forget the next ID, miss a stale status, or hand-edit a registry that no longer matches the repo. Agent Continuity moves that work into deterministic tooling.
+This exists because agents are good at synthesis but unreliable at bookkeeping. They can duplicate identity across branches, miss a stale status, or hand-edit a registry that no longer matches the repo. Agent Continuity moves that work into deterministic tooling.
 
 | Need | Command |
 |---|---|
 | Create a doc | `agent-continuity docs new <family> "<title>" --domain <domain>` |
-| Find next ID | `agent-continuity docs next <family>` |
-| Retire the current next IMPL ID | `agent-continuity docs retire-id IMPL-####-## --plan PLAN-#### --reason "..." --source-type <type> --source-link <link>` |
+| Inspect document formats | `agent-continuity docs format-status` |
+| Prepare UUID migration | `agent-continuity docs migrate-uuids --prepare-plan .agent-continuity/migrations/document-format-v2.json --write` |
+| Apply committed migration | `agent-continuity docs migrate-uuids --plan .agent-continuity/migrations/document-format-v2.json --write` |
+| Retire a legacy IMPL alias | `agent-continuity docs retire-id IMPL-####-## --plan PLAN-#### --reason "..." --source-type <type> --source-link <link>` |
 | Update generated views | `agent-continuity docs update` |
 | Validate metadata and generated views | `agent-continuity docs check` |
 | Validate structured todos | `agent-continuity docs check-todos` |
@@ -456,7 +449,7 @@ This exists because agents are good at synthesis but unreliable at bookkeeping. 
 | Move docs safely | `agent-continuity docs move OLD NEW --dry-run` |
 | Check freshness | `agent-continuity docs health --write` |
 
-Supported stable-ID families include `IDEA`, `RSCH`, `EVAL`, `DIAG`, `CONC`, `SPEC`, `PLAN`, `IMPL`, `ADR`, `LRN`, `EXPL`, `QST`, and `TODO`.
+Supported document type prefixes include `IDEA`, `RSCH`, `EVAL`, `DIAG`, `CONC`, `SPEC`, `PLAN`, `IMPL`, `ADR`, `LRN`, `EXPL`, and `QST`. Structured `TODO-*` handles and legacy numeric aliases remain separate compatibility surfaces.
 
 When an uncreated implementation-brief ID must never be reused,
 `agent-continuity docs retire-id` creates a typed tombstone at

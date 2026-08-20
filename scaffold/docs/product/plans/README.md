@@ -2,12 +2,8 @@
 
 This repo uses specs, plans, and implementation briefs on purpose.
 
-Starter examples live here:
-
-- `docs/IDEAS.md` and the repo's idea template
-- `docs/SPECS.md` and the repo's spec template
-- `docs/product/plans/PLAN-0000-plan-title/PLAN-0000-plan-title.md`
-- `docs/product/plans/PLAN-0000-plan-title/IMPL-0000-00-implementation-brief-title.md`
+Fresh repositories do not seed fake numbered plans or briefs. Create the first
+real record when the project has real content to preserve.
 
 Reusable implementation-session handoff prompt:
 
@@ -16,23 +12,20 @@ Reusable implementation-session handoff prompt:
 If this repo has `agent-continuity docs`, use it for mechanical metadata:
 
 ```bash
-agent-continuity docs next spec
-agent-continuity docs next idea
-agent-continuity docs next plan
-agent-continuity docs next impl --plan PLAN-0000
 agent-continuity docs new spec "<title>" --domain product --spec-type feature
 agent-continuity docs new idea "<title>" --domain product
-agent-continuity docs new plan "<title>" --domain product --spec SPEC-0000
-agent-continuity docs new impl "<title>" --plan PLAN-0000
-agent-continuity docs retire-id IMPL-0000-01 --plan PLAN-0000 --reason "<reason>" --source-type conversation --source-notes "<provenance>"
-agent-continuity docs set-status PLAN-0000 in_progress
+agent-continuity docs new plan "<title>" --domain product --spec <spec UUID>
+agent-continuity docs new impl "<title>" --plan <plan UUID>
+agent-continuity docs set-status <document UUID> in_progress
 agent-continuity docs todos
 agent-continuity docs update
 agent-continuity docs check
 agent-continuity docs roadmap --write
 ```
 
-Do not ask agents to guess the next ID when the repo can derive it.
+The generator assigns a UUID version 7 (UUIDv7) and writes `aliases: []`.
+Numbered IDs are compatibility aliases for migrated documents, not a naming
+requirement for new work.
 
 If the current next `IMPL-*` ID must never be reused even though no live brief
 was created, use `agent-continuity docs retire-id`. Review its default preview,
@@ -51,24 +44,22 @@ Plans should live under the topic/domain that owns the work:
 - `operations/` - release, production, App Store, or manual operational work
 - `marketing/` - launch and growth planning
 
-Each meaningful plan should get its own folder:
+Each meaningful plan should get its own type-plus-slug folder:
 
 ```text
 <domain>/plans/<plan-slug>/
-  PLAN-0001-<slug>.md
-  IMPL-0001-01-<slug>.md
+  PLAN-<slug>.md
+  IMPL-<brief-slug>.md
 ```
 
-The parent plan folder and parent plan file must both use the same uppercase
-`PLAN-####-<slug>` identity:
+The parent plan folder and file use the same human locator:
 
 ```text
-<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
+<domain>/plans/PLAN-<slug>/PLAN-<slug>.md
 ```
 
-Do not name the parent plan `plan.md`. A generic filename breaks the stable
-paper trail because commits, session logs, issues, generated views, and
-implementation briefs refer to the `PLAN-####` ID.
+Do not name the parent plan `plan.md`. The descriptive locator helps repository
+browsing, while the UUID in frontmatter preserves identity across renames.
 
 Use the old flat file convention only when the repo intentionally chooses simpler docs.
 
@@ -94,8 +85,8 @@ the docs silently disagree.
 Full supersession:
 
 - set the older doc's `status` to `superseded`
-- add `superseded_by: [SPEC-0000]` or the relevant replacement doc
-- add `supersedes: [SPEC-0000]` to the newer doc when applicable
+- add the replacement UUID under `superseded_by`
+- add the older UUID under `supersedes` on the newer doc when applicable
 - write one short note near the top of the older doc explaining why it was
   superseded
 
@@ -112,24 +103,24 @@ Partial supersession:
 Prefer small, explicit revision notes over editing history until the old artifact
 looks like it always knew the future.
 
-## ID and filename conventions
+## Identity and filename conventions
 
-Use independent IDs for specs and plans. Do not force plan numbers to match spec numbers.
+UUIDv7 is canonical identity. The type prefix and slug are a mutable locator.
+Legacy numeric IDs remain aliases only on migrated records.
 
 ```text
-IDEA-0001
-SPEC-0001
-PLAN-0001
-IMPL-0001-01
+document_format_version: 2
+id: 019d2f60-7d3a-7bb0-bf46-ae03ee6b6472
+aliases: []
 ```
 
 Recommended paths:
 
 ```text
-docs/<domain>/ideas/IDEA-0001-<slug>.md
-docs/<domain>/specs/SPEC-0001-<slug>.md
-docs/<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
-docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
+docs/<domain>/ideas/IDEA-<slug>.md
+docs/<domain>/specs/SPEC-<slug>.md
+docs/<domain>/plans/PLAN-<slug>/PLAN-<slug>.md
+docs/<domain>/plans/PLAN-<slug>/IMPL-<brief-slug>.md
 ```
 
 Relationships belong in frontmatter:
@@ -139,19 +130,20 @@ sequence:
   roadmap: "3.5"
   sort_key: "003.005"
   lane: product
-  after: [PLAN-0034]
+  after: [<plan UUID>]
 promoted_to:
-  - SPEC-0001
+  - <spec UUID>
 related_specs:
-  - SPEC-0001
-parent_plan: PLAN-0001
+  - <spec UUID>
+parent_plan: <plan UUID>
 ```
 
 This keeps filenames readable while still supporting one-to-one, one-to-many, many-to-one, and no-spec plans.
 
 ## Roadmap order
 
-`PLAN-*` IDs are stable identity after implementation history points at them. Before implementation starts, keep numeric IDs and execution order aligned; if order changes, move/renumber the docs rather than relying on hidden dependency interpretation.
+Identity never encodes execution order. Use explicit dependency fields for
+blocking semantics and `sequence` only as an optional presentation order.
 
 Use `sequence` frontmatter for order:
 
@@ -160,8 +152,8 @@ sequence:
   roadmap: "3.5.1"
   sort_key: "003.005.001"
   lane: product
-  after: [PLAN-0035]
-  before: [PLAN-0036]
+  after: [<plan UUID>]
+  before: [<plan UUID>]
 ```
 
 Use `agent-continuity docs roadmap --write` to generate `docs/ROADMAP-VIEW.md` from plan frontmatter.

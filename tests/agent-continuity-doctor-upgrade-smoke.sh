@@ -137,8 +137,12 @@ retirement_doctor_target="$tmpdir/retirement-doctor"
 retirement_doctor_docs="$retirement_doctor_target/docs"
 "$repo_root/scripts/agent-continuity" docs --root "$retirement_doctor_docs" new plan "Retirement Doctor Preservation" --domain product \
   >$tmpdir/retirement-doctor-plan.out
+retirement_doctor_plan_path="$(cat "$tmpdir/retirement-doctor-plan.out")"
+perl -0pi -e 's/aliases: \[\]/aliases:\n  - PLAN-0001/' "$retirement_doctor_plan_path"
 "$repo_root/scripts/agent-continuity" docs --root "$retirement_doctor_docs" new impl "Live First Slice" --plan PLAN-0001 \
   >$tmpdir/retirement-doctor-impl.out
+retirement_doctor_impl_path="$(cat "$tmpdir/retirement-doctor-impl.out")"
+perl -0pi -e 's/aliases: \[\]/aliases:\n  - IMPL-0001-01/' "$retirement_doctor_impl_path"
 "$repo_root/scripts/agent-continuity" docs --root "$retirement_doctor_docs" retire-id IMPL-0001-02 --plan PLAN-0001 \
   --reason "Preserve this project-owned tombstone through doctor." --source-type test --source-notes "doctor preservation" --write \
   >$tmpdir/retirement-doctor-write.out
@@ -170,6 +174,69 @@ snapshot_tree "$healthy_target" "$tmpdir/healthy-after-bare-upgrade.sha"
 cmp "$tmpdir/healthy-before-bare-upgrade.sha" "$tmpdir/healthy-after-bare-upgrade.sha"
 require_contains "$tmpdir/healthy-bare-upgrade.out" "Agent Continuity upgrade dry-run"
 require_contains "$tmpdir/healthy-bare-upgrade.out" "Status: healthy/current"
+
+release_mismatch_target="$tmpdir/release-mismatch"
+cp -R "$healthy_target" "$release_mismatch_target"
+python3 - "$release_mismatch_target" <<'PY'
+import json
+import pathlib
+import sys
+
+manifest_path = pathlib.Path(sys.argv[1]) / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["agent_continuity_release"] = "2026.01.01.1"
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 1 "$tmpdir/release-mismatch-doctor.out" "$agent_docs" doctor "$release_mismatch_target"
+require_contains "$tmpdir/release-mismatch-doctor.out" "installed release 2026.01.01.1 differs from current release"
+require_exit 1 "$tmpdir/release-mismatch-preview.out" "$agent_docs" upgrade --dry-run "$release_mismatch_target"
+require_exit 0 "$tmpdir/release-mismatch-write.out" "$agent_docs" upgrade --write --tooling-only "$release_mismatch_target"
+python3 - "$release_mismatch_target" "$repo_root/VERSION" <<'PY'
+import json
+import pathlib
+import sys
+
+target = pathlib.Path(sys.argv[1])
+release = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8").strip()
+manifest = json.loads((target / ".agent-docs/manifest.json").read_text(encoding="utf-8"))
+assert manifest["agent_continuity_release"] == release
+assert manifest["schema_version"] == 2
+assert manifest["document_format_target"] == 2
+PY
+
+missing_release_target="$tmpdir/missing-release"
+cp -R "$healthy_target" "$missing_release_target"
+python3 - "$missing_release_target" <<'PY'
+import json
+import pathlib
+import sys
+
+manifest_path = pathlib.Path(sys.argv[1]) / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest.pop("agent_continuity_release")
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 2 "$tmpdir/missing-release-doctor.out" "$agent_docs" doctor "$missing_release_target"
+require_contains "$tmpdir/missing-release-doctor.out" "manifest schema 2 requires a non-empty agent_continuity_release"
+
+legacy_schema_target="$tmpdir/legacy-schema"
+cp -R "$healthy_target" "$legacy_schema_target"
+python3 - "$legacy_schema_target" <<'PY'
+import json
+import pathlib
+import sys
+
+manifest_path = pathlib.Path(sys.argv[1]) / ".agent-docs/manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest["schema_version"] = 1
+manifest.pop("agent_continuity_release")
+manifest.pop("document_format_target")
+manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+require_exit 1 "$tmpdir/legacy-schema-doctor.out" "$agent_docs" doctor "$legacy_schema_target"
+require_contains "$tmpdir/legacy-schema-doctor.out" "legacy manifest schema"
+require_exit 0 "$tmpdir/legacy-schema-write.out" "$agent_docs" upgrade --write --tooling-only "$legacy_schema_target"
+require_exit 0 "$tmpdir/legacy-schema-doctor-after.out" "$agent_docs" doctor "$legacy_schema_target"
 
 missing_project_owned_target="$tmpdir/missing-project-owned"
 "$installer" "$missing_project_owned_target" --profile small --docs-meta yes --write >"$tmpdir/missing-project-owned-install.out"

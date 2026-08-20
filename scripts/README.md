@@ -74,9 +74,11 @@ files from `scaffold/`.
 
 Explicit write installs create `.agent-continuity/manifest.json`.
 
-Schema version 1 contains:
+Schema version 2 contains:
 
-- `schema_version`: currently `1`
+- `schema_version`: currently `2`
+- `agent_continuity_release`: named Calendar Versioning release
+- `document_format_target`: currently `2`
 - `installed_at` and `updated_at`: UTC timestamps
 - `source`: Agent Continuity repository URL, ref, commit, and local source path when available
 - `profile`: selected canonical profile
@@ -122,7 +124,9 @@ agent-continuity upgrade /path/to/project
 agent-continuity upgrade --dry-run /path/to/project
 ```
 
-Both commands classify the target with the schema version 1 manifest. Reports
+Both commands read manifest schemas 1 and 2. Schema 1 is reported as a
+tooling-only upgrade, while v1 authored documents are reported as a separate
+content migration. Reports
 include exact paths and reasons for healthy/current files, missing legacy
 manifests, missing Agent Continuity-owned tooling, checksum drift, safe automatic
 additions, candidate tooling updates, generated-view refreshes, project-owned manual-review
@@ -165,13 +169,13 @@ Supported platforms and prerequisites: Bash on macOS or Linux, Git for installer
 
 `agent-continuity docs` is the deterministic structured-document interface.
 
-It exists to keep repository memory queryable without asking a human or AI agent to manually maintain counters, status tables, generated registries, or todo dashboards. The important rule is simple: Markdown files, filenames, and frontmatter are the source of truth. Generated files are views.
+It exists to keep repository memory queryable without asking a human or AI agent to manually maintain identity, status tables, generated registries, or todo dashboards. The important rule is simple: Markdown and frontmatter are authored truth, filenames are mutable locators, and generated files are views.
 
 ## What It Solves
 
 Agent-driven projects tend to accumulate small bits of comprehension debt:
 
-- the next `IDEA-*`, `CONC-*`, `SPEC-*`, `PLAN-*`, or `ADR-*` number is guessed instead of derived
+- branches assign conflicting numbered document identities
 - plan and implementation statuses drift from reality
 - generated registries are hand-edited and quietly become stale
 - todos are scattered across specs, plans, and implementation briefs
@@ -184,16 +188,16 @@ Agent Continuity turns those into mechanical operations. It scans the repo, deri
 Canonical state lives in docs files:
 
 ```text
-docs/<domain>/specs/SPEC-0001-<slug>.md
-docs/<domain>/ideas/IDEA-0001-<slug>.md
-docs/<domain>/concepts/CONC-0001-<slug>.md
-docs/<domain>/plans/PLAN-0001-<slug>/PLAN-0001-<slug>.md
-docs/<domain>/plans/PLAN-0001-<slug>/IMPL-0001-01-<slug>.md
+docs/<domain>/specs/SPEC-<slug>.md
+docs/<domain>/ideas/IDEA-<slug>.md
+docs/<domain>/concepts/CONC-<slug>.md
+docs/<domain>/plans/PLAN-<slug>/PLAN-<slug>.md
+docs/<domain>/plans/PLAN-<slug>/IMPL-<brief-slug>.md
 ```
 
 The script reads:
 
-- IDs from frontmatter and filenames
+- UUIDv7 identities and legacy aliases from frontmatter
 - status from frontmatter
 - titles from frontmatter or first heading
 - todos from Markdown checkboxes
@@ -242,7 +246,8 @@ changed without changing adopter behavior.
 
 ## Commands
 
-Show the next ID:
+Inspect the next legacy numeric alias. These commands exist for migrated
+repositories and ID-retirement workflows; new documents do not use them:
 
 ```bash
 agent-continuity docs next spec
@@ -268,13 +273,28 @@ agent-continuity docs new concept "Selections, Snapshots, And Dynamic Sections" 
 agent-continuity docs new research "Embedding Options Survey" --domain research
 agent-continuity docs new eval "Embedding Model Bakeoff" --domain repo-health
 agent-continuity docs new diag "Simulator Freeze Investigation" --domain repo-health
-agent-continuity docs new plan "Shared Capture Implementation" --domain product --spec SPEC-0001
-agent-continuity docs new impl "Persist Capture Drafts" --plan PLAN-0001
+agent-continuity docs new plan "Shared Capture Implementation" --domain product --spec <spec UUID>
+agent-continuity docs new impl "Persist Capture Drafts" --plan <plan UUID>
 agent-continuity docs new adr "Use Append-Only Worktree Journal"
 agent-continuity docs new learning "Why plans and specs are separate" --domain repo-health
 agent-continuity docs new explainer "How specs and plans fit together" --domain orientation
 agent-continuity docs new question "Should specs and plans be one-to-one?" --domain repo-health
 ```
+
+Fresh documents use document format v2, receive UUIDv7 identity, write
+`aliases: []`, and use type-plus-slug locators. Inspect or migrate formats with:
+
+```bash
+agent-continuity docs format-status
+agent-continuity docs migrate-uuids --prepare-plan .agent-continuity/migrations/document-format-v2.json --write
+git add .agent-continuity/migrations/document-format-v2.json
+git commit -m "Prepare Agent Continuity UUID migration"
+agent-continuity docs migrate-uuids --plan .agent-continuity/migrations/document-format-v2.json --write
+```
+
+Migration preserves old numeric IDs as aliases, changes no filenames or
+relationship fields, refuses uncommitted plans and divergent preimages, and
+writes its receipt last. Commit the receipt with the migrated documents.
 
 Retire the current next implementation-brief ID without creating live work:
 
@@ -286,7 +306,7 @@ agent-continuity docs retire-id IMPL-0017-03 \
   --source-link codex://threads/<thread-id>
 ```
 
-`retire-id` is preview-only unless `--write` is passed. V1 supports `IMPL-*`
+`retire-id` is preview-only unless `--write` is passed. This legacy-compatibility command supports `IMPL-*`
 only and requires the target to equal `agent-continuity docs next impl --plan
 PLAN-####` for a live primary plan. Provenance requires a non-empty
 `--source-type` plus at least one non-empty `--source-link` or
@@ -313,9 +333,9 @@ Inspect or update status:
 
 ```bash
 agent-continuity docs status
-agent-continuity docs status PLAN-0001
-agent-continuity docs show PLAN-0001
-agent-continuity docs set-status PLAN-0001 in_progress
+agent-continuity docs status <document UUID>
+agent-continuity docs show <document UUID or legacy alias>
+agent-continuity docs set-status <document UUID> in_progress
 ```
 
 `show` is the per-doc inspection command. It prints one doc's metadata, related docs from frontmatter, `linked_paths`, and local todos.
@@ -474,7 +494,7 @@ agent-continuity docs update
 agent-continuity docs check
 ```
 
-`check` also validates frontmatter contracts for known doc types, type-specific statuses, ID/filename agreement, implementation-to-parent-plan ID agreement, retirement tombstone paths, provenance, parent plans and scanner collisions, and whether generated registry files are stale.
+`check` also validates frontmatter contracts for known doc types, type-specific statuses, UUIDv7 and alias uniqueness, v1 ID/filename compatibility, retirement tombstone paths, provenance, parent plans and scanner collisions, and whether generated registry files are stale.
 
 Inspect docs links:
 
@@ -523,7 +543,7 @@ agent-continuity docs roadmap --json
 agent-continuity docs roadmap --write
 ```
 
-`roadmap` sorts `type: plan` docs by `sequence` frontmatter. In normal pre-implementation planning, `PLAN-*` numbering and `sequence` order should agree; if execution order changes, move or renumber the docs rather than relying on hidden dependencies. After commits, PRs, or session logs point at a plan, keep the ID stable and record any ordering correction in the docs. Running it also refreshes `docs/ROADMAP-VIEW.md`.
+`roadmap` sorts `type: plan` docs by optional `sequence` frontmatter for presentation. UUIDs and filenames never encode execution order; blocking order belongs in explicit typed dependencies. Running it also refreshes `docs/ROADMAP-VIEW.md`.
 
 Print and refresh any generated Markdown view:
 
@@ -551,30 +571,29 @@ tests/agent-continuity-docs-smoke.sh
 
 ## Naming Model
 
-The default naming model is independent IDs plus explicit relationships:
+UUIDv7 is canonical identity. Type prefixes and slugs are human locators;
+numeric values appear only as aliases on migrated records:
 
 ```text
-SPEC-0001
-IDEA-0001
-CONC-0001
-PLAN-0001
-IMPL-0001-01
-ADR-0001
+document_format_version: 2
+id: 019d2f60-7d3a-7bb0-bf46-ae03ee6b6472
+aliases: []
+type: plan
 ```
 
 Relationships belong in frontmatter:
 
 ```yaml
 related_specs:
-  - SPEC-0001
+  - <spec UUID>
 promoted_to:
-  - SPEC-0001
-parent_plan: PLAN-0001
+  - <spec UUID>
+parent_plan: <plan UUID>
 sequence:
   roadmap: "3.5.1"
   sort_key: "003.005.001"
   lane: product
-  after: [PLAN-0035]
+  after: [<plan UUID>]
 related_issues:
   - "#123"
 linked_paths:

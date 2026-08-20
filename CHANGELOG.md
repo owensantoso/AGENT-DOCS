@@ -8,6 +8,22 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ### For adopters
 
+- Added document format v2 with UUID version 7 (UUIDv7) canonical identity,
+  empty aliases on fresh documents, type-plus-slug locators, UUID/alias lookup,
+  and compatibility reading for v1 Markdown. Existing numeric IDs are preserved
+  only as aliases during migration; fresh documents and repositories do not
+  allocate numbered aliases.
+- Added `agent-continuity docs format-status` and preview-first
+  `migrate-uuids`. Migration plans record the base commit, known worktrees,
+  preimage and postimage hashes, assigned UUIDs, and a receipt path. Write mode
+  requires the exact plan to be committed, refuses divergent preimages before
+  mutation, resumes partial expected postimages, and writes the receipt last.
+- Added named release `2026.08.21.1`, manifest schema version 2, and the
+  independent `document_format_target`. `doctor` reads schema 1 compatibly and
+  reports manifest and document-format migrations separately; tooling-only
+  upgrade does not mutate project-authored Markdown.
+- Fresh complete scaffolds now omit fake numbered records, assign UUIDv7 to
+  starter records, and regenerate views from the resulting corpus.
 - Added preview-first `agent-continuity docs retire-id` for permanently retiring
   the current next `IMPL-*` ID of a live plan. Explicit `--write` creates a
   typed, provenance-bearing tombstone under `docs/id-retirements/`; it advances

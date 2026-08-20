@@ -67,7 +67,11 @@ The native direction separates four concepts without turning them into four phys
 
 Workflow order belongs in typed relationships, not identifiers or filenames. Containment uses `part_of`; implementation uses `implements`; supersession uses `supersedes`; and evidence uses `evidenced_by`. Predicate-specific validation applies: `depends_on`, `part_of`, and `supersedes` must be irreflexive and acyclic. `depends_on` therefore forms the execution directed acyclic graph (DAG), meaning a dependency graph with no route that loops back to its starting node.
 
-This is a confirmed identity choice and a proposed storage direction, not an implemented schema or migration approval. The first implementation should be a compatibility-first fixture: add UUIDv7 values and legacy aliases, prove rename recovery, and migrate one relationship family before changing the corpus broadly.
+This is a confirmed identity choice. The document-format-v2 implementation is
+tracked by PLAN-0012: fresh documents receive UUIDv7 identity, empty aliases,
+and type-plus-slug locators; migrated documents alone preserve their prior
+numeric IDs as aliases. Relationship normalization and broad locator renames
+remain separate work.
 
 ## Versioning Must Precede UUID Migration
 
@@ -452,6 +456,15 @@ As of 2026-08-08, a mature universal “GitHub for Jujutsu” has not clearly em
 These projects are useful references, especially their commit-first and stack-aware review models, but Agent Continuity does not need a separate forge before proving its own document-specific interface.
 
 ## Public Code And Private Project Memory
+
+### Visibility Decision Parked - 2026-08-21
+
+Owen's current preference is to keep the entire Agent Continuity corpus private
+because public code repositories presently serve as portfolio surfaces, not as
+collaboration surfaces. The exact repository topology and any public subset are
+deferred until there is a real publishing or contribution need. The selective
+public/private split below remains design research, not the current default and
+not part of the UUID migration.
 
 Repository visibility is a security boundary. A public repository cannot contain a truly private branch, folder, or selected file on GitHub. `.gitignore` can keep local files out of Git, but it does not synchronize, back up, or share them. A `visibility: private` field inside a committed public document is classification metadata, not protection.
 

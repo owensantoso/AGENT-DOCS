@@ -10,7 +10,9 @@ agent-continuity docs new eval "<Title>" --domain <domain>
 
 ---
 type: evaluation
-id: EVAL-####
+document_format_version: 2
+id: <generated UUIDv7>
+aliases: []
 title: <Evaluation Title>
 domain: <product | architecture | repo-health | research | operations | marketing>
 status: draft
@@ -18,7 +20,7 @@ created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
 updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
 owner:
 hypothesis:
-artifact_root: artifacts/evaluations/EVAL-####/
+artifact_root: artifacts/evaluations/<document UUIDv7>/
 dataset_version:
 fixture_digest:
 run_command:
@@ -36,7 +38,7 @@ repo_state:
   last_reviewed_commit:
 ---
 
-# EVAL-#### - <Evaluation Title>
+# <Evaluation Title>
 
 ## Hypothesis
 

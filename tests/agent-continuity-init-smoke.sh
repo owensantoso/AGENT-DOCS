@@ -33,8 +33,12 @@ retirement_preserve_target="$tmpdir/retirement-preserve-app"
 retirement_docs="$retirement_preserve_target/docs"
 "$repo_root/scripts/agent-continuity" docs --root "$retirement_docs" new plan "Retirement Preservation" --domain product \
   >$tmpdir/retirement-preserve-plan.out
+retirement_plan_path="$(cat "$tmpdir/retirement-preserve-plan.out")"
+perl -0pi -e 's/aliases: \[\]/aliases:\n  - PLAN-0001/' "$retirement_plan_path"
 "$repo_root/scripts/agent-continuity" docs --root "$retirement_docs" new impl "Live First Slice" --plan PLAN-0001 \
   >$tmpdir/retirement-preserve-impl.out
+retirement_impl_path="$(cat "$tmpdir/retirement-preserve-impl.out")"
+perl -0pi -e 's/aliases: \[\]/aliases:\n  - IMPL-0001-01/' "$retirement_impl_path"
 "$repo_root/scripts/agent-continuity" docs --root "$retirement_docs" retire-id IMPL-0001-02 --plan PLAN-0001 \
   --reason "Preserve this project-owned tombstone through init." --source-type test --source-notes "init preservation" --write \
   >$tmpdir/retirement-preserve-write.out
@@ -80,8 +84,12 @@ import json
 import sys
 
 manifest = json.load(open(sys.argv[1], encoding="utf-8"))
-if manifest.get("schema_version") != 1:
-    raise SystemExit("Expected manifest schema_version 1")
+if manifest.get("schema_version") != 2:
+    raise SystemExit("Expected manifest schema_version 2")
+if manifest.get("agent_continuity_release") != "2026.08.21.1":
+    raise SystemExit("Expected named Agent Continuity release")
+if manifest.get("document_format_target") != 2:
+    raise SystemExit("Expected document format target 2")
 if manifest.get("profile") != "core":
     raise SystemExit("Expected core profile in manifest")
 if manifest.get("optional_components") != []:
@@ -284,6 +292,26 @@ if grep -Fq -- "tooling: scripts/agent-continuity-docs" "$tmpdir/full-no-meta-dr
   echo "Expected full profile without agent-continuity docs to hide tooling row" >&2
   exit 1
 fi
+
+full_write_target="$tmpdir/full-write-app"
+"$installer" "$full_write_target" --profile complete --write >"$tmpdir/full-write.out"
+if find "$full_write_target/docs" -name '*0000*' -print -quit | grep -q .; then
+  echo "Expected a fresh complete repo to omit numbered placeholder documents" >&2
+  exit 1
+fi
+if rg -n '^(id|aliases): .*-(0000|####)' "$full_write_target/docs" >"$tmpdir/full-write-numbered-aliases.out"; then
+  cat "$tmpdir/full-write-numbered-aliases.out" >&2
+  echo "Expected a fresh complete repo to contain no old number-based document aliases" >&2
+  exit 1
+fi
+if rg -n '^aliases:[[:space:]]*$' "$full_write_target/docs" >"$tmpdir/full-write-nonempty-aliases.out"; then
+  cat "$tmpdir/full-write-nonempty-aliases.out" >&2
+  echo "Expected every fresh repository document to start with aliases: []" >&2
+  exit 1
+fi
+"$full_write_target/scripts/agent-continuity-docs" --root "$full_write_target/docs" format-status --json >"$tmpdir/full-write-format.json"
+require_contains "$tmpdir/full-write-format.json" '"v1": 0'
+require_contains "$tmpdir/full-write-format.json" '"invalid": 0'
 
 python3 - "$installer" "$tmpdir/interactive-app" >"$tmpdir/interactive-picker.out" <<'PY'
 import os

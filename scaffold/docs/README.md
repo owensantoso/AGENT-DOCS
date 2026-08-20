@@ -9,12 +9,12 @@ Map of the documentation system.
 3. `<orientation/ROADMAP.md>` - sequence and rationale
 4. `<orientation/ARCHITECTURE.md>` - architecture and decision provenance
 5. `<architecture/README.md>` - architecture area registry and boundary map, if split out
-6. `<IDEAS.md>` - global `IDEA-####` registry
-7. `<SPECS.md>` - global `SPEC-####` registry
-8. `<CONCEPTS.md>` - global `CONC-####` registry, if concept notes exist
-9. `<EXPLAINERS.md>` - global `EXPL-####` registry, if explainers exist
-10. `<QUESTIONS.md>` - global `QST-####` registry, if durable questions exist
-11. `<LEARNINGS.md>` - global `LRN-####` registry, if learning records exist
+6. `<IDEAS.md>` - generated idea registry
+7. `<SPECS.md>` - generated specification registry
+8. `<CONCEPTS.md>` - generated concept registry, if concept notes exist
+9. `<EXPLAINERS.md>` - generated explainer registry, if explainers exist
+10. `<QUESTIONS.md>` - generated question registry, if durable questions exist
+11. `<LEARNINGS.md>` - generated learning registry, if learning records exist
 12. `<product/specs/>`, `<architecture/specs/>`, or another topic-first specs folder
 13. `<domain>/plans/` - plan folders and implementation briefs
 
@@ -93,12 +93,7 @@ Decision shortcut:
 ## Rules
 
 - Keep `CURRENT_STATE.md` short and link outward.
-- Keep `IDEAS.md` as the global registry for one continuous `IDEA-####` sequence.
-- Keep `CONCEPTS.md` as the global registry for one continuous `CONC-####` sequence when the repo uses concept notes.
-- Keep `SPECS.md` as the global registry for one continuous `SPEC-####` sequence.
-- Keep `EXPLAINERS.md` as the global registry for one continuous `EXPL-####` sequence when the repo uses explainers.
-- Keep `QUESTIONS.md` as the global registry for one continuous `QST-####` sequence when the repo uses durable questions.
-- Keep `LEARNINGS.md` as the global registry for one continuous `LRN-####` sequence when the repo uses learning records.
+- Keep type registries generated from UUID-bearing Markdown records.
 - Store specs in topic-first folders such as `product/specs/`, `architecture/specs/`, or `repo-health/specs/`.
 - Put plans under the domain that owns the outcome.
 - Keep `PLAN-*` numbering and `sequence` roadmap order aligned before implementation starts. If order changes later, move/renumber pre-implementation docs or record the correction when IDs already have history.
@@ -107,9 +102,9 @@ Decision shortcut:
 - Use `EVAL-*` evaluations for repeatable fixtures, metrics, thresholds, and bakeoffs.
 - Use `DIAG-*` diagnostics for real-run failures, freezes, slow flows, crash logs, timing traces, and privacy-sensitive debugging evidence.
 - Give each meaningful plan its own folder.
-- Name parent plans as `PLAN-####-slug/PLAN-####-slug.md`; never use a generic
+- Name parent plans as `PLAN-slug/PLAN-slug.md`; never use a generic
   `plan.md` for a stable parent plan.
-- Name implementation briefs as `IMPL-####-NN-slug.md` inside the parent plan
+- Name implementation briefs as `IMPL-brief-slug.md` inside the parent plan
   folder.
 - Use session logs for per-session receipts.
 - Use ADRs for durable cross-plan decisions.

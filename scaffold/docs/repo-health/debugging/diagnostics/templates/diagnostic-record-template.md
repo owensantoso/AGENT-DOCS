@@ -10,7 +10,9 @@ agent-continuity docs new diag "<Title>" --domain <domain>
 
 ---
 type: diagnostic-record
-id: DIAG-####
+document_format_version: 2
+id: <generated UUIDv7>
+aliases: []
 title: <Diagnostic Title>
 domain: <product | architecture | repo-health | research | operations | marketing>
 status: investigating
@@ -18,7 +20,7 @@ created_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
 updated_at: "YYYY-MM-DD HH:MM:SS TZ +0000"
 owner:
 symptom:
-artifact_root: artifacts/diagnostics/DIAG-####/
+artifact_root: artifacts/diagnostics/<document UUIDv7>/
 privacy_classification:
 artifact_sensitivity:
 safe_to_commit: false
@@ -41,7 +43,7 @@ repo_state:
   last_reviewed_commit:
 ---
 
-# DIAG-#### - <Diagnostic Title>
+# <Diagnostic Title>
 
 ## Symptom
 

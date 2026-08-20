@@ -10,7 +10,9 @@ agent-continuity docs new research "<Title>" --domain <domain>
 
 ---
 type: research-survey
-id: RSCH-####
+document_format_version: 2
+id: <generated UUIDv7>
+aliases: []
 title: <Research Survey Title>
 domain: <product | architecture | repo-health | research | operations | marketing>
 status: draft
@@ -37,7 +39,7 @@ repo_state:
   last_reviewed_commit:
 ---
 
-# RSCH-#### - <Research Survey Title>
+# <Research Survey Title>
 
 ## Question
 

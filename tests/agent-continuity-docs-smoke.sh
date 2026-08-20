@@ -52,12 +52,51 @@ require_not_contains() {
   fi
 }
 
+frontmatter_id() {
+  awk '$1 == "id:" { print $2; exit }' "$1"
+}
+
+require_uuid7() {
+  python3 - "$1" <<'PY'
+import sys
+import uuid
+
+value = sys.argv[1]
+try:
+    parsed = uuid.UUID(value)
+except ValueError as exc:
+    raise SystemExit(f"Expected UUID, got {value!r}: {exc}")
+if parsed.version != 7 or parsed.variant != uuid.RFC_4122:
+    raise SystemExit(f"Expected RFC UUIDv7, got {value!r}")
+PY
+}
+
+add_legacy_alias() {
+  local path="$1"
+  local alias="$2"
+  perl -0pi -e 's/aliases: \[\]/aliases:\n  - '"$alias"'/' "$path"
+}
+
 idea_path="$(run_meta new idea "Repo Memory Timeline" --domain product)"
 rsch_path="$(run_meta new research "Embedding Options Survey" --domain research)"
 eval_path="$(run_meta new eval "Embedding Model Bakeoff" --domain repo-health)"
 diag_path="$(run_meta new diag "Simulator Freeze Investigation" --domain repo-health)"
 spec_path="$(run_meta new spec "Shared Capture Workflow" --domain product --spec-type improvement)"
 plan_path="$(run_meta new plan "Shared Capture Implementation" --domain product --spec SPEC-0001)"
+
+for fresh_path in "$idea_path" "$rsch_path" "$eval_path" "$diag_path" "$spec_path" "$plan_path"; do
+  require_contains "$fresh_path" "document_format_version: 2"
+  require_contains "$fresh_path" "aliases: []"
+done
+plan_uuid="$(frontmatter_id "$plan_path")"
+require_uuid7 "$plan_uuid"
+add_legacy_alias "$idea_path" IDEA-0001
+add_legacy_alias "$rsch_path" RSCH-0001
+add_legacy_alias "$eval_path" EVAL-0001
+add_legacy_alias "$diag_path" DIAG-0001
+add_legacy_alias "$spec_path" SPEC-0001
+add_legacy_alias "$plan_path" PLAN-0001
+
 impl_path="$(run_meta new impl "Persist Capture Drafts" --domain product --plan PLAN-0001 --spec SPEC-0001)"
 adr_path="$(run_meta new adr "Use Append Only Journal" --domain architecture --spec SPEC-0001)"
 lrn_path="$(run_meta new learning "Specs And Plans Stay Separate" --domain repo-health)"
@@ -66,6 +105,19 @@ qst_path="$(run_meta new question "Should Specs And Plans Be One To One" --domai
 conc_path="$(run_meta new concept "Selections Snapshots And Dynamic Sections" --domain product)"
 audit_path="$(run_meta new audit "Docs System Migration Baseline Audit" --kind docs-health --domain repo-health)"
 completed_audit_path="$(run_meta new audit "Completed Roadmap Alignment Audit" --kind roadmap-alignment --status completed --domain repo-health)"
+
+for fresh_path in "$impl_path" "$adr_path" "$lrn_path" "$expl_path" "$qst_path" "$conc_path" "$audit_path" "$completed_audit_path"; do
+  require_contains "$fresh_path" "document_format_version: 2"
+  require_contains "$fresh_path" "aliases: []"
+done
+add_legacy_alias "$impl_path" IMPL-0001-01
+add_legacy_alias "$adr_path" ADR-0001
+add_legacy_alias "$lrn_path" LRN-0001
+add_legacy_alias "$expl_path" EXPL-0001
+add_legacy_alias "$qst_path" QST-0001
+add_legacy_alias "$conc_path" CONC-0001
+add_legacy_alias "$audit_path" AUDT-0001
+add_legacy_alias "$completed_audit_path" AUDT-0002
 
 if run_meta new audit "Audit Without CLI Kind" --domain repo-health >$tmpdir/docs-meta-new-audit-without-kind.out 2>&1; then
   echo "Expected agent-continuity docs new audit without --kind to fail" >&2
@@ -88,49 +140,55 @@ require_file "$conc_path"
 require_file "$audit_path"
 require_file "$completed_audit_path"
 
-if [[ "$audit_path" != *"/AUDT-0001-"* ]]; then
-  echo "Expected new audit path to include AUDT-0001, got $audit_path" >&2
+if [[ "$audit_path" != *"/AUDT-docs-system-migration-baseline-audit.md" ]]; then
+  echo "Expected new audit path to use a type-plus-slug locator, got $audit_path" >&2
   exit 1
 fi
 
-require_contains "$idea_path" "id: IDEA-0001"
+idea_uuid="$(frontmatter_id "$idea_path")"
+require_uuid7 "$idea_uuid"
+require_uuid7 "$plan_uuid"
+require_contains "$idea_path" "document_format_version: 2"
+require_contains "$idea_path" "  - IDEA-0001"
 require_contains "$idea_path" "status: captured"
-require_contains "$rsch_path" "id: RSCH-0001"
+require_contains "$rsch_path" "  - RSCH-0001"
 require_contains "$rsch_path" "type: research-survey"
 require_contains "$rsch_path" "based_on_commit: $repo_commit"
-require_contains "$eval_path" "id: EVAL-0001"
-require_contains "$eval_path" "artifact_root: artifacts/evaluations/EVAL-0001/"
+require_contains "$eval_path" "  - EVAL-0001"
+eval_uuid="$(frontmatter_id "$eval_path")"
+require_contains "$eval_path" "artifact_root: artifacts/evaluations/$eval_uuid/"
 require_contains "$eval_path" "based_on_commit: $repo_commit"
-require_contains "$diag_path" "id: DIAG-0001"
+require_contains "$diag_path" "  - DIAG-0001"
 require_contains "$diag_path" "status: investigating"
-require_contains "$diag_path" "artifact_root: artifacts/diagnostics/DIAG-0001/"
+diag_uuid="$(frontmatter_id "$diag_path")"
+require_contains "$diag_path" "artifact_root: artifacts/diagnostics/$diag_uuid/"
 require_contains "$diag_path" "safe_to_commit: false"
 require_contains "$diag_path" "raw_artifacts_local_only: []"
 require_contains "$diag_path" "based_on_commit: $repo_commit"
-require_contains "$spec_path" "id: SPEC-0001"
+require_contains "$spec_path" "  - SPEC-0001"
 require_contains "$spec_path" "superseded_by: []"
 require_contains "$plan_path" "related_prs: []"
 require_contains "$impl_path" "parent_plan: PLAN-0001"
 require_contains "$impl_path" "related_prs: []"
 require_contains "$adr_path" "status: proposed"
 require_contains "$adr_path" "related_prs: []"
-require_contains "$lrn_path" "id: LRN-0001"
+require_contains "$lrn_path" "  - LRN-0001"
 require_contains "$lrn_path" "status: active"
 require_contains "$lrn_path" "learning_type: lesson"
-require_contains "$expl_path" "id: EXPL-0001"
+require_contains "$expl_path" "  - EXPL-0001"
 require_contains "$expl_path" "type: explainer"
 require_contains "$expl_path" "explainer_type: concept"
-require_contains "$qst_path" "id: QST-0001"
+require_contains "$qst_path" "  - QST-0001"
 require_contains "$qst_path" "status: open"
 require_contains "$qst_path" "question_type: product"
-require_contains "$conc_path" "id: CONC-0001"
+require_contains "$conc_path" "  - CONC-0001"
 require_contains "$conc_path" "type: concept"
 require_contains "$conc_path" "concept_type: domain-model"
-require_contains "$audit_path" "id: AUDT-0001"
+require_contains "$audit_path" "  - AUDT-0001"
 require_contains "$audit_path" "type: repo-health-audit"
 require_contains "$audit_path" "audit_kind: docs-health"
 require_contains "$audit_path" "status: planned"
-require_contains "$completed_audit_path" "id: AUDT-0002"
+require_contains "$completed_audit_path" "  - AUDT-0002"
 require_contains "$completed_audit_path" "status: completed"
 require_contains "$completed_audit_path" "audit_started_at: \""
 require_contains "$completed_audit_path" "audit_ended_at: \""
@@ -209,7 +267,9 @@ run_meta retire-id "$retirement_id" --plan PLAN-0001 --reason "$retirement_reaso
   >$tmpdir/docs-meta-retire-write.out
 require_file "$retirement_path"
 require_contains "$retirement_path" "type: id-retirement"
-require_contains "$retirement_path" "id: $retirement_id"
+require_contains "$retirement_path" "document_format_version: 2"
+require_uuid7 "$(frontmatter_id "$retirement_path")"
+require_contains "$retirement_path" "  - $retirement_id"
 require_contains "$retirement_path" "status: retired"
 require_contains "$retirement_path" "parent_plan: PLAN-0001"
 require_contains "$retirement_path" "reason: \"$retirement_reason\""
@@ -245,7 +305,7 @@ cat >>"$retirement_path" <<'RETIREMENT_FIXTURES'
 ## Immutable fixture content
 
 - [ ] TODO-9998 [blocked] Tombstone-only todo must never enter live work surfaces
-- [Spec](/product/specs/SPEC-0001-shared-capture-workflow.md)
+- [Spec](/product/specs/SPEC-shared-capture-workflow.md)
 - [Exact immutable target](../link-fixtures/immutable-target.md)
 - [Nested immutable target](../link-fixtures/immutable-dir/nested.md)
 RETIREMENT_FIXTURES
@@ -276,10 +336,12 @@ if [[ "$next_impl" != "IMPL-0001-03" ]]; then
   exit 1
 fi
 impl_after_retirement="$(run_meta new impl "Continue Capture Work" --domain product --plan PLAN-0001)"
-if [[ "$impl_after_retirement" != *"/IMPL-0001-03-"* ]]; then
-  echo "Expected new impl after retirement to use IMPL-0001-03, got $impl_after_retirement" >&2
+if [[ "$impl_after_retirement" != *"/IMPL-continue-capture-work.md" ]]; then
+  echo "Expected new impl after retirement to use a type-plus-slug locator, got $impl_after_retirement" >&2
   exit 1
 fi
+require_contains "$impl_after_retirement" "aliases: []"
+require_uuid7 "$(frontmatter_id "$impl_after_retirement")"
 
 retired_reference_fixture="$docs_root/retired-reference-fixture.md"
 cat >"$retired_reference_fixture" <<EOF
@@ -573,10 +635,10 @@ next_audit_due:
 | FINDING-005 | low | routed | Blocked todo should stay visible | TODO | TODO-0002 |  |
 | FINDING-006 | medium | routed | Stale plan should stay visible | PLAN | PLAN-0001 |  |
 | FINDING-007 | low | deferred | Deferred finding should be reviewed later | none |  | Deferred because this is low risk; revisit after next planning pass |
-| FINDING-008 | medium | routed | Markdown follow-up fragment is missing | PLAN | [Plan](../../product/plans/PLAN-0001-shared-capture-implementation/PLAN-0001-shared-capture-implementation.md#missing-anchor) |  |
+| FINDING-008 | medium | routed | Markdown follow-up fragment is missing | PLAN | [Plan](../../product/plans/PLAN-shared-capture-implementation/PLAN-shared-capture-implementation.md#missing-anchor) |  |
 | FINDING-009 | medium | open | Medium finding should not be grouped as high priority | PLAN | PLAN-0001 |  |
 | FINDING-010 | medium | routed | Freeform routed follow-up should stay visible | PLAN | Someone should look into this |  |
-| FINDING-011 | medium | routed | Markdown follow-up title should still resolve | PLAN | [Plan](../../product/plans/PLAN-0001-shared-capture-implementation/PLAN-0001-shared-capture-implementation.md#plan-0001-shared-capture-implementation "Open plan") |  |
+| FINDING-011 | medium | routed | Markdown follow-up title should still resolve | PLAN | [Plan](../../product/plans/PLAN-shared-capture-implementation/PLAN-shared-capture-implementation.md#shared-capture-implementation "Open plan") |  |
 | FINDING-012 | low | routed | External Markdown issue link should be accepted | PLAN | [Issue](https://github.com/owensantoso/agent-continuity/issues/1 "Issue") |  |
 | FINDING-013 | medium | routed | Route mismatch should stay visible | DIAG | PLAN-0001 |  |
 | FINDING-014 | medium | routed | Retired brief must not resolve as live work | IMPL | IMPL-0001-02 |  |
@@ -819,7 +881,7 @@ for type_registry in IDEAS.md SPECS.md LEARNINGS.md EXPLAINERS.md QUESTIONS.md C
   require_not_contains "$docs_root/$type_registry" "$retirement_id"
 done
 require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001"
-require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-0001-shared-capture-implementation"
+require_contains "$docs_root/ROADMAP-VIEW.md" "PLAN-shared-capture-implementation"
 require_contains "$docs_root/ROADMAP-VIEW.md" "type: generated-view"
 require_contains "$docs_root/ROADMAP-VIEW.md" "updated_at:"
 require_contains "$docs_root/TODOS.md" "Define owner boundaries"
@@ -1071,7 +1133,7 @@ fi
 rm "$docs_root/ROADMAP-VIEW.md"
 run_meta roadmap --json >$tmpdir/docs-meta-roadmap.json
 require_contains $tmpdir/docs-meta-roadmap.json "\"id\": \"PLAN-0001\""
-require_contains $tmpdir/docs-meta-roadmap.json "\"plan_name\": \"PLAN-0001-shared-capture-implementation\""
+require_contains $tmpdir/docs-meta-roadmap.json "\"plan_name\": \"PLAN-shared-capture-implementation\""
 require_absent "$docs_root/ROADMAP-VIEW.md"
 run_meta roadmap --write >$tmpdir/docs-meta-roadmap-write.out
 require_file "$docs_root/ROADMAP-VIEW.md"
@@ -1081,6 +1143,10 @@ require_contains $tmpdir/docs-meta-show-plan.out "app/src/todo.ts: ok -> app/src
 run_meta show PLAN-0001 --json >$tmpdir/docs-meta-show-plan.json
 require_contains $tmpdir/docs-meta-show-plan.json "\"linked_paths\""
 require_contains $tmpdir/docs-meta-show-plan.json "\"status\": \"ok\""
+require_contains $tmpdir/docs-meta-show-plan.json "\"id\": \"$plan_uuid\""
+require_contains $tmpdir/docs-meta-show-plan.json "\"aliases\""
+run_meta show "$plan_uuid" --json >$tmpdir/docs-meta-show-plan-by-uuid.json
+require_contains $tmpdir/docs-meta-show-plan-by-uuid.json "\"display_id\": \"PLAN-0001\""
 run_meta view todos >$tmpdir/docs-meta-view-todos.md
 require_contains $tmpdir/docs-meta-view-todos.md "Docs Todos"
 require_contains "$docs_root/TODOS.md" "updated_at:"
@@ -1134,7 +1200,7 @@ cat > "$docs_root/link-fixtures/source.md" <<'SOURCE'
 # Source
 
 - [Target](target.md)
-- [Spec](/product/specs/SPEC-0001-shared-capture-workflow.md)
+- [Spec](/product/specs/SPEC-shared-capture-workflow.md)
 - [Missing](missing.md)
 - [[target.md]]
 - `<not-a-link>`
@@ -1206,10 +1272,10 @@ if ! run_meta check-links >$tmpdir/docs-meta-check-links-after-refused-moves.out
 fi
 
 run_meta normalize-links --style relative --dry-run >$tmpdir/docs-meta-normalize-dry-run.out
-require_contains $tmpdir/docs-meta-normalize-dry-run.out "/product/specs/SPEC-0001-shared-capture-workflow.md -> ../product/specs/SPEC-0001-shared-capture-workflow.md"
+require_contains $tmpdir/docs-meta-normalize-dry-run.out "/product/specs/SPEC-shared-capture-workflow.md -> ../product/specs/SPEC-shared-capture-workflow.md"
 retirement_hash_before_normalize="$(shasum -a 256 "$retirement_path")"
 run_meta normalize-links --style relative --write >$tmpdir/docs-meta-normalize-write.out
-require_contains "$docs_root/link-fixtures/source.md" "../product/specs/SPEC-0001-shared-capture-workflow.md"
+require_contains "$docs_root/link-fixtures/source.md" "../product/specs/SPEC-shared-capture-workflow.md"
 if [[ "$retirement_hash_before_normalize" != "$(shasum -a 256 "$retirement_path")" ]]; then
   echo "Expected normalize-links --write to preserve tombstone bytes" >&2
   exit 1
@@ -1262,6 +1328,201 @@ if run_meta check >$tmpdir/docs-meta-bad-area.out 2>&1; then
 fi
 require_contains $tmpdir/docs-meta-bad-area.out "must match filename stem"
 rm "$bad_area"
+
+migration_repo="$tmpdir/uuid-migration-repo"
+migration_docs="$migration_repo/docs"
+mkdir -p "$migration_docs/product/plans/PLAN-0001-legacy/implementation-briefs"
+cat >"$migration_docs/product/plans/PLAN-0001-legacy/PLAN-0001-legacy.md" <<'LEGACYPLAN'
+---
+type: plan
+id: PLAN-0001
+title: Legacy Plan
+domain: product
+status: ready
+created_at: "2026-08-20 10:00:00 JST +0900"
+updated_at: "2026-08-20 10:00:00 JST +0900"
+areas: []
+related_specs: []
+repo_state:
+  based_on_commit: fixture
+  last_reviewed_commit: fixture
+---
+
+# PLAN-0001 - Legacy Plan
+LEGACYPLAN
+cat >"$migration_docs/product/plans/PLAN-0001-legacy/implementation-briefs/IMPL-0001-01-legacy.md" <<'LEGACYIMPL'
+---
+type: implementation-brief
+id: IMPL-0001-01
+title: Legacy Brief
+domain: product
+status: ready
+created_at: "2026-08-20 10:00:00 JST +0900"
+updated_at: "2026-08-20 10:00:00 JST +0900"
+parent_plan: PLAN-0001
+task_refs: []
+repo_state:
+  based_on_commit: fixture
+  last_reviewed_commit: fixture
+---
+
+# IMPL-0001-01 - Legacy Brief
+LEGACYIMPL
+git -C "$migration_repo" init -q
+git -C "$migration_repo" add docs
+git -C "$migration_repo" \
+  -c user.name="Agent Continuity Smoke" \
+  -c user.email="smoke@example.invalid" \
+  commit -qm "Create legacy document fixture"
+
+run_meta_root "$migration_docs" check
+run_meta_root "$migration_docs" format-status --json >"$tmpdir/uuid-format-before.json"
+require_contains "$tmpdir/uuid-format-before.json" '"v1": 2'
+require_contains "$tmpdir/uuid-format-before.json" '"migration_required": true'
+
+conflict_repo="$tmpdir/uuid-migration-conflict-repo"
+git clone -q "$migration_repo" "$conflict_repo"
+
+migration_plan_rel=".agent-continuity/migrations/document-format-v2.json"
+(
+  cd "$migration_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --prepare-plan "$migration_plan_rel" --write
+)
+if (
+  cd "$migration_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write
+) >"$tmpdir/uuid-uncommitted-plan.out" 2>&1; then
+  echo "Expected UUID migration to refuse an uncommitted plan" >&2
+  exit 1
+fi
+require_contains "$tmpdir/uuid-uncommitted-plan.out" "Migration plan must be committed"
+git -C "$migration_repo" add "$migration_plan_rel"
+git -C "$migration_repo" \
+  -c user.name="Agent Continuity Smoke" \
+  -c user.email="smoke@example.invalid" \
+  commit -qm "Commit UUID migration plan"
+
+resume_repo="$tmpdir/uuid-migration-resume-repo"
+git clone -q "$migration_repo" "$resume_repo"
+(
+  cd "$resume_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write --json
+) >"$tmpdir/uuid-migration-resume-initial.json"
+rm "$resume_repo/$migration_plan_rel.receipt.json"
+resume_first_path="docs/product/plans/PLAN-0001-legacy/PLAN-0001-legacy.md"
+git -C "$resume_repo" show "HEAD:$resume_first_path" >"$resume_repo/$resume_first_path"
+(
+  cd "$resume_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --json
+) >"$tmpdir/uuid-migration-resume-preview.json"
+require_contains "$tmpdir/uuid-migration-resume-preview.json" '"state": "in_progress"'
+(
+  cd "$resume_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write --json
+) >"$tmpdir/uuid-migration-resume-apply.json"
+require_contains "$tmpdir/uuid-migration-resume-apply.json" '"state": "completed"'
+require_file "$resume_repo/$migration_plan_rel.receipt.json"
+
+unplanned_repo="$tmpdir/uuid-migration-unplanned-repo"
+git clone -q "$migration_repo" "$unplanned_repo"
+mkdir -p "$unplanned_repo/docs/product/specs"
+cat >"$unplanned_repo/docs/product/specs/SPEC-unplanned-v1.md" <<'UNPLANNED'
+---
+type: spec
+id: SPEC-0002
+title: Unplanned V1 Document
+domain: product
+status: draft
+created_at: "2026-08-20 10:00:00 JST +0900"
+updated_at: "2026-08-20 10:00:00 JST +0900"
+spec_type: feature
+source:
+  type: test
+  link: ""
+areas: []
+related_plans: []
+repo_state:
+  based_on_commit: fixture
+  last_reviewed_commit: fixture
+---
+
+# Unplanned V1 Document
+UNPLANNED
+unplanned_existing="$unplanned_repo/$resume_first_path"
+unplanned_hash_before="$(shasum -a 256 "$unplanned_existing")"
+if (
+  cd "$unplanned_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write
+) >"$tmpdir/uuid-migration-unplanned.out" 2>&1; then
+  echo "Expected UUID migration to refuse a v1 document absent from the committed plan" >&2
+  exit 1
+fi
+require_contains "$tmpdir/uuid-migration-unplanned.out" "does not cover v1 document added after preparation"
+if [[ "$unplanned_hash_before" != "$(shasum -a 256 "$unplanned_existing")" ]]; then
+  echo "Expected unplanned-document refusal before any planned document mutation" >&2
+  exit 1
+fi
+require_absent "$unplanned_repo/$migration_plan_rel.receipt.json"
+
+(
+  cd "$migration_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --json
+) >"$tmpdir/uuid-migration-preview.json"
+require_contains "$tmpdir/uuid-migration-preview.json" '"state": "ready"'
+(
+  cd "$migration_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write --json
+) >"$tmpdir/uuid-migration-apply.json"
+require_contains "$tmpdir/uuid-migration-apply.json" '"state": "completed"'
+require_file "$migration_repo/$migration_plan_rel.receipt.json"
+
+migrated_plan="$migration_docs/product/plans/PLAN-0001-legacy/PLAN-0001-legacy.md"
+migrated_impl="$migration_docs/product/plans/PLAN-0001-legacy/implementation-briefs/IMPL-0001-01-legacy.md"
+migrated_plan_uuid="$(frontmatter_id "$migrated_plan")"
+migrated_impl_uuid="$(frontmatter_id "$migrated_impl")"
+require_uuid7 "$migrated_plan_uuid"
+require_uuid7 "$migrated_impl_uuid"
+require_contains "$migrated_plan" "document_format_version: 2"
+require_contains "$migrated_plan" '  - "PLAN-0001"'
+require_contains "$migrated_impl" '  - "IMPL-0001-01"'
+require_contains "$migrated_impl" "parent_plan: PLAN-0001"
+run_meta_root "$migration_docs" show "$migrated_plan_uuid" --json >"$tmpdir/uuid-migrated-show.json"
+require_contains "$tmpdir/uuid-migrated-show.json" '"display_id": "PLAN-0001"'
+run_meta_root "$migration_docs" check
+run_meta_root "$migration_docs" format-status --json >"$tmpdir/uuid-format-after.json"
+require_contains "$tmpdir/uuid-format-after.json" '"v2": 2'
+require_contains "$tmpdir/uuid-format-after.json" '"migration_required": false'
+(
+  cd "$migration_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write --json
+) >"$tmpdir/uuid-migration-idempotent.json"
+require_contains "$tmpdir/uuid-migration-idempotent.json" '"state": "completed"'
+
+(
+  cd "$conflict_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --prepare-plan "$migration_plan_rel" --write
+)
+git -C "$conflict_repo" add "$migration_plan_rel"
+git -C "$conflict_repo" \
+  -c user.name="Agent Continuity Smoke" \
+  -c user.email="smoke@example.invalid" \
+  commit -qm "Commit conflicting UUID migration plan"
+conflict_plan="$conflict_repo/docs/product/plans/PLAN-0001-legacy/PLAN-0001-legacy.md"
+perl -0pi -e 's/title: Legacy Plan/title: Diverged Legacy Plan/' "$conflict_plan"
+conflict_hash_before="$(shasum -a 256 "$conflict_plan")"
+if (
+  cd "$conflict_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write
+) >"$tmpdir/uuid-migration-conflict.out" 2>&1; then
+  echo "Expected UUID migration to refuse a preimage conflict" >&2
+  exit 1
+fi
+require_contains "$tmpdir/uuid-migration-conflict.out" "preimage conflict"
+conflict_hash_after="$(shasum -a 256 "$conflict_plan")"
+if [[ "$conflict_hash_before" != "$conflict_hash_after" ]]; then
+  echo "Expected UUID migration conflict refusal to preserve source bytes" >&2
+  exit 1
+fi
 
 perl -0pi -e 's/status: draft/status: accepted/' "$plan_path"
 if run_meta check >$tmpdir/docs-meta-bad-status.out 2>&1; then

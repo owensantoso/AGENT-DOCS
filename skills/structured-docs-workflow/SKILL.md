@@ -28,8 +28,9 @@ If you are planning or drafting docs:
 If you are adopting the workflow in another repo:
 
 1. go to `INSTALL.md`
-2. copy the scaffold and `scaffold/skills/structured-docs-workflow/SKILL.md`
-3. adapt placeholders before handoff
+2. preview `agent-continuity init <repo> --profile <profile> --dry-run`
+3. apply the reviewed initializer output; do not copy `scaffold/` directly
+4. adapt project-owned starter docs before handoff
 
 ## Use This For
 
@@ -38,7 +39,7 @@ If you are adopting the workflow in another repo:
 - deciding whether work belongs in an idea, spec, plan, implementation brief, ADR, session log, learning, explainer, or question
 - understanding the read order for a fresh agent
 - using structured `TODO-*` items
-- using `agent-continuity docs` for IDs, status, generated views, todo checks, and link checks
+- using `agent-continuity docs` for UUID identity, status, generated views, todo checks, and link checks
 - using `agent-continuity docs review` to find audit findings, routed follow-ups, stale docs, and TODOs needing attention
 - explaining the workflow to another agent or installing it into another repo
 
@@ -107,14 +108,18 @@ Detailed syntax and lifecycle rules live in `scripts/README.md` and `scaffold/do
 
 ## Agent Continuity Document Commands
 
-Use `agent-continuity docs` for mechanical workflow tasks instead of inventing IDs or hand-maintaining registries.
+Use `agent-continuity docs` for mechanical workflow tasks instead of inventing
+identity or hand-maintaining registries. Fresh documents receive UUIDv7
+identity and `aliases: []`; numbered aliases are retained only by migration or
+explicit legacy ID-retirement records.
 
 Common commands:
 
 ```bash
-agent-continuity docs next spec
 agent-continuity docs next todo
-agent-continuity docs new plan "Title" --domain product --spec SPEC-0001
+agent-continuity docs new spec "Title" --domain product
+agent-continuity docs new plan "Title" --domain product --spec <spec UUID>
+agent-continuity docs new impl "Slice" --plan <plan UUID>
 agent-continuity docs retire-id IMPL-0001-02 --plan PLAN-0001 --reason "Reason" --source-type conversation --source-notes "Provenance"
 agent-continuity docs todos --status ready
 agent-continuity docs review
@@ -144,10 +149,11 @@ Expected convention:
 
 When the task is about bootstrapping another repo:
 
-1. use `INSTALL.md` for exact copy steps
-2. adapt placeholders before handoff
-3. make the target repo's `AGENTS.md` and `docs/orientation/CURRENT_STATE.md` truthful
-4. run the relevant verification commands
+1. use `INSTALL.md` and the preview-first initializer
+2. never seed numbered example records or aliases from the source scaffold
+3. adapt project-owned starter docs before handoff
+4. make the target repo's `AGENTS.md` and `docs/orientation/CURRENT_STATE.md` truthful
+5. run the relevant verification commands
 
 ## Guardrails
 

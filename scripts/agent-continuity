@@ -21,6 +21,13 @@ from tempfile import NamedTemporaryFile
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+MANIFEST_SCHEMA_VERSION = 2
+DOCUMENT_FORMAT_TARGET = 2
+try:
+    AGENT_CONTINUITY_RELEASE = (REPO_ROOT / "VERSION").read_text(encoding="utf-8").strip()
+except OSError:
+    AGENT_CONTINUITY_RELEASE = "unknown"
 MANIFEST_PATH = Path(".agent-continuity/manifest.json")
 LEGACY_MANIFEST_PATH = Path(".agent-docs/manifest.json")
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -76,6 +83,8 @@ class GeneratedViewOperation:
 
 
 WARNING_CATEGORIES = {
+    "legacy manifest schema",
+    "document format migration",
     "missing manifest/legacy/manual review",
     "missing Agent Continuity-owned tooling",
     "checksum drift/local modification",
@@ -427,14 +436,78 @@ def read_manifest(report: Report) -> dict | None:
             "manifest root must be a JSON object",
         )
         return None
-    if manifest.get("schema_version") != 1:
+    if manifest.get("schema_version") not in {1, MANIFEST_SCHEMA_VERSION}:
         report.add(
             "refused/unknown/incompatible shapes",
             report.manifest_path,
-            f"unsupported manifest schema_version {manifest.get('schema_version')!r}; expected 1",
+            f"unsupported manifest schema_version {manifest.get('schema_version')!r}; expected 1 or {MANIFEST_SCHEMA_VERSION}",
         )
         return None
+    if manifest.get("schema_version") == 1:
+        report.add(
+            "legacy manifest schema",
+            report.manifest_path,
+            f"manifest schema 1 is readable but should be upgraded to schema {MANIFEST_SCHEMA_VERSION}",
+        )
     return manifest
+
+
+def classify_document_format(report: Report, manifest: dict) -> None:
+    if manifest.get("schema_version") == MANIFEST_SCHEMA_VERSION:
+        release = manifest.get("agent_continuity_release")
+        if not isinstance(release, str) or not release:
+            report.add(
+                "refused/unknown/incompatible shapes",
+                report.manifest_path,
+                "manifest schema 2 requires a non-empty agent_continuity_release",
+            )
+        elif release != AGENT_CONTINUITY_RELEASE:
+            report.add(
+                "candidate tooling updates available",
+                report.manifest_path,
+                f"installed release {release} differs from current release {AGENT_CONTINUITY_RELEASE}",
+            )
+        target = manifest.get("document_format_target")
+        if target != DOCUMENT_FORMAT_TARGET:
+            report.add(
+                "refused/unknown/incompatible shapes",
+                report.manifest_path,
+                f"manifest document_format_target {target!r} does not match supported target {DOCUMENT_FORMAT_TARGET}",
+            )
+    docs_root = report.target / "docs"
+    if not docs_root.is_dir():
+        return
+    command = [
+        sys.executable,
+        str(SCRIPT_DIR / "agent-continuity-docs"),
+        "--root",
+        str(docs_root),
+        "format-status",
+        "--json",
+    ]
+    result = subprocess.run(command, cwd=report.target, capture_output=True, text=True)
+    if result.returncode != 0:
+        report.add("refused/unknown/incompatible shapes", "docs", "document-format scan failed")
+        return
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        report.add("refused/unknown/incompatible shapes", "docs", "document-format scan returned invalid JSON")
+        return
+    counts = payload.get("counts", {})
+    if not isinstance(counts, dict):
+        report.add("refused/unknown/incompatible shapes", "docs", "document-format scan omitted counts")
+        return
+    invalid = counts.get("invalid", 0)
+    v1 = counts.get("v1", 0)
+    if isinstance(invalid, int) and invalid:
+        report.add("refused/unknown/incompatible shapes", "docs", f"{invalid} document(s) use an invalid or unsupported format")
+    if isinstance(v1, int) and v1:
+        report.add(
+            "document format migration",
+            "docs",
+            f"{v1} authored document(s) still use v1; prepare a committed UUIDv7 migration plan before content writes",
+        )
 
 
 def classify_target(target: Path) -> Report:
@@ -467,6 +540,7 @@ def classify_target(target: Path) -> Report:
         report.source_commit = source.get("commit") if isinstance(source.get("commit"), str) else None
     report.installed_at = manifest.get("installed_at") if isinstance(manifest.get("installed_at"), str) else None
     report.updated_at = manifest.get("updated_at") if isinstance(manifest.get("updated_at"), str) else None
+    classify_document_format(report, manifest)
 
     init_module = load_init_module()
     upstream_actions = {}
@@ -747,6 +821,8 @@ def print_report(command: str, report: Report, command_name: str = "agent-contin
 
     category_order = [
         "healthy/current",
+        "legacy manifest schema",
+        "document format migration",
         "missing manifest/legacy/manual review",
         "missing Agent Continuity-owned tooling",
         "checksum drift/local modification",
@@ -775,6 +851,8 @@ def print_report(command: str, report: Report, command_name: str = "agent-contin
         print("- Review legacy files manually before creating any future baseline manifest.")
     elif report_exit_code(report) == 1:
         print(f"- {command_name} upgrade --dry-run {report.target}")
+        if report.categories.get("document format migration"):
+            print(f"- {command_name} docs --root {report.target / 'docs'} format-status")
         print("- Review checksum drift and project-owned/manual-review items before any future write mode.")
     else:
         print(f"- {command_name} doctor {report.target}")
@@ -1110,7 +1188,9 @@ def build_baseline(
 
     timestamp = utc_timestamp()
     manifest = {
-        "schema_version": 1,
+        "schema_version": MANIFEST_SCHEMA_VERSION,
+        "agent_continuity_release": AGENT_CONTINUITY_RELEASE,
+        "document_format_target": DOCUMENT_FORMAT_TARGET,
         "installed_at": timestamp,
         "updated_at": timestamp,
         "source": current_source_metadata(init_module),
@@ -1720,6 +1800,9 @@ def apply_upgrade_operations(
         else:
             print(f"Added: {operation.relpath}")
 
+    manifest["schema_version"] = MANIFEST_SCHEMA_VERSION
+    manifest["agent_continuity_release"] = AGENT_CONTINUITY_RELEASE
+    manifest["document_format_target"] = DOCUMENT_FORMAT_TARGET
     manifest["source"] = current_source_metadata(init_module)
     manifest["updated_at"] = utc_timestamp()
     ensure_backup_root_with_manifest()
@@ -1772,7 +1855,12 @@ def upgrade(args: list[str], command_name: str = "agent-continuity") -> int:
             for finding in generated_refusals:
                 print(f"- {finding.path}: {finding.reason}", file=sys.stderr)
             return 2
-    if not operations and not generated_operations:
+    manifest_metadata_upgrade = (
+        manifest.get("schema_version") != MANIFEST_SCHEMA_VERSION
+        or manifest.get("agent_continuity_release") != AGENT_CONTINUITY_RELEASE
+        or manifest.get("document_format_target") != DOCUMENT_FORMAT_TARGET
+    )
+    if not operations and not generated_operations and not manifest_metadata_upgrade:
         print("No tooling-only writes needed.")
         return report_exit_code(report)
 
@@ -1807,6 +1895,9 @@ def upgrade(args: list[str], command_name: str = "agent-continuity") -> int:
 
 
 def main(argv: list[str], command_name: str = "agent-continuity") -> int:
+    if argv and argv[0] == "--version":
+        print(f"Agent Continuity {AGENT_CONTINUITY_RELEASE}")
+        return 0
     if not argv or argv[0] in {"-h", "--help"}:
         print_help(command_name)
         return 0
