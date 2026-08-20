@@ -9,6 +9,21 @@ Use this skill when the task is about how Agent Continuity structured docs fit t
 
 This skill is a router and quick-start guide. The source of truth still lives in the repo docs and `agent-continuity docs`.
 
+## Version Preflight
+
+Before the first structured-document or Agent Continuity tooling mutation in a
+task, run this read-only check when `.agent-continuity/manifest.json` exists:
+
+```bash
+agent-continuity doctor .
+```
+
+If it reports installed-release, owned-tooling, or document-format drift, do not
+use a repo-local `scripts/agent-continuity-docs` or compatibility `scripts/docs-meta`
+command to create, rename, or mutate structured docs yet. Follow the reported
+upgrade or migration path. If another task owns uncommitted docs, coordinate a
+clean handoff before migration. Unrelated read-only or code work may continue.
+
 ## Fast Path
 
 If you are implementing:
@@ -21,7 +36,7 @@ If you are implementing:
 
 If you are planning or drafting docs:
 
-1. use this skill first
+1. complete the version preflight above
 2. choose the owning doc type
 3. use `agent-continuity docs` for UUID identity, status, and generated views
 

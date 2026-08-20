@@ -36,6 +36,15 @@ Interpret the result:
   agent-continuity upgrade --write --tooling-only .
 - If generated views are stale and manifest-tracked, consider:
   agent-continuity upgrade --write --tooling-only --generated-views .
+- If document format migration is required, first make sure no other task owns
+  uncommitted structured-doc changes. Then inspect the corpus and prepare one
+  immutable migration plan for the whole repo:
+  agent-continuity docs format-status
+  agent-continuity docs migrate-uuids --prepare-plan .agent-continuity/migrations/document-format-v2.json --write
+  Commit that plan by itself, then apply its exact UUID mapping:
+  agent-continuity docs migrate-uuids --plan .agent-continuity/migrations/document-format-v2.json --write
+  This is an automated corpus migration. The committed plan locks the generated
+  UUID mapping and preimage hashes; it is not a file-by-file manual rewrite.
 - If project-owned Markdown is changed, summarize it for human review. Do not
   overwrite it.
 - If refused / unknown / incompatible shapes are present, stop and explain the
@@ -63,6 +72,7 @@ The safe upgrade path separates three cases:
 | Manifest-backed install | `doctor` and `upgrade --dry-run` can compare owned tooling against the manifest. |
 | Older install without manifest | `baseline --dry-run` previews whether a conservative manifest can be created. |
 | Customized project Markdown | Report-only. The tool does not overwrite local project truth. |
+| Version 1 structured-doc corpus | One committed migration plan upgrades the full corpus to UUID identity and writes its receipt last. |
 
 Compatibility commands such as `agent-docs` and `agent-docs-init` still work,
 but new instructions should use `agent-continuity`.

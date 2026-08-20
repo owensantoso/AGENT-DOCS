@@ -79,14 +79,17 @@ require_file "$tiny_target/docs/CURRENT_STATE.md"
 require_file "$tiny_target/docs/ARCHITECTURE.md"
 require_file "$tiny_target/.agent-continuity/manifest.json"
 require_contains "$tiny_target/AGENTS.md" "Core Project"
-python3 - "$tiny_target/.agent-continuity/manifest.json" <<'PY'
+require_contains "$tiny_target/AGENTS.md" "agent-continuity doctor ."
+python3 - "$tiny_target/.agent-continuity/manifest.json" "$repo_root/VERSION" <<'PY'
 import json
+import pathlib
 import sys
 
 manifest = json.load(open(sys.argv[1], encoding="utf-8"))
 if manifest.get("schema_version") != 2:
     raise SystemExit("Expected manifest schema_version 2")
-if manifest.get("agent_continuity_release") != "2026.08.21.1":
+expected_release = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8").strip()
+if manifest.get("agent_continuity_release") != expected_release:
     raise SystemExit("Expected named Agent Continuity release")
 if manifest.get("document_format_target") != 2:
     raise SystemExit("Expected document format target 2")
@@ -244,6 +247,7 @@ require_absent "$meta_generated_conflict_target/scripts/agent-continuity-docs"
 
 growing_target="$tmpdir/growing-app"
 "$installer" "$growing_target" --profile expanded --write >"$tmpdir/growing-write.out"
+require_contains "$growing_target/AGENTS.md" "agent-continuity doctor ."
 require_file "$growing_target/docs/repo-health/audits/README.md"
 require_file "$growing_target/docs/repo-health/audits/audit-profile.md"
 require_file "$growing_target/docs/repo-health/audits/guides/architecture.md"
@@ -252,6 +256,8 @@ require_file "$growing_target/docs/repo-health/audits/guides/docs-health.md"
 require_file "$growing_target/scripts/agent-continuity-docs"
 require_contains "$tmpdir/growing-write.out" "docs/repo-health/audits/README.md"
 require_contains "$tmpdir/growing-write.out" "docs/repo-health/audits/guides/architecture.md"
+require_contains "$repo_root/scaffold/skills/structured-docs-workflow/SKILL.md" "agent-continuity doctor ."
+require_contains "$repo_root/scaffold/skills/structured-docs-workflow/SKILL.md" "do not"
 
 cwd_target="$tmpdir/cwd-app"
 mkdir -p "$cwd_target"

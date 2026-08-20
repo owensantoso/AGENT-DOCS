@@ -2,7 +2,7 @@
 type: generated-view
 title: Docs Registry
 status: generated
-updated_at: "2026-08-21 02:31:21 JST +0900"
+updated_at: "2026-08-21 06:40:24 JST +0900"
 ---
 
 # Docs Registry
@@ -11,6 +11,7 @@ updated_at: "2026-08-21 02:31:21 JST +0900"
 
 | ID | Type | Title | Status | Path |
 |---|---|---|---|---|
+| 01a0211d-8e63-709e-9528-26425072b798 | learning | Workflow Failure - Stale Project Tooling Created Legacy Numbered Docs | active | `decisions/learnings/LRN-workflow-failure-stale-project-tooling-created-legacy-numbered-docs.md` |
 | EXPL-0001 | explainer | Agent Continuity Baseline Manifest | draft | `orientation/explainers/EXPL-0001-agent-docs-baseline-manifest.md` |
 | EXPL-0002 | explainer | Documents, Work, Delivery, And Semantic History | draft | `orientation/explainers/EXPL-0002-documents-work-delivery-and-semantic-history.md` |
 | EXPL-0003 | explainer | Agent Continuity, Jira, Linear, And General Execution | draft | `orientation/explainers/EXPL-0003-agent-continuity-jira-linear-and-general-execution.md` |

@@ -8,6 +8,14 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ### For adopters
 
+- Fresh project instructions and the structured-doc workflow now require a
+  read-only `agent-continuity doctor .` preflight before the first Agent
+  Continuity docs or tooling mutation in a task. Stale release, owned-tooling,
+  or document-format state blocks new structured-doc writes until the reported
+  upgrade or migration is coordinated.
+- The existing-install runbook now documents the automated whole-corpus UUID
+  migration: prepare and commit one immutable mapping, then apply that exact
+  plan instead of rewriting documents manually.
 - Added document format v2 with UUID version 7 (UUIDv7) canonical identity,
   empty aliases on fresh documents, type-plus-slug locators, UUID/alias lookup,
   and compatibility reading for v1 Markdown. Existing numeric IDs are preserved

@@ -40,6 +40,21 @@ Short index. Read the file for your task.
 
 If the repo includes `skills/structured-docs-workflow/SKILL.md`, read it before implementation when the repo uses plans, briefs, structured `TODO-*`, or Agent Continuity document tooling.
 
+## Agent Continuity version preflight
+
+Before the first structured-document or Agent Continuity tooling mutation in a
+task, run this read-only check when `.agent-continuity/manifest.json` exists:
+
+```bash
+agent-continuity doctor .
+```
+
+If it reports installed-release, owned-tooling, or document-format drift, do not
+create, rename, or mutate structured docs with the repo-local script yet. Follow
+the recommended upgrade or migration path, and coordinate first when another
+task owns uncommitted docs. This gate applies to Agent Continuity docs and
+tooling mutations; unrelated read-only or code work may continue.
+
 ## Rules
 
 - Never invent scope. If it is not in a spec or plan, ask.
