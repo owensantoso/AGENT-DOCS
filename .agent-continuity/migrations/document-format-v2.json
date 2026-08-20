@@ -1,0 +1,657 @@
+{
+  "schema_version": 1,
+  "migration_type": "agent-continuity-document-uuid-v2",
+  "migration_id": "01a02039-7a6a-78c6-ab78-480b3b5759b0",
+  "document_format_from": 1,
+  "document_format_to": 2,
+  "prepared_at": "2026-08-21T02:30:32.938321+09:00",
+  "prepared_base_commit": "d87ea088b643fce77d23d559c57b81a94344dec0",
+  "source_root": ".",
+  "excludes": [
+    "scaffold/**"
+  ],
+  "inventoried_worktrees": [
+    {
+      "head": "7ec866c4557e941e1cb5577e3c4be531ac46c940",
+      "branch": "main"
+    },
+    {
+      "head": "d87ea088b643fce77d23d559c57b81a94344dec0",
+      "branch": "codex/spec-systems-evaluation"
+    },
+    {
+      "head": "21a421484ee31418ec57801d807c17c13ab91323",
+      "branch": "codex/docs-ops-continuity"
+    }
+  ],
+  "receipt_path": ".agent-continuity/migrations/document-format-v2.json.receipt.json",
+  "documents": [
+    {
+      "path": "agent-continuity/ideas/IDEA-0001-docs-to-code-graph.md",
+      "preimage_sha256": "sha256:282462e8469d7c475e1f0c03837011f06570efe8f35721c28af0ab14f41c66a1",
+      "postimage_sha256": "sha256:262a6b9f5f5f9dfda4f6216bca8b61bf085ced6f5e77bb26ac8cf68a3ce5b49d",
+      "uuid": "01a02039-7a65-7579-b782-7b433cd8e001",
+      "aliases": [
+        "IDEA-0001"
+      ]
+    },
+    {
+      "path": "agent-continuity/ideas/IDEA-0002-evaluation-campaigns-and-reproducible-runs.md",
+      "preimage_sha256": "sha256:88331e7e885a42830fbc6281fb528ccfdffd4db1ba49d99ea71dea26837f72c1",
+      "postimage_sha256": "sha256:aff66483b1e005a441773104748065cbc44fe065fd576d11f7dd36da8a3c1ce7",
+      "uuid": "01a02039-7a65-7cd6-bb0c-ca9457841f88",
+      "aliases": [
+        "IDEA-0002"
+      ]
+    },
+    {
+      "path": "agent-continuity/ideas/IDEA-0003-federated-document-library-and-relationship-graph.md",
+      "preimage_sha256": "sha256:97dd044bfd18125ae52e6f6ab4b2b059c726b0e6beb1b7b90deed5657f41996d",
+      "postimage_sha256": "sha256:b1edd6c40fadeb287120dcfaaa816f56451812da126efdd28549874b5e339083",
+      "uuid": "01a02039-7a65-7a6b-9465-b0901f21f424",
+      "aliases": [
+        "IDEA-0003"
+      ]
+    },
+    {
+      "path": "agent-continuity/ideas/IDEA-0004-semantic-history-and-work-projections.md",
+      "preimage_sha256": "sha256:850e61def377031ec29439cfd5fcc4b26b60acf3f89d6f9fd2a41cb9b9c05392",
+      "postimage_sha256": "sha256:f6c290d8c1d222b1db39e68c5f0e1b4696d397a00cfbafe1f38f00a841a39bf6",
+      "uuid": "01a02039-7a65-7787-b2f6-8b30c1fc3827",
+      "aliases": [
+        "IDEA-0004"
+      ]
+    },
+    {
+      "path": "agent-continuity/ideas/IDEA-0005-general-human-agent-execution-graph.md",
+      "preimage_sha256": "sha256:1def0291e256edeae54f244aa6a04588b4e5231e6a0f1f07a30fe7b49540bdbf",
+      "postimage_sha256": "sha256:6b8cd07864bf1f1c8b71b589a1d2cc2093a8c4028ce1db96beadfdae2100d4ae",
+      "uuid": "01a02039-7a65-7ed7-ba2c-b1ffb1466060",
+      "aliases": [
+        "IDEA-0005"
+      ]
+    },
+    {
+      "path": "agent-continuity/ideas/IDEA-0006-adaptive-goal-to-outcome-quest-planning.md",
+      "preimage_sha256": "sha256:5e118959ba3e61828f054bf45dcfd34fd93c903f6a7842f2614a36d56686fee4",
+      "postimage_sha256": "sha256:89ba1fe5a96ef83369ebf93229f0f78b8c730227d5e1b74fac6b98b489be29cb",
+      "uuid": "01a02039-7a65-72fa-9ffb-9800cd55624b",
+      "aliases": [
+        "IDEA-0006"
+      ]
+    },
+    {
+      "path": "agent-continuity/plans/PLAN-0012-versioned-uuid-document-identity/PLAN-0012-versioned-uuid-document-identity.md",
+      "preimage_sha256": "sha256:9b918f9cb7eb0436b68cc3778245f7f2bf1bf0c891f8b7e1eb82d5a210aa4fb8",
+      "postimage_sha256": "sha256:215c43be3e0dddec39a10f7ca76570355bf04d3759db7ed6f50f77c9f4d1b446",
+      "uuid": "01a02039-7a65-7639-9a50-fa737028f351",
+      "aliases": [
+        "PLAN-0012"
+      ]
+    },
+    {
+      "path": "concepts/CONC-0001-read-only-sqlite-docs-index.md",
+      "preimage_sha256": "sha256:aa7722ddb2d81abda07728b860d0b0b079529020f4af979e0a71912f1df5855f",
+      "postimage_sha256": "sha256:81802617ba90a6e435956f38255913f35814ce89967a789fdde73069dd8bffb6",
+      "uuid": "01a02039-7a65-7427-87e5-55bcd00b0b4c",
+      "aliases": [
+        "CONC-0001"
+      ]
+    },
+    {
+      "path": "concepts/CONC-0002-agent-docs-doctor-and-upgrade.md",
+      "preimage_sha256": "sha256:43185b4430ff43ec7f1cc50e6e101c4912b10d1ff6d25c7fbfc044bb0eb0c200",
+      "postimage_sha256": "sha256:d6cab4d11cd379b7bf67efd7f49f54d9ed1feee13ad5a548f60734833d7e764c",
+      "uuid": "01a02039-7a65-787d-b23e-4c8b3d8df2b7",
+      "aliases": [
+        "CONC-0002"
+      ]
+    },
+    {
+      "path": "concepts/CONC-0003-open-loop-review-cadence.md",
+      "preimage_sha256": "sha256:2df0c54fe7524bfa29f4ff189b31ed5ba0e8c2d31b5a805b2d501ddcd4587f85",
+      "postimage_sha256": "sha256:722dcf1dce52a4ccf30eef6523529b83e4dcec849aa60760d37ae8f579eff33c",
+      "uuid": "01a02039-7a65-7635-9bc4-d275e9337510",
+      "aliases": [
+        "CONC-0003"
+      ]
+    },
+    {
+      "path": "docs/decisions/learnings/LRN-0001-workflow-failure-hardening-before-usefulness-proof.md",
+      "preimage_sha256": "sha256:7d26b02aaed44db7049ab5dbf43202b471dd9e47b578c938769ad64ec972edc4",
+      "postimage_sha256": "sha256:e3e899e3c87c49f0fad2e0475f4d3572671dfcaa4e04adc926db54b1b3fd1c86",
+      "uuid": "01a02039-7a65-7964-9111-ec2934bb4053",
+      "aliases": [
+        "LRN-0001"
+      ]
+    },
+    {
+      "path": "docs/orientation/explainers/EXPL-0001-agent-docs-baseline-manifest.md",
+      "preimage_sha256": "sha256:36753bb1d9e5486ba9b8ed5cf3eb7ea5b08901cd1eded76c69b04ab51fc95ba0",
+      "postimage_sha256": "sha256:3686ae1589198212fc546b107bf0e38de441c6f37ba6c4b4da2d42a909542298",
+      "uuid": "01a02039-7a65-7e28-a799-5c377cda19d6",
+      "aliases": [
+        "EXPL-0001"
+      ]
+    },
+    {
+      "path": "docs/orientation/explainers/EXPL-0002-documents-work-delivery-and-semantic-history.md",
+      "preimage_sha256": "sha256:3cfe1e0fac872e7ae65301022f4883f3dffc664f54b02a1571f94484fe82c22d",
+      "postimage_sha256": "sha256:763aa9a9811447b5bb53d9a43348152da323be9e746e20e7cf68d539ca90dddb",
+      "uuid": "01a02039-7a66-79f7-a14a-4cf1ac804b98",
+      "aliases": [
+        "EXPL-0002"
+      ]
+    },
+    {
+      "path": "docs/orientation/explainers/EXPL-0003-agent-continuity-jira-linear-and-general-execution.md",
+      "preimage_sha256": "sha256:ee3d4addb9e2523d8fdbda00552055e6f0bb0e2cbf61455320910480decfcd68",
+      "postimage_sha256": "sha256:332374da1396e3aafa1f03ec7e2c95eab8c21c234c6ef1eedbfa2ce42cb24663",
+      "uuid": "01a02039-7a66-749e-bb5b-ea247371c8f2",
+      "aliases": [
+        "EXPL-0003"
+      ]
+    },
+    {
+      "path": "docs/orientation/explainers/EXPL-0004-from-fuzzy-intent-to-next-action.md",
+      "preimage_sha256": "sha256:ea6e22b8a1dc456a5454652ca475a4ac5a25c14939e813b14c388a37c67657c7",
+      "postimage_sha256": "sha256:5afda16d7ddf57a62637894f050af5bf0c5093b04cb7d48f5dee4ba4982168ed",
+      "uuid": "01a02039-7a66-7fba-80e7-56b4fd882e77",
+      "aliases": [
+        "EXPL-0004"
+      ]
+    },
+    {
+      "path": "plans/agent-continuity-docs-command/PLAN-0011-agent-continuity-docs-command.md",
+      "preimage_sha256": "sha256:940df1a51b71dc5e89015b785c12c005a4787fd4cc6792de3effdfc37c6f12fc",
+      "postimage_sha256": "sha256:c1c4eee8dfadc4d12d53b2dfcdbd3bfb031f974a0029c0074379772d0bb1ab4e",
+      "uuid": "01a02039-7a66-7447-8ff6-d33c3e7bbc7a",
+      "aliases": [
+        "PLAN-0011"
+      ]
+    },
+    {
+      "path": "plans/agent-continuity-docs-command/SPEC-0004-agent-continuity-docs-command.md",
+      "preimage_sha256": "sha256:15a26077c8371f46c3c194426c3c84d25d949b35f59eb6f0f8fa209165f05aad",
+      "postimage_sha256": "sha256:ffaa9bafb8edaa017d4b4000be198321e22fd2890ac9f438ca582c0764b56c2d",
+      "uuid": "01a02039-7a66-7cd8-8f67-76e75cedc4f8",
+      "aliases": [
+        "SPEC-0004"
+      ]
+    },
+    {
+      "path": "plans/agent-continuity-public-rename/PLAN-0008-agent-continuity-public-rename.md",
+      "preimage_sha256": "sha256:2ca940e3d9313c320568cf6345674e32ed5508157615529534b6b15e4e0c790d",
+      "postimage_sha256": "sha256:f5ab798ea08ee9a71543fbcffb18382e54468c4b212f2b8239f162e5783d7f92",
+      "uuid": "01a02039-7a66-7e24-8751-53bbf06018da",
+      "aliases": [
+        "PLAN-0008"
+      ]
+    },
+    {
+      "path": "plans/agent-continuity-public-rename/implementation-briefs/IMPL-0008-01-command-and-profile-rename.md",
+      "preimage_sha256": "sha256:a92da1a9162eb1c70e2663231ceb4c1fcc5b870c36b8127dbbe860887e490be6",
+      "postimage_sha256": "sha256:14ff027c85fe9f65d121c582befdcdfca1404a98e4403969dd2b922023c51303",
+      "uuid": "01a02039-7a66-7956-bf6c-64e447637264",
+      "aliases": [
+        "IMPL-0008-01"
+      ]
+    },
+    {
+      "path": "plans/agent-docs-doctor-manifest-upgrade/PLAN-0005-agent-docs-doctor-manifest-upgrade.md",
+      "preimage_sha256": "sha256:880aa7282d334cd932749681f513268aaeb4e9fb05105047755db34f28542fa7",
+      "postimage_sha256": "sha256:fb52022f205263b22ed48979cb8dfbc4e464db3b681658f5f5662fc3d2c68347",
+      "uuid": "01a02039-7a66-7f87-abb9-6963d57e1e00",
+      "aliases": [
+        "PLAN-0005"
+      ]
+    },
+    {
+      "path": "plans/agent-docs-upgrade-follow-ups/PLAN-0006-generated-view-and-legacy-manifest-upgrade-follow-ups.md",
+      "preimage_sha256": "sha256:7a0a33e91dcf4994c2a5163e6063d91b64afe58c11db6b88a1e07ce4218d2502",
+      "postimage_sha256": "sha256:c1f1c9b42f6dbf9b0c7d00abaab0c76e27fdf93bbfdba3e872be4f945800657a",
+      "uuid": "01a02039-7a66-7759-8fac-3cb5a8e031cc",
+      "aliases": [
+        "PLAN-0006"
+      ]
+    },
+    {
+      "path": "plans/agent-docs-upgrade-follow-ups/implementation-briefs/IMPL-0006-01-legacy-manifest-baseline.md",
+      "preimage_sha256": "sha256:5ae2af962cf6c4d4ef940ff5dfae168dc88e3e925e90315ae5c39c1fe302cb25",
+      "postimage_sha256": "sha256:370b5fcde72a63700922a7aebf1d13f616c962bd870d3775424e8342124e1a57",
+      "uuid": "01a02039-7a66-72e8-be0d-34aff9a0bbce",
+      "aliases": [
+        "IMPL-0006-01"
+      ]
+    },
+    {
+      "path": "plans/agent-docs-upgrade-follow-ups/implementation-briefs/IMPL-0006-02-generated-view-upgrade-writes.md",
+      "preimage_sha256": "sha256:25bb90286713c91b4e6f2a730b8198d30ad97c33821e07fc8a422e1f5635c8ea",
+      "postimage_sha256": "sha256:59d74d0f1b3388ff61dd168e9959b8de3b7a86c96376094b77df92f1c8071281",
+      "uuid": "01a02039-7a66-75ad-8523-1236115078da",
+      "aliases": [
+        "IMPL-0006-02"
+      ]
+    },
+    {
+      "path": "plans/agent-docs-versioning-and-upgrade/SPEC-0003-agent-docs-versioning-and-upgrade.md",
+      "preimage_sha256": "sha256:566dcf37e9f9ff5a18c844a7812e92ab298d5cf0673dda36da4a0287c5204a55",
+      "postimage_sha256": "sha256:cb3ae3f780f8b9fa01a7a9566c13bbba6d5c6a7b5496ea7f23b0c3c2f9ec8667",
+      "uuid": "01a02039-7a66-7be1-868b-33832c02c97f",
+      "aliases": [
+        "SPEC-0003"
+      ]
+    },
+    {
+      "path": "plans/docs-meta-link-graph-and-safe-move/PLAN-0001-docs-meta-link-graph-and-safe-move.md",
+      "preimage_sha256": "sha256:6cfef97f0ccc737a1762796838cb383f4e23afbb069d107f0d8a1263352c5660",
+      "postimage_sha256": "sha256:f690cc9fc141764ca8127218ea3026b50934cf0eaa45fa45858f2c230051d019",
+      "uuid": "01a02039-7a66-77d1-9207-71376bd9a702",
+      "aliases": [
+        "PLAN-0001"
+      ]
+    },
+    {
+      "path": "plans/docs-meta-link-graph-and-safe-move/implementation-briefs/IMPL-0001-01-link-graph-and-safe-move-foundation.md",
+      "preimage_sha256": "sha256:f28d3e99543917236b7c8613cd1d1e0908d0e9733c768c004bee3df3005b84d4",
+      "postimage_sha256": "sha256:5ab05226b1965fb91bf80d0702bab363eef3ca6aa8c9279b8968abaa308671bd",
+      "uuid": "01a02039-7a66-7841-a406-109cd95c6b70",
+      "aliases": [
+        "IMPL-0001-01"
+      ]
+    },
+    {
+      "path": "plans/docs-meta-review-parser/PLAN-0003-docs-meta-review-parser.md",
+      "preimage_sha256": "sha256:f7ad18edd198235803021c045e38047f855a812569c139bfdaa5c843547156e6",
+      "postimage_sha256": "sha256:657884a934be456e4466007696cf301c4cbd8be771e262fbabcdf198236291a6",
+      "uuid": "01a02039-7a66-77a9-8c8e-fda024d979b5",
+      "aliases": [
+        "PLAN-0003"
+      ]
+    },
+    {
+      "path": "plans/docs-meta-review-parser/SPEC-0002-docs-meta-review-parser.md",
+      "preimage_sha256": "sha256:c09f2d0df6fafe7f11906d7e3ac1266f8d2ab27398a2828fe85c015e3abb2739",
+      "postimage_sha256": "sha256:1ef09f3dbb9dad4a1e3b029140785f2e66f79e3282e17b305cebd536bea61914",
+      "uuid": "01a02039-7a67-7f63-8263-b14bd8792f2d",
+      "aliases": [
+        "SPEC-0002"
+      ]
+    },
+    {
+      "path": "plans/generated-view-manifest-registration/PLAN-0007-generated-view-manifest-registration.md",
+      "preimage_sha256": "sha256:971595f99d763c1c6ff67451f7743717d9aa5d7394a1646684e27644feceafd3",
+      "postimage_sha256": "sha256:99d5a7ec0d04a11246b0c07eaa70f0d5910d1aa5dfccd7983e223a15ff94e8f9",
+      "uuid": "01a02039-7a67-7502-b2e5-bf580837f90c",
+      "aliases": [
+        "PLAN-0007"
+      ]
+    },
+    {
+      "path": "plans/generated-view-manifest-registration/implementation-briefs/IMPL-0007-01-generated-view-registration.md",
+      "preimage_sha256": "sha256:4a17ed1771c4591b833ce9b0254febab6247513f6c210ccb12821b7157720054",
+      "postimage_sha256": "sha256:9ba74dacb05b5dcaab17133da9777d26a3155db8766e73cc42d281abd97a8cfe",
+      "uuid": "01a02039-7a67-7303-ab93-3c587f4d319b",
+      "aliases": [
+        "IMPL-0007-01"
+      ]
+    },
+    {
+      "path": "plans/github-repo-rename/PLAN-0009-github-repo-rename.md",
+      "preimage_sha256": "sha256:3053d1d4f23b90ca8bafeb8f49c9d101489cebda58df03e1e96f768073e48f5a",
+      "postimage_sha256": "sha256:6f8829270f5eebb359502867a2470103103908d48c38da503589094353bfe4dc",
+      "uuid": "01a02039-7a67-775e-8ce9-846ab88e0053",
+      "aliases": [
+        "PLAN-0009"
+      ]
+    },
+    {
+      "path": "plans/package-manager-distribution/PLAN-0010-package-manager-distribution.md",
+      "preimage_sha256": "sha256:a2d9089117eca9fe908ca95473a28eb89f1f1dab038eda1a386002d9a9d6e7e5",
+      "postimage_sha256": "sha256:c04edf91e84a70792804680ef291950fb236470933fb776883f1690da769def0",
+      "uuid": "01a02039-7a67-702f-898c-8edfc561b547",
+      "aliases": [
+        "PLAN-0010"
+      ]
+    },
+    {
+      "path": "plans/public-readiness-and-agent-continuity-rename/IMPL-0004-01-public-install-docs-portability-hardening.md",
+      "preimage_sha256": "sha256:e2861e37382e4fd45778d351f17b0726f0da7b2db4d142dab0a05e0a469b2dfe",
+      "postimage_sha256": "sha256:f3f3c8cc04c4936b650c7e816bbb19a67e86aa81984b2d4e4b4573c274c14b36",
+      "uuid": "01a02039-7a67-7aa8-b67b-0852dbb98567",
+      "aliases": [
+        "IMPL-0004-01"
+      ]
+    },
+    {
+      "path": "plans/public-readiness-and-agent-continuity-rename/IMPL-0004-02-release-checks-and-ci.md",
+      "preimage_sha256": "sha256:31580388b3af7624b4bc40b60bd728735df3e773b6ee1e4b5c26ca79c759e540",
+      "postimage_sha256": "sha256:629aa6ba1d4399bb39bcb7fe8cc047acbfdc1dce56cbd78d31bdc40d926054ec",
+      "uuid": "01a02039-7a67-701d-b0e3-5367330b8ab3",
+      "aliases": [
+        "IMPL-0004-02"
+      ]
+    },
+    {
+      "path": "plans/public-readiness-and-agent-continuity-rename/IMPL-0004-03-changelog-versioning-gate.md",
+      "preimage_sha256": "sha256:f980dfed5703fa9d88f634f875d577c0f0e61acb741f9d7769e017862cc15d5f",
+      "postimage_sha256": "sha256:56a2cfb18be7c27f80a50424a3597e244b88cc35097ea88db36222544e019a91",
+      "uuid": "01a02039-7a67-7305-9cc2-07cfd240c88b",
+      "aliases": [
+        "IMPL-0004-03"
+      ]
+    },
+    {
+      "path": "plans/public-readiness-and-agent-continuity-rename/PLAN-0004-public-readiness-and-agent-continuity-rename.md",
+      "preimage_sha256": "sha256:3ced3dd19a4f1cc1d3717f43c6dbe7c8c0bdb14dbc1fcd706da8726bf13aeb76",
+      "postimage_sha256": "sha256:b010bea7044a2148b7a161d5ee9e047db133388c4d8710c3d115c3450d94b8e1",
+      "uuid": "01a02039-7a67-71ef-b571-7e400b955174",
+      "aliases": [
+        "PLAN-0004"
+      ]
+    },
+    {
+      "path": "plans/stable-todo-system/PLAN-0002-stable-todo-system.md",
+      "preimage_sha256": "sha256:02fe6bf7ddff118b7cc76f9fc778d93332d169be461152ab1caf6fd446f12981",
+      "postimage_sha256": "sha256:ba71ca24a3f1ffd50b3f9507090b5d189938887e8eac77d49d4209ad3a228fc0",
+      "uuid": "01a02039-7a67-7fad-9074-ae4c4dbd28fa",
+      "aliases": [
+        "PLAN-0002"
+      ]
+    },
+    {
+      "path": "plans/stable-todo-system/SPEC-0001-stable-todo-system.md",
+      "preimage_sha256": "sha256:632664b578724d32b61e128954b899d2308254a0e340ca291a009432397f6223",
+      "postimage_sha256": "sha256:13eae9a35a8470fa6bd118c789f89158faf321a1bc9c4db146657461a6770e4d",
+      "uuid": "01a02039-7a67-7704-bed2-d4cbd7cbabdc",
+      "aliases": [
+        "SPEC-0001"
+      ]
+    },
+    {
+      "path": "plans/stable-todo-system/implementation-briefs/IMPL-0002-01-todo-parser-and-checks.md",
+      "preimage_sha256": "sha256:53f263a24a9218512116a308845b63fefaffa1025c426ca82b01277397ca1753",
+      "postimage_sha256": "sha256:c81b69c089cfe71d50741cb258212042861f969a6ffa657047d7ee8e889294a7",
+      "uuid": "01a02039-7a67-7257-ba85-7b2ccd1587c1",
+      "aliases": [
+        "IMPL-0002-01"
+      ]
+    },
+    {
+      "path": "repo-health/evaluations/EVAL-0001-docs-to-code-graph-agent-efficiency.md",
+      "preimage_sha256": "sha256:5097b9139253500c3d5f8a9be120d480864b7519a93ec2cee539f7bd7a0a485b",
+      "postimage_sha256": "sha256:5a85c90ce91b11e774936b91babdd6081df223bbf706ce403a148bc01afb998d",
+      "uuid": "01a02039-7a67-7c4b-ba92-a36c2d15fc00",
+      "aliases": [
+        "EVAL-0001"
+      ]
+    },
+    {
+      "path": "repo-health/evaluations/EVAL-0002-documentation-ceremony-and-recovery-value.md",
+      "preimage_sha256": "sha256:55d2a535e83030459dfe4f477158211534da1d54258f27c7a1d7c90304a63e80",
+      "postimage_sha256": "sha256:7afc50144acb6a611fd7a755b4fba420e0afc8c3f46b76890159dcda46fe0c09",
+      "uuid": "01a02039-7a67-7e60-976d-d2a36f58346f",
+      "aliases": [
+        "EVAL-0002"
+      ]
+    },
+    {
+      "path": "research/RSCH-0001-docs-code-traceability-tools.md",
+      "preimage_sha256": "sha256:4fb6adc9463bd8ad91d660ee8cf1a6a6b2a313e6c03ff3d36b8da72cbf3e2fad",
+      "postimage_sha256": "sha256:7a349cf15f9ab9fae72418787dc247a4972f277ee70aebb25af30ac4cb60409d",
+      "uuid": "01a02039-7a67-73d3-8052-6c48dc8a4a04",
+      "aliases": [
+        "RSCH-0001"
+      ]
+    },
+    {
+      "path": "research/RSCH-0002-code-knowledge-graph-and-agent-context-tools.md",
+      "preimage_sha256": "sha256:4b209b5560211f12f16eb76374b8a664107718386c5b78ea62f111b2199bfc1f",
+      "postimage_sha256": "sha256:67008fef2a30b6f791fdbc100d164e5a945e9c4202f4748dff2f8c3f03c32fa0",
+      "uuid": "01a02039-7a68-7a0f-82f2-76f2c2fb8784",
+      "aliases": [
+        "RSCH-0002"
+      ]
+    },
+    {
+      "path": "research/RSCH-0003-documentation-systems-with-source-links.md",
+      "preimage_sha256": "sha256:05609f472d5f1991fd3c83b47031b8c364f4ac6d150ccaad5a1d48d7087dd800",
+      "postimage_sha256": "sha256:3e5c2fa8015fb5ed24f1c7e469db5fa6d29161bd1940f981996691d5f86d9fce",
+      "uuid": "01a02039-7a68-729d-b46c-1914685ec7ee",
+      "aliases": [
+        "RSCH-0003"
+      ]
+    },
+    {
+      "path": "research/RSCH-0004-tree-sitter-for-docs-to-code-linking.md",
+      "preimage_sha256": "sha256:8fac1ed2b31167c4f2bbc9a4b70a52a6a2aa21ad7f0753d49a62645b6a3739a2",
+      "postimage_sha256": "sha256:5c49552e0225f9c5f9517f78e860ee9efe52895b3a3db7d3b419c3ed757f9522",
+      "uuid": "01a02039-7a68-7fb5-a73c-47bd79807822",
+      "aliases": [
+        "RSCH-0004"
+      ]
+    },
+    {
+      "path": "research/RSCH-0005-ast-indexes-and-static-analysis-for-docs-links.md",
+      "preimage_sha256": "sha256:466e8edc7235b8f4ee4f509d19a1c452f41a7b604bc977c1f4fc7e54cba785f5",
+      "postimage_sha256": "sha256:ffd15ba0bd59aaa2d068079cb2b8331feb7146bc79216bd819858526b22f91e9",
+      "uuid": "01a02039-7a68-7ba1-8e31-0a15ea838924",
+      "aliases": [
+        "RSCH-0005"
+      ]
+    },
+    {
+      "path": "research/RSCH-0006-lsp-symbol-graphs-for-docs-navigation.md",
+      "preimage_sha256": "sha256:1ad513c80c95ad233258374cffb9f1eebe4f8825b04e947038c7e0060eda6a81",
+      "postimage_sha256": "sha256:8ea99f01d4d31029584d613fb07bbc0817720460c807aa710f0c36b0fb7dc1a6",
+      "uuid": "01a02039-7a68-7c2a-9240-a07c8dee2945",
+      "aliases": [
+        "RSCH-0006"
+      ]
+    },
+    {
+      "path": "research/RSCH-0007-monocle-swift-symbol-navigation-fit.md",
+      "preimage_sha256": "sha256:1e4733a8c6414bb30229e197bba289b451c7e8074ea2697f225da59360f8cdb5",
+      "postimage_sha256": "sha256:6a04001dfb4e591f75925fb6c743bde943f65eada2d7a2137525275092a0282c",
+      "uuid": "01a02039-7a68-730a-880e-3da1f49fc66a",
+      "aliases": [
+        "RSCH-0007"
+      ]
+    },
+    {
+      "path": "research/RSCH-0008-adaptive-goal-to-outcome-planning-landscape.md",
+      "preimage_sha256": "sha256:39179874a7e9532263d657fd324cfbc9c65416ef14c1001f04c757207802d0a9",
+      "postimage_sha256": "sha256:0255d7640ff030e9300b4809165dcae998251bfac48cf780965539abe7feee2e",
+      "uuid": "01a02039-7a68-71be-a2b2-624187822473",
+      "aliases": [
+        "RSCH-0008"
+      ]
+    },
+    {
+      "path": "research/RSCH-0009-graphify-and-canonical-relationship-store-fit.md",
+      "preimage_sha256": "sha256:09c6da301383e5196e711d8ecb7ce48235315e85e1bf60d22bc2d0c28fd6f0bb",
+      "postimage_sha256": "sha256:39316a6f8b90c788c8250aa9c830562927ed4d3b54b4404d19b7c11bfd5d5086",
+      "uuid": "01a02039-7a68-7236-a04a-c2e12da6abb5",
+      "aliases": [
+        "RSCH-0009"
+      ]
+    },
+    {
+      "path": "research/RSCH-0010-spec-systems-and-agent-continuity-fit.md",
+      "preimage_sha256": "sha256:312bacf34036c7347cccd68ed9512f0dd3d70b3d845f891f462b5ea2fd4b50ad",
+      "postimage_sha256": "sha256:070cc8e93e50fa634d4d5a185fbbc13d0c10be7d391997fc625481e51c31b012",
+      "uuid": "01a02039-7a68-7cb9-8508-3ed504a0ee21",
+      "aliases": [
+        "RSCH-0010"
+      ]
+    },
+    {
+      "path": "session-logs/2026-04-28-docs-meta-review-parser.md",
+      "preimage_sha256": "sha256:c8741d10ff7d0c0f7cb2e80fb31ffd076e0ca4f2544bd3ab8362ef522d83ff10",
+      "postimage_sha256": "sha256:ffb6922f35ec8fd26cb4d9c5f55da4d2c18f25a323d089c0dfcb30f6f78ac742",
+      "uuid": "01a02039-7a68-7fe4-a701-679b74966db2",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-impl-0006-01-legacy-manifest-baseline.md",
+      "preimage_sha256": "sha256:7a2f9cf8bcac90ce9d15fe019a65ac9867e6083a9809acf467052fca9b989678",
+      "postimage_sha256": "sha256:3ffdd255ef9964ac1d266be2bcc0d1ff2ae385df934a0a383be0a94ea80c9ff4",
+      "uuid": "01a02039-7a69-70c4-8a84-fc23eaf6d9f2",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-impl-0006-02-generated-view-upgrade-writes-briefing.md",
+      "preimage_sha256": "sha256:548006e531403bc893986cc06c6f4604f8dafb890a1d0389c598744686dfa7c2",
+      "postimage_sha256": "sha256:7a0119c8d7e831fc568b94492b1ee7a2b0b99ff71b68023a49779010cdbb3d8a",
+      "uuid": "01a02039-7a69-7a08-8b65-d8c41bbf51db",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-impl-0006-02-generated-view-upgrade-writes.md",
+      "preimage_sha256": "sha256:bbfd13a6959e957baa7a2fcc61cd188cdf56d9e636afe56efd765a3c4f275745",
+      "postimage_sha256": "sha256:53cb8c92a762561279dd27de037b016d556ee6da3dd57e61057d5148b468c424",
+      "uuid": "01a02039-7a69-7e35-b6b3-3934e721ecbb",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-impl-0007-01-generated-view-registration.md",
+      "preimage_sha256": "sha256:3a70107abe23ea566c554e0e8c2ca7a51cacce17c5b3775c7f22390249467abd",
+      "postimage_sha256": "sha256:faa12ce2f2176cc10370d673569547d4a285ccff35761fb4bdd4e51b56d5ad96",
+      "uuid": "01a02039-7a69-7a90-bfce-072530fe3fa1",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-impl-0008-01-command-and-profile-rename.md",
+      "preimage_sha256": "sha256:28d7fa5cabec2170dcae218a72c25b4dd78a9bacd5969af354c614fdfa4e2b92",
+      "postimage_sha256": "sha256:4ecae42a3ca33b14e89d5baa925a71303e391310d3cc75fd4478ad278a703c44",
+      "uuid": "01a02039-7a69-7fd6-acd1-3f6431d9b964",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-plan-0004-closeout.md",
+      "preimage_sha256": "sha256:37ab496c02692dd5cc22e8abc22f5d7d8e14aa848e93294846b5974a8a15dc76",
+      "postimage_sha256": "sha256:565be531f343304a361c74f88d295f6669643560da5783df8ddac8f2c322aad4",
+      "uuid": "01a02039-7a69-7fff-a3e6-eee3c0b8b9a1",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-plan-0004-public-readiness.md",
+      "preimage_sha256": "sha256:94d6361a10c2b716c5365709782cf168764959b3cfd3f6cbb11c7180cc2b2fd7",
+      "postimage_sha256": "sha256:99ae1f932b557ce69ef6b1d33f234f659b71d3a63d342712482d6a48b40dc6b5",
+      "uuid": "01a02039-7a69-7c93-b3e0-7413616c55ef",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-plan-0005-closeout.md",
+      "preimage_sha256": "sha256:d67fb6e3291c896069bfe4ac748ae129881dfe21dcd3f1060a0d16ad6ea2166e",
+      "postimage_sha256": "sha256:533ad1cfbea1541b5609ca87610bd9b449de596de866342018d07605c1c7290c",
+      "uuid": "01a02039-7a69-7201-95ca-0d8daeec59c1",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-plan-0005-post-review-upgrade-semantics.md",
+      "preimage_sha256": "sha256:89b189ed18538b100d3b12bd476ae71be3d496c18780cebe4bc33ad0a56ec072",
+      "postimage_sha256": "sha256:a30269e1e3e10b8ad6f176b0950eccb19bde1161ac88c2069fc401ff8352f3db",
+      "uuid": "01a02039-7a69-7725-bb5a-95f9562a156b",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-plan-0005-slice-a-manifest-foundation.md",
+      "preimage_sha256": "sha256:2708487764da56419a0c0e57f72205b5c676850025168263f67ececa49cffe9c",
+      "postimage_sha256": "sha256:e13a24702aabc106fa9978e9a926b092c103b20758b16ecf1cccedfd159783f7",
+      "uuid": "01a02039-7a69-7bbc-a7b0-09b2e6bad400",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-plan-0005-slice-b-doctor-upgrade-dry-run.md",
+      "preimage_sha256": "sha256:37cda3d84529a3402b0d155a722ab3e22b2656484eea39ef09f105890632de5a",
+      "postimage_sha256": "sha256:e9bdf39b7040dbf1f6e15033f6879aa2cdfaeb314ba36f0e1bd0ad5aedb793af",
+      "uuid": "01a02039-7a69-72f6-842f-4282e87b761b",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-plan-0005-slice-c-tooling-only-write-mode.md",
+      "preimage_sha256": "sha256:b5ff9e00e14a4aea178d30126886591d27a9c99fa5b2204adc2bcd1f01935eba",
+      "postimage_sha256": "sha256:b0b356f73316e19955a94efb2d359c0c0b4b93718f2adaa4dfb22815a6f58583",
+      "uuid": "01a02039-7a69-747e-894c-2375e752d061",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-plan-0006-briefing.md",
+      "preimage_sha256": "sha256:fefc42fb5670f93d3f5d2e04d509192d790a8e404a02b02b94d9797e61b5eb4b",
+      "postimage_sha256": "sha256:61a12a6b4dc07915790f7dc997a8125dd5564fc5dfdfcc733ad2d2c889759702",
+      "uuid": "01a02039-7a69-7f44-ac73-6de959f47cd3",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-plan-0009-github-repo-rename.md",
+      "preimage_sha256": "sha256:bd4afd037e38dfb26d4f55bddae4ff918b561eff0bf6779ba33a1a71b208769d",
+      "postimage_sha256": "sha256:def0808d278d28e7e0d828f7f12307d40477fb2dd7c57fd78d825a62e5aefcc3",
+      "uuid": "01a02039-7a69-7638-bdd5-65328c8116d2",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-05-02-plan-0010-package-manager-and-upgrade-guidance.md",
+      "preimage_sha256": "sha256:20f138e4666564abcb9fdf4055d26c8215a3983fa9145af5b1e9ca900ac8f457",
+      "postimage_sha256": "sha256:643b5fb0a69b9af437b65c6d0cc5f022cb3d75c5409ecfe7122959fb16963c60",
+      "uuid": "01a02039-7a69-78f9-8b77-ad9c9eaa0be4",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-08-07-federated-document-library-and-relationship-graph.md",
+      "preimage_sha256": "sha256:61a20b07cab065aca56777936fd442ed9646741c44a6654158d0ce8c08944b26",
+      "postimage_sha256": "sha256:fccff7f01aedc949ccf027be7b4c6af02d9a4ee4b581f1d31e0f58db41431eaf",
+      "uuid": "01a02039-7a69-7be8-9bd5-ed5574749ac1",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-08-08-adaptive-goal-to-outcome-planning.md",
+      "preimage_sha256": "sha256:4ce49a797ded0bf6853473b7f4e47068b44265363979cfcf7e802d888989e75d",
+      "postimage_sha256": "sha256:1879c1b580670e9b76200d2551082624a5dccbf31ca9bc138254f1b27c594277",
+      "uuid": "01a02039-7a69-7df8-a9f7-66ebbbffc542",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-08-08-general-human-agent-execution-graph.md",
+      "preimage_sha256": "sha256:9f92e80ef0fc64aa558ed5491fcac30fb0b750227239011607166e73465b6f54",
+      "postimage_sha256": "sha256:6391fb4cc90e6771042195948178b9a9a960e70d0db78f97efdcb8d72a05f923",
+      "uuid": "01a02039-7a69-7960-b879-4d8b83e9e82c",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-08-08-personal-first-research-and-relationship-store.md",
+      "preimage_sha256": "sha256:cfc5db2d7425bbab7cc8f69d11aebcddfb17dda80849c26f9c48affb60a55397",
+      "postimage_sha256": "sha256:bcf2e131aaabf6b945be2b1c369ca6490c5cf7b1c7cd9084d991b67d07f5918f",
+      "uuid": "01a02039-7a6a-7dd7-a80f-76a95ba6409b",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-08-08-repository-boundary-and-graph-authority-clarification.md",
+      "preimage_sha256": "sha256:f33f849dfba92f6f4de74c8a5dbeb31513fad2e3e3d306157def28ecc4246bf6",
+      "postimage_sha256": "sha256:a9ed94ca2bb71be8cf118bff5aa43b4c9effe1e447866bb7e7a37fa9c502f470",
+      "uuid": "01a02039-7a6a-7ae6-9afe-c1043dc26852",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-08-08-semantic-history-and-work-projections.md",
+      "preimage_sha256": "sha256:f53eec6fc2f9062d71d26662c1e900f6ed455b0f119cc8de27257e061fb3a257",
+      "postimage_sha256": "sha256:dbf97665075c2863a1cf4bf3efe8f58dc0b41a69ac97ed7d58a957fe9d4eabed",
+      "uuid": "01a02039-7a6a-7ad6-b772-b1f90d48db55",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-08-16-impl-id-retirement-tombstones.md",
+      "preimage_sha256": "sha256:88c513dbd35ee40a871584676e7e6f7d70e98dc2bdea07a6d148a7bffd0ba9b1",
+      "postimage_sha256": "sha256:e4ee5e5e73906d51671e1ec7c1932e77fdb195ae289a184e6f296e6a5f6cd836",
+      "uuid": "01a02039-7a6a-7bc6-b14b-c2fe3df71fcf",
+      "aliases": []
+    },
+    {
+      "path": "session-logs/2026-08-20-spec-systems-and-ceremony-evaluation.md",
+      "preimage_sha256": "sha256:88f743714a799d17ac611bd66bb47e98a29931965df2c35a25cc80498b1e7d81",
+      "postimage_sha256": "sha256:3bf5b13080cbc4a35714b3da6033474f70956ea300025c6125e78fea7b30bfeb",
+      "uuid": "01a02039-7a6a-78da-9eb8-81a332e5b303",
+      "aliases": []
+    }
+  ]
+}
