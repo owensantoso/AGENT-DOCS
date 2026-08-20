@@ -1,6 +1,9 @@
 ---
 type: implementation-brief
-id: IMPL-0004-01
+document_format_version: 2
+id: 01a02039-7a67-7aa8-b67b-0852dbb98567
+aliases:
+  - "IMPL-0004-01"
 title: Public Install Docs Portability Hardening
 domain: repo-health
 status: completed

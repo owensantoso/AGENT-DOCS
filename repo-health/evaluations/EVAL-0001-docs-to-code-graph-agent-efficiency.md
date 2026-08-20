@@ -1,6 +1,9 @@
 ---
 type: evaluation
-id: EVAL-0001
+document_format_version: 2
+id: 01a02039-7a67-7c4b-ba92-a36c2d15fc00
+aliases:
+  - "EVAL-0001"
 title: Docs To Code Graph Agent Efficiency
 domain: repo-health
 status: draft

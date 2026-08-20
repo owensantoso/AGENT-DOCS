@@ -1,6 +1,9 @@
 ---
 type: research-survey
-id: RSCH-0010
+document_format_version: 2
+id: 01a02039-7a68-7cb9-8508-3ed504a0ee21
+aliases:
+  - "RSCH-0010"
 title: Spec Systems And Agent Continuity Fit
 domain: architecture
 status: archived

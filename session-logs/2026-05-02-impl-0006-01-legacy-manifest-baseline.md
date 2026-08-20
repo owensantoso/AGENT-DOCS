@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-70c4-8a84-fc23eaf6d9f2
+aliases: []
 title: IMPL-0006-01 Legacy Manifest Baseline
 domain: repo-health
 status: completed

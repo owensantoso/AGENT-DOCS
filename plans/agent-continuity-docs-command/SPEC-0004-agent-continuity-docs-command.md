@@ -1,6 +1,9 @@
 ---
 type: spec
-id: SPEC-0004
+document_format_version: 2
+id: 01a02039-7a66-7cd8-8f67-76e75cedc4f8
+aliases:
+  - "SPEC-0004"
 title: Agent Continuity Structured Docs Command
 domain: repo-health
 spec_type: improvement

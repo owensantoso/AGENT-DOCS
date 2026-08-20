@@ -1,6 +1,9 @@
 ---
 type: implementation-brief
-id: IMPL-0004-03
+document_format_version: 2
+id: 01a02039-7a67-7305-9cc2-07cfd240c88b
+aliases:
+  - "IMPL-0004-03"
 title: Changelog Versioning Gate
 domain: repo-health
 status: completed

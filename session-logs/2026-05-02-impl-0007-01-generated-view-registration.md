@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7a90-bfce-072530fe3fa1
+aliases: []
 title: IMPL-0007-01 Generated View Registration
 domain: repo-health
 status: completed

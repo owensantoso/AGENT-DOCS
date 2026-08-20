@@ -1,6 +1,9 @@
 ---
 type: learning
-id: LRN-0001
+document_format_version: 2
+id: 01a02039-7a65-7964-9111-ec2934bb4053
+aliases:
+  - "LRN-0001"
 title: Workflow Failure - Hardening Before Usefulness Proof
 domain: workflow
 status: active

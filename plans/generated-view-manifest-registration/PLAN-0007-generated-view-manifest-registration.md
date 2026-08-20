@@ -1,6 +1,9 @@
 ---
 type: plan
-id: PLAN-0007
+document_format_version: 2
+id: 01a02039-7a67-7502-b2e5-bf580837f90c
+aliases:
+  - "PLAN-0007"
 title: Generated View Manifest Registration
 domain: repo-health
 status: completed

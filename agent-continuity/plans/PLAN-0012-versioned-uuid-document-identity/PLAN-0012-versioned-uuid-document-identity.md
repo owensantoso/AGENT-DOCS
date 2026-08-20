@@ -1,11 +1,14 @@
 ---
 type: plan
-id: PLAN-0012
+document_format_version: 2
+id: 01a02039-7a65-7639-9a50-fa737028f351
+aliases:
+  - "PLAN-0012"
 title: Versioned UUID Document Identity
 domain: agent-continuity
-status: in_progress
+status: completed
 created_at: "2026-08-21 01:46:46 JST +0900"
-updated_at: "2026-08-21 01:46:46 JST +0900"
+updated_at: "2026-08-21 02:41:52 JST +0900"
 owner: Codex main agent
 sequence:
   roadmap:
@@ -18,13 +21,14 @@ related_ideas:
   - ../../ideas/IDEA-0003-federated-document-library-and-relationship-graph.md
 related_specs: []
 related_adrs: []
-related_sessions: []
+related_sessions:
+  - ../../../session-logs/2026-08-20-spec-systems-and-ceremony-evaluation.md
 related_issues: []
 related_prs: []
 linked_paths: []
 repo_state:
-  based_on_commit: 0e4384ddb42645d77f3dc04ab77d472f949ba352
-  last_reviewed_commit: 0e4384ddb42645d77f3dc04ab77d472f949ba352
+  based_on_commit: d87ea088b643fce77d23d559c57b81a94344dec0
+  last_reviewed_commit: 663934fe4f03b703db210fb6023b99cbe3619684
 ---
 
 # PLAN-0012 - Versioned UUID Document Identity
@@ -94,7 +98,7 @@ repository self-migration waits for all of them to pass.
   semantics.
 - [x] Add release `2026.08.21.1`, manifest schema v2, document-format target,
   and separate `doctor` findings for install metadata and project documents.
-- [ ] Commit the migration plan, self-migrate the existing corpus, regenerate
+- [x] Commit the migration plan, self-migrate the existing corpus, regenerate
   views, and record completion evidence.
 
 ## Validation
@@ -120,3 +124,22 @@ repository self-migration waits for all of them to pass.
   migration state without relying on this conversation.
 - The Agent Continuity repository is itself migrated and all relevant checks
   pass from committed source.
+
+## Completion Evidence
+
+- Tooling foundation commit: `d87ea088b643fce77d23d559c57b81a94344dec0`
+- Canonical migration-plan commit: `663934fe4f03b703db210fb6023b99cbe3619684`
+- Migration ID: `01a02039-7a6a-78c6-ab78-480b3b5759b0`
+- Migration-plan digest:
+  `sha256:227b1b476ab9d4eeecffab8fe29f7b6b8301bd993f70ab1c4c3b6d927512cbc7`
+- Result: 75 planned preimages became 75 exact postimages; 51 historical
+  identities were retained as aliases and 24 formerly ID-less records remained
+  aliasless.
+- Post-migration format status: `v1: 0`, `v2: 75`, `invalid: 0`.
+- Receipt:
+  `.agent-continuity/migrations/document-format-v2.json.receipt.json`
+- Generated views under `docs/` were regenerated after the corpus write.
+- `doctor` now distinguishes `ready`, `in_progress`, and `completed` migration
+  state from the canonical plan and full receipt; completion enforces v2-only
+  authored records while permitting later content edits that preserve the
+  planned UUID and historical aliases.

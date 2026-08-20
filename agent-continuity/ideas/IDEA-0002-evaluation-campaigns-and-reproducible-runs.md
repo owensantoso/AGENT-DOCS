@@ -1,6 +1,9 @@
 ---
 type: idea
-id: IDEA-0002
+document_format_version: 2
+id: 01a02039-7a65-7cd6-bb0c-ca9457841f88
+aliases:
+  - "IDEA-0002"
 title: Evaluation Campaigns And Reproducible Runs
 domain: agent-continuity
 status: captured

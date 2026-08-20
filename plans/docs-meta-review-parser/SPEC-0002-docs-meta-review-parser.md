@@ -1,6 +1,9 @@
 ---
 type: spec
-id: SPEC-0002
+document_format_version: 2
+id: 01a02039-7a67-7f63-8263-b14bd8792f2d
+aliases:
+  - "SPEC-0002"
 title: Docs Meta Review Parser
 spec_type: repo-health
 domain: docs-meta

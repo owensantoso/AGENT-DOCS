@@ -77,6 +77,12 @@ add_legacy_alias() {
   perl -0pi -e 's/aliases: \[\]/aliases:\n  - '"$alias"'/' "$path"
 }
 
+fresh_audit_root="$tmpdir/fresh-audit-docs"
+fresh_audit_path="$(run_meta_root "$fresh_audit_root" new audit "Fresh Aliasless Audit" --kind docs-health --domain repo-health)"
+require_contains "$fresh_audit_path" "document_format_version: 2"
+require_contains "$fresh_audit_path" "aliases: []"
+run_meta_root "$fresh_audit_root" check
+
 idea_path="$(run_meta new idea "Repo Memory Timeline" --domain product)"
 rsch_path="$(run_meta new research "Embedding Options Survey" --domain research)"
 eval_path="$(run_meta new eval "Embedding Model Bakeoff" --domain repo-health)"
@@ -1497,6 +1503,55 @@ require_contains "$tmpdir/uuid-format-after.json" '"migration_required": false'
   "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write --json
 ) >"$tmpdir/uuid-migration-idempotent.json"
 require_contains "$tmpdir/uuid-migration-idempotent.json" '"state": "completed"'
+
+perl -0pi -e 's/title: Legacy Plan/title: Evolved Legacy Plan/' "$migrated_plan"
+(
+  cd "$migration_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write --json
+) >"$tmpdir/uuid-migration-evolved.json"
+require_contains "$tmpdir/uuid-migration-evolved.json" '"state": "completed"'
+require_contains "$tmpdir/uuid-migration-evolved.json" '"state": "evolved"'
+
+perl -0pi -e "s/id: $migrated_plan_uuid/id: $migrated_impl_uuid/" "$migrated_plan"
+if (
+  cd "$migration_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write
+) >"$tmpdir/uuid-migration-identity-drift.out" 2>&1; then
+  echo "Expected completed migration verification to reject canonical identity drift" >&2
+  exit 1
+fi
+require_contains "$tmpdir/uuid-migration-identity-drift.out" "Completed UUID migration validation failed"
+perl -0pi -e "s/id: $migrated_impl_uuid/id: $migrated_plan_uuid/" "$migrated_plan"
+
+mkdir -p "$migration_repo/docs/product/specs"
+cp "$unplanned_repo/docs/product/specs/SPEC-unplanned-v1.md" "$migration_repo/docs/product/specs/SPEC-unplanned-v1.md"
+if run_meta_root "$migration_docs" check >"$tmpdir/uuid-migration-v2-policy.out" 2>&1; then
+  echo "Expected a completion receipt to make new v1 documents invalid" >&2
+  exit 1
+fi
+require_contains "$tmpdir/uuid-migration-v2-policy.out" "does not cover v1 document added after preparation"
+rm "$migration_repo/docs/product/specs/SPEC-unplanned-v1.md"
+
+cp "$migration_repo/$migration_plan_rel.receipt.json" "$tmpdir/uuid-valid-receipt.json"
+python3 - "$migration_repo/$migration_plan_rel.receipt.json" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+receipt = json.loads(path.read_text(encoding="utf-8"))
+receipt.pop("document_count")
+path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+PY
+if (
+  cd "$migration_repo"
+  "$agent_continuity_docs" --root docs migrate-uuids --plan "$migration_plan_rel" --write
+) >"$tmpdir/uuid-migration-shallow-receipt.out" 2>&1; then
+  echo "Expected a structurally incomplete migration receipt to be rejected" >&2
+  exit 1
+fi
+require_contains "$tmpdir/uuid-migration-shallow-receipt.out" "Migration receipt does not match plan"
+cp "$tmpdir/uuid-valid-receipt.json" "$migration_repo/$migration_plan_rel.receipt.json"
 
 (
   cd "$conflict_repo"

@@ -1,6 +1,9 @@
 ---
 type: implementation-brief
-id: IMPL-0007-01
+document_format_version: 2
+id: 01a02039-7a67-7303-ab93-3c587f4d319b
+aliases:
+  - "IMPL-0007-01"
 title: Generated View Registration
 domain: repo-health
 status: completed

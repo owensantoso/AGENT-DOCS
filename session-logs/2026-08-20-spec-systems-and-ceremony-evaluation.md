@@ -1,12 +1,15 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a6a-78da-9eb8-81a332e5b303
+aliases: []
 title: Spec Systems And Ceremony Evaluation
 domain: agent-continuity
 status: completed
 created_at: "2026-08-20 17:13:32 JST +0900"
-updated_at: "2026-08-21 01:18:11 JST +0900"
+updated_at: "2026-08-21 02:41:52 JST +0900"
 started_at: "2026-08-20 17:13:32 JST +0900"
-ended_at: "2026-08-20 17:29:44 JST +0900"
+ended_at: "2026-08-21 02:41:52 JST +0900"
 timezone: "JST +0900"
 participants:
   - Owen
@@ -17,6 +20,7 @@ participants:
   - delegated relation-storage reviewer
   - delegated graph-database reviewer
   - delegated plan-and-brief reviewer
+  - delegated UUID implementation reviewer
 areas:
   - agent-continuity
   - spec-driven-development
@@ -24,14 +28,17 @@ areas:
   - documentation-ceremony
   - repository-topology
   - identity-and-dependencies
-related_plans: []
+related_plans:
+  - ../agent-continuity/plans/PLAN-0012-versioned-uuid-document-identity/PLAN-0012-versioned-uuid-document-identity.md
 related_briefs: []
 related_specs: []
 related_adrs: []
 related_todos: []
 related_issues: []
 related_prs: []
-commits: []
+commits:
+  - d87ea088b643fce77d23d559c57b81a94344dec0
+  - 663934fe4f03b703db210fb6023b99cbe3619684
 ---
 
 # 2026-08-20 - Spec Systems And Ceremony Evaluation
@@ -187,3 +194,64 @@ Verification:
 - `scripts/release-check` passed, including installer, init, doctor/upgrade, structured-document, changelog, compile, plan metadata, repo-root link, and diff checks.
 - The pre-existing ignored `scripts/__pycache__` directory was moved aside for the release hygiene gate and restored immediately afterward.
 - A direct subtree metadata check still reports the repository's previously recorded root-relative `linked_paths` debt; no new failure was introduced by this follow-up.
+
+## Follow-Up Implementation - 2026-08-21 02:31 JST
+
+Owen selected the native Agent Continuity UUID direction and explicitly added
+one creation invariant: fresh documents and freshly initialized repositories
+must not receive old number-based aliases merely because migrated documents
+have them.
+
+Implemented result:
+
+- Agent Continuity release `2026.08.21.1` introduces manifest schema 2 and
+  document format 2 as separate version axes.
+- Fresh structured documents receive an RFC UUIDv7 canonical `id`,
+  `aliases: []`, and a type-plus-slug locator. The `new` command no longer calls
+  a numeric allocator.
+- The initializer omits numbered example records and generated views, UUID-binds
+  real starter records without aliases, and records document-format target 2.
+- Numeric aliases are created only by the existing-document migration or an
+  explicit legacy `retire-id` tombstone.
+- `format-status` reports v1, v2, and invalid records. `doctor` reports manifest
+  and document-format migration separately and checks named release metadata.
+- `migrate-uuids` prepares an immutable Git-committed mapping, records known
+  worktrees and exact pre/postimage hashes, refuses unplanned v1 additions or
+  divergent files before mutation, resumes mixed expected state, and writes a
+  matching completion receipt last.
+- The canonical scaffold skill now routes new repositories through the
+  preview-first initializer instead of raw scaffold copying.
+
+Self-hosted migration receipt:
+
+- foundation commit: `d87ea088b643fce77d23d559c57b81a94344dec0`
+- migration-plan commit: `663934fe4f03b703db210fb6023b99cbe3619684`
+- migration ID: `01a02039-7a6a-78c6-ab78-480b3b5759b0`
+- migration plan: `.agent-continuity/migrations/document-format-v2.json`
+- completion receipt:
+  `.agent-continuity/migrations/document-format-v2.json.receipt.json`
+- corpus result: 75 v2 records, zero v1 records, zero invalid records; 51
+  historical numeric identities retained as aliases and 24 formerly ID-less
+  records aliasless
+
+Verification before self-migration:
+
+- `scripts/release-check` passed.
+- Focused document, initializer, doctor/upgrade, install, and skill validation
+  suites passed.
+- Migration coverage includes an uncommitted-plan refusal, exact committed
+  apply, lookup by UUID and alias, relationship-field preservation, idempotence,
+  mixed-state resume, unplanned-v1 refusal before mutation, and divergent
+  preimage byte preservation.
+
+Independent implementation review found two cutover gaps before closeout. A
+fresh aliasless audit still inherited a v1 `AUDT-####` validator, and an
+all-postimage corpus with a missing receipt could appear healthy. Both were
+corrected: audit numbering is now v1-only, `doctor` inspects canonical migration
+state and supplies the resume command, the full receipt contract is validated,
+and a valid completion receipt closes the v1 compatibility window while
+allowing ordinary later edits that retain planned identity and aliases.
+
+The visibility/repository-boundary question remains parked. No document
+repository split, relationship normalization, broad filename rename, graph
+database, public write, installation, or release publication was performed.

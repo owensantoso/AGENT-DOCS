@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7960-b879-4d8b83e9e82c
+aliases: []
 title: Capture General Human-Agent Execution Graph
 domain: agent-continuity
 status: completed

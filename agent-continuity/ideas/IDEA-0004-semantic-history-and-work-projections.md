@@ -1,6 +1,9 @@
 ---
 type: idea
-id: IDEA-0004
+document_format_version: 2
+id: 01a02039-7a65-7787-b2f6-8b30c1fc3827
+aliases:
+  - "IDEA-0004"
 title: Semantic History And Work Projections
 domain: agent-continuity
 status: captured

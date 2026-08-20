@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a6a-7ad6-b772-b1f90d48db55
+aliases: []
 title: Capture Semantic History And Work Projections
 domain: agent-continuity
 status: completed

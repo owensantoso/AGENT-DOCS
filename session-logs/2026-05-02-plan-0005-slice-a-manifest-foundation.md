@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7bbc-a7b0-09b2e6bad400
+aliases: []
 title: PLAN-0005 Slice A Manifest Foundation
 domain: repo-health
 status: completed

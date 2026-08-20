@@ -126,7 +126,9 @@ agent-continuity upgrade --dry-run /path/to/project
 
 Both commands read manifest schemas 1 and 2. Schema 1 is reported as a
 tooling-only upgrade, while v1 authored documents are reported as a separate
-content migration. Reports
+content migration. A canonical UUID migration plan is inspected together with
+its receipt, so an all-postimage corpus with a missing receipt remains
+`in_progress` rather than appearing healthy. Reports
 include exact paths and reasons for healthy/current files, missing legacy
 manifests, missing Agent Continuity-owned tooling, checksum drift, safe automatic
 additions, candidate tooling updates, generated-view refreshes, project-owned manual-review
@@ -295,6 +297,10 @@ agent-continuity docs migrate-uuids --plan .agent-continuity/migrations/document
 Migration preserves old numeric IDs as aliases, changes no filenames or
 relationship fields, refuses uncommitted plans and divergent preimages, and
 writes its receipt last. Commit the receipt with the migrated documents.
+Thereafter, ordinary document edits are allowed, but the planned UUIDs and
+historical aliases remain enforced. `doctor` validates the full receipt and
+surfaces incomplete migration state with an exact resume command; a completed
+receipt makes later unplanned v1 records invalid in that source root.
 
 Retire the current next implementation-brief ID without creating live work:
 

@@ -1,6 +1,9 @@
 ---
 type: implementation-brief
-id: IMPL-0006-01
+document_format_version: 2
+id: 01a02039-7a66-72e8-be0d-34aff9a0bbce
+aliases:
+  - "IMPL-0006-01"
 title: Legacy Manifest Baseline
 domain: repo-health
 status: completed

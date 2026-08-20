@@ -1,6 +1,9 @@
 ---
 type: plan
-id: PLAN-0003
+document_format_version: 2
+id: 01a02039-7a66-77a9-8c8e-fda024d979b5
+aliases:
+  - "PLAN-0003"
 title: Docs Meta Review Parser
 domain: docs-meta
 status: completed

@@ -175,6 +175,60 @@ cmp "$tmpdir/healthy-before-bare-upgrade.sha" "$tmpdir/healthy-after-bare-upgrad
 require_contains "$tmpdir/healthy-bare-upgrade.out" "Agent Continuity upgrade dry-run"
 require_contains "$tmpdir/healthy-bare-upgrade.out" "Status: healthy/current"
 
+migration_doctor_target="$tmpdir/migration-doctor"
+"$installer" "$migration_doctor_target" --profile small --docs-meta yes --write >"$tmpdir/migration-doctor-install.out"
+mkdir -p "$migration_doctor_target/docs/product/specs"
+cat >"$migration_doctor_target/docs/product/specs/SPEC-0001-doctor-migration.md" <<'MIGRATION_SPEC'
+---
+type: spec
+id: SPEC-0001
+title: Doctor Migration Fixture
+domain: product
+status: draft
+created_at: "2026-08-21 00:00:00 JST +0900"
+updated_at: "2026-08-21 00:00:00 JST +0900"
+spec_type: feature
+source:
+  type: test
+  link: ""
+areas: []
+related_plans: []
+repo_state:
+  based_on_commit: fixture
+  last_reviewed_commit: fixture
+---
+
+# SPEC-0001 - Doctor Migration Fixture
+MIGRATION_SPEC
+git -C "$migration_doctor_target" init -q
+git -C "$migration_doctor_target" add .
+git -C "$migration_doctor_target" \
+  -c user.name="Agent Continuity Smoke" \
+  -c user.email="smoke@example.invalid" \
+  commit -qm "Create doctor migration fixture"
+migration_doctor_plan=".agent-continuity/migrations/document-format-v2.json"
+(
+  cd "$migration_doctor_target"
+  "$repo_root/scripts/agent-continuity-docs" --root docs migrate-uuids --prepare-plan "$migration_doctor_plan" --write
+) >"$tmpdir/migration-doctor-prepare.out"
+git -C "$migration_doctor_target" add "$migration_doctor_plan"
+git -C "$migration_doctor_target" \
+  -c user.name="Agent Continuity Smoke" \
+  -c user.email="smoke@example.invalid" \
+  commit -qm "Commit doctor UUID migration plan"
+(
+  cd "$migration_doctor_target"
+  "$repo_root/scripts/agent-continuity-docs" --root docs migrate-uuids --plan "$migration_doctor_plan" --write
+) >"$tmpdir/migration-doctor-apply.out"
+migration_doctor_receipt="$migration_doctor_target/$migration_doctor_plan.receipt.json"
+require_file "$migration_doctor_receipt"
+require_exit 0 "$tmpdir/migration-doctor-complete.out" "$agent_docs" doctor "$migration_doctor_target"
+mv "$migration_doctor_receipt" "$tmpdir/migration-doctor-receipt.json"
+require_exit 1 "$tmpdir/migration-doctor-in-progress.out" "$agent_docs" doctor "$migration_doctor_target"
+require_contains "$tmpdir/migration-doctor-in-progress.out" "UUID migration state is in_progress"
+require_contains "$tmpdir/migration-doctor-in-progress.out" "migrate-uuids --plan .agent-continuity/migrations/document-format-v2.json --write"
+mv "$tmpdir/migration-doctor-receipt.json" "$migration_doctor_receipt"
+
 release_mismatch_target="$tmpdir/release-mismatch"
 cp -R "$healthy_target" "$release_mismatch_target"
 python3 - "$release_mismatch_target" <<'PY'

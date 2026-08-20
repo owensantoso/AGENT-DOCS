@@ -1,6 +1,9 @@
 ---
 type: idea
-id: IDEA-0001
+document_format_version: 2
+id: 01a02039-7a65-7579-b782-7b433cd8e001
+aliases:
+  - "IDEA-0001"
 title: Docs To Code Graph
 domain: structured-docs
 status: captured

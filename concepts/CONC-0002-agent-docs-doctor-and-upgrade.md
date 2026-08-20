@@ -1,6 +1,9 @@
 ---
 type: concept
-id: CONC-0002
+document_format_version: 2
+id: 01a02039-7a65-787d-b23e-4c8b3d8df2b7
+aliases:
+  - "CONC-0002"
 title: Agent Docs Doctor And Upgrade
 domain: repo-health
 status: draft

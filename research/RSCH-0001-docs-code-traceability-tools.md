@@ -1,6 +1,9 @@
 ---
 type: research-survey
-id: RSCH-0001
+document_format_version: 2
+id: 01a02039-7a67-73d3-8052-6c48dc8a4a04
+aliases:
+  - "RSCH-0001"
 title: Docs Code Traceability Tools
 domain: research
 status: completed

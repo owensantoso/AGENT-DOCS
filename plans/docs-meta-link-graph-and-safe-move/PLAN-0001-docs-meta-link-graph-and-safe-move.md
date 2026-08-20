@@ -1,6 +1,9 @@
 ---
 type: plan
-id: PLAN-0001
+document_format_version: 2
+id: 01a02039-7a66-77d1-9207-71376bd9a702
+aliases:
+  - "PLAN-0001"
 title: Docs Link Graph and Safe Move Tooling
 domain: docs-meta
 status: completed

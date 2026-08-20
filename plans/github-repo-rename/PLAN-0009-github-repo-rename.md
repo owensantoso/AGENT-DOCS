@@ -1,6 +1,9 @@
 ---
 type: plan
-id: PLAN-0009
+document_format_version: 2
+id: 01a02039-7a67-775e-8ce9-846ab88e0053
+aliases:
+  - "PLAN-0009"
 title: GitHub Repo Rename
 domain: repo-health
 status: completed

@@ -1,6 +1,9 @@
 ---
 type: plan
-id: PLAN-0005
+document_format_version: 2
+id: 01a02039-7a66-7f87-abb9-6963d57e1e00
+aliases:
+  - "PLAN-0005"
 title: Agent Docs Doctor Manifest Upgrade
 domain: repo-health
 status: completed

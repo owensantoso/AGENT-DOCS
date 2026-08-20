@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a6a-7ae6-9afe-c1043dc26852
+aliases: []
 title: Repository Boundary And Graph Authority Clarification
 domain: agent-continuity
 status: completed

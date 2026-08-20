@@ -1,6 +1,9 @@
 ---
 type: research-survey
-id: RSCH-0005
+document_format_version: 2
+id: 01a02039-7a68-7ba1-8e31-0a15ea838924
+aliases:
+  - "RSCH-0005"
 title: AST Indexes And Static Analysis For Docs Links
 domain: research
 status: completed

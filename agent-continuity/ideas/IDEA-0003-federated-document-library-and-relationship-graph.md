@@ -1,6 +1,9 @@
 ---
 type: idea
-id: IDEA-0003
+document_format_version: 2
+id: 01a02039-7a65-7a6b-9465-b0901f21f424
+aliases:
+  - "IDEA-0003"
 title: Federated Document Library And Canonical Relationship Graph
 domain: agent-continuity
 status: exploring

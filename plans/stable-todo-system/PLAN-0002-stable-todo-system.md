@@ -1,6 +1,9 @@
 ---
 type: plan
-id: PLAN-0002
+document_format_version: 2
+id: 01a02039-7a67-7fad-9074-ae4c4dbd28fa
+aliases:
+  - "PLAN-0002"
 title: Stable Todo System
 domain: docs-meta
 status: completed

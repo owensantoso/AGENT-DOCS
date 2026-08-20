@@ -1,6 +1,9 @@
 ---
 type: plan
-id: PLAN-0006
+document_format_version: 2
+id: 01a02039-7a66-7759-8fac-3cb5a8e031cc
+aliases:
+  - "PLAN-0006"
 title: Generated View And Legacy Manifest Upgrade Follow-ups
 domain: repo-health
 status: completed

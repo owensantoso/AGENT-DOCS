@@ -1,6 +1,9 @@
 ---
 type: research-survey
-id: RSCH-0006
+document_format_version: 2
+id: 01a02039-7a68-7c2a-9240-a07c8dee2945
+aliases:
+  - "RSCH-0006"
 title: LSP Symbol Graphs For Docs Navigation
 domain: research
 status: completed

@@ -1,6 +1,9 @@
 ---
 type: spec
-id: SPEC-0003
+document_format_version: 2
+id: 01a02039-7a66-7be1-868b-33832c02c97f
+aliases:
+  - "SPEC-0003"
 title: AGENT-DOCS Versioning And Safe Upgrade
 spec_type: repo-health
 domain: repo-health

@@ -452,6 +452,78 @@ def read_manifest(report: Report) -> dict | None:
     return manifest
 
 
+def classify_uuid_migration(report: Report) -> Path:
+    default_root = report.target / "docs"
+    plan_rel = Path(".agent-continuity/migrations/document-format-v2.json")
+    plan_path = report.target / plan_rel
+    default_receipt = plan_path.with_name(f"{plan_path.name}.receipt.json")
+    if not plan_path.exists():
+        if default_receipt.exists():
+            report.add(
+                "refused/unknown/incompatible shapes",
+                default_receipt.relative_to(report.target),
+                "UUID migration receipt exists without its canonical migration plan",
+            )
+        return default_root
+    if not plan_path.is_file() or plan_path.is_symlink():
+        report.add(
+            "refused/unknown/incompatible shapes",
+            plan_rel,
+            "UUID migration plan is not a regular file",
+        )
+        return default_root
+    try:
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        report.add("refused/unknown/incompatible shapes", plan_rel, f"UUID migration plan is invalid: {exc}")
+        return default_root
+    if not isinstance(plan, dict) or not isinstance(plan.get("source_root"), str):
+        report.add("refused/unknown/incompatible shapes", plan_rel, "UUID migration plan omits source_root")
+        return default_root
+    source_value = Path(plan["source_root"])
+    source_root = (report.target / source_value).resolve()
+    try:
+        source_root.relative_to(report.target)
+    except ValueError:
+        report.add("refused/unknown/incompatible shapes", plan_rel, "UUID migration source_root escapes target")
+        return default_root
+    command = [
+        sys.executable,
+        str(SCRIPT_DIR / "agent-continuity-docs"),
+        "--root",
+        str(source_root),
+        "migrate-uuids",
+        "--plan",
+        plan_rel.as_posix(),
+        "--json",
+    ]
+    result = subprocess.run(command, cwd=report.target, capture_output=True, text=True)
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip().splitlines()
+        reason = detail[-1] if detail else "UUID migration inspection failed"
+        report.add("refused/unknown/incompatible shapes", plan_rel, reason)
+        return source_root
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        report.add("refused/unknown/incompatible shapes", plan_rel, "UUID migration inspection returned invalid JSON")
+        return source_root
+    state = payload.get("state")
+    if state in {"ready", "in_progress"}:
+        resume = (
+            f"agent-continuity docs --root {source_value.as_posix()} migrate-uuids "
+            f"--plan {plan_rel.as_posix()} --write"
+        )
+        report.add(
+            "document format migration",
+            plan_rel,
+            f"UUID migration state is {state}; resume with `{resume}`",
+        )
+    elif state != "completed":
+        report.add("refused/unknown/incompatible shapes", plan_rel, f"unknown UUID migration state {state!r}")
+    return source_root
+
+
 def classify_document_format(report: Report, manifest: dict) -> None:
     if manifest.get("schema_version") == MANIFEST_SCHEMA_VERSION:
         release = manifest.get("agent_continuity_release")
@@ -474,7 +546,7 @@ def classify_document_format(report: Report, manifest: dict) -> None:
                 report.manifest_path,
                 f"manifest document_format_target {target!r} does not match supported target {DOCUMENT_FORMAT_TARGET}",
             )
-    docs_root = report.target / "docs"
+    docs_root = classify_uuid_migration(report)
     if not docs_root.is_dir():
         return
     command = [

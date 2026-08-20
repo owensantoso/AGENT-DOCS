@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "migration_type": "agent-continuity-document-uuid-v2",
+  "migration_id": "01a02039-7a6a-78c6-ab78-480b3b5759b0",
+  "plan_path": ".agent-continuity/migrations/document-format-v2.json",
+  "plan_sha256": "sha256:227b1b476ab9d4eeecffab8fe29f7b6b8301bd993f70ab1c4c3b6d927512cbc7",
+  "plan_commit": "663934fe4f03b703db210fb6023b99cbe3619684",
+  "applied_on_head": "663934fe4f03b703db210fb6023b99cbe3619684",
+  "completed_at": "2026-08-21T02:31:00.672744+09:00",
+  "document_count": 75
+}

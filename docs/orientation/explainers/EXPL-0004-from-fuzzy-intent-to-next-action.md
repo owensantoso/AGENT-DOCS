@@ -1,6 +1,9 @@
 ---
 type: explainer
-id: EXPL-0004
+document_format_version: 2
+id: 01a02039-7a66-7fba-80e7-56b4fd882e77
+aliases:
+  - "EXPL-0004"
 title: From Fuzzy Intent To Next Action
 domain: orientation
 status: draft

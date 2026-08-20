@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7a08-8b65-d8c41bbf51db
+aliases: []
 title: IMPL-0006-02 Generated View Upgrade Writes Briefing
 domain: repo-health
 status: completed

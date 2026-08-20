@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7c93-b3e0-7413616c55ef
+aliases: []
 title: PLAN-0004 Public Readiness
 domain: repo-health
 status: completed

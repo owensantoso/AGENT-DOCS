@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7725-bb5a-95f9562a156b
+aliases: []
 title: PLAN-0005 Post Review Upgrade Semantics
 domain: repo-health
 status: completed

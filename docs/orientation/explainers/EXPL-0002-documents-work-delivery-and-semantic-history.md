@@ -1,6 +1,9 @@
 ---
 type: explainer
-id: EXPL-0002
+document_format_version: 2
+id: 01a02039-7a66-79f7-a14a-4cf1ac804b98
+aliases:
+  - "EXPL-0002"
 title: Documents, Work, Delivery, And Semantic History
 domain: orientation
 status: draft

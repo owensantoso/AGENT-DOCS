@@ -18,6 +18,12 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
   preimage and postimage hashes, assigned UUIDs, and a receipt path. Write mode
   requires the exact plan to be committed, refuses divergent preimages before
   mutation, resumes partial expected postimages, and writes the receipt last.
+- `doctor` now inspects the canonical UUID migration plan and full completion
+  receipt, reports `ready` or `in_progress` with an exact resume command, and
+  refuses invalid receipts. Completed migrations permit later content edits
+  while enforcing planned UUIDs, historical aliases, and a v2-only corpus.
+- Fresh aliasless audit records now validate without requiring a legacy
+  `AUDT-####` alias.
 - Added named release `2026.08.21.1`, manifest schema version 2, and the
   independent `document_format_target`. `doctor` reads schema 1 compatibly and
   reports manifest and document-format migrations separately; tooling-only

@@ -1,6 +1,9 @@
 ---
 type: concept
-id: CONC-0003
+document_format_version: 2
+id: 01a02039-7a65-7635-9bc4-d275e9337510
+aliases:
+  - "CONC-0003"
 title: Open Loop Review Cadence
 domain: repo-health
 status: draft

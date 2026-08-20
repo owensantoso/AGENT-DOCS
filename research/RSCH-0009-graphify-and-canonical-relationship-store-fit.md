@@ -1,6 +1,9 @@
 ---
 type: research-survey
-id: RSCH-0009
+document_format_version: 2
+id: 01a02039-7a68-7236-a04a-c2e12da6abb5
+aliases:
+  - "RSCH-0009"
 title: Graphify And Canonical Relationship Store Fit
 domain: architecture
 status: completed

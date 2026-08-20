@@ -1,6 +1,9 @@
 ---
 type: implementation-brief
-id: IMPL-0004-02
+document_format_version: 2
+id: 01a02039-7a67-701d-b0e3-5367330b8ab3
+aliases:
+  - "IMPL-0004-02"
 title: Release Checks And CI
 domain: repo-health
 status: completed

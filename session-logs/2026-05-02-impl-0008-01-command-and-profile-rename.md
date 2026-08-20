@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7fd6-acd1-3f6431d9b964
+aliases: []
 title: IMPL-0008-01 Command And Profile Rename
 domain: repo-health
 status: completed

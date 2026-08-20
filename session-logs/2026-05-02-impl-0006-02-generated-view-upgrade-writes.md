@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7e35-b6b3-3934e721ecbb
+aliases: []
 title: IMPL-0006-02 Generated View Upgrade Writes
 domain: repo-health
 status: completed

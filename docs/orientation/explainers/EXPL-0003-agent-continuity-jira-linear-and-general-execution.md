@@ -1,6 +1,9 @@
 ---
 type: explainer
-id: EXPL-0003
+document_format_version: 2
+id: 01a02039-7a66-749e-bb5b-ea247371c8f2
+aliases:
+  - "EXPL-0003"
 title: Agent Continuity, Jira, Linear, And General Execution
 domain: orientation
 status: draft

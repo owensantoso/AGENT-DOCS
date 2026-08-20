@@ -1,6 +1,9 @@
 ---
 type: evaluation
-id: EVAL-0002
+document_format_version: 2
+id: 01a02039-7a67-7e60-976d-d2a36f58346f
+aliases:
+  - "EVAL-0002"
 title: Documentation Ceremony And Recovery Value
 domain: repo-health
 status: archived

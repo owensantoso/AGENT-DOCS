@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a6a-7dd7-a80f-76a95ba6409b
+aliases: []
 title: Personal-First Research And Relationship Store
 domain: agent-continuity
 status: completed

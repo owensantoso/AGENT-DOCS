@@ -1,6 +1,9 @@
 ---
 type: plan
-id: PLAN-0011
+document_format_version: 2
+id: 01a02039-7a66-7447-8ff6-d33c3e7bbc7a
+aliases:
+  - "PLAN-0011"
 title: Agent Continuity Structured Docs Command
 domain: repo-health
 status: completed

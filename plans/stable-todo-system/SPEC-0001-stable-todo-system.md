@@ -1,6 +1,9 @@
 ---
 type: spec
-id: SPEC-0001
+document_format_version: 2
+id: 01a02039-7a67-7704-bed2-d4cbd7cbabdc
+aliases:
+  - "SPEC-0001"
 title: Stable Todo System
 spec_type: improvement
 domain: docs-meta

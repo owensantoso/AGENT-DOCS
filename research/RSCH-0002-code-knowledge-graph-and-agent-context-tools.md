@@ -1,6 +1,9 @@
 ---
 type: research-survey
-id: RSCH-0002
+document_format_version: 2
+id: 01a02039-7a68-7a0f-82f2-76f2c2fb8784
+aliases:
+  - "RSCH-0002"
 title: Code Knowledge Graph And Agent Context Tools
 domain: research
 status: completed

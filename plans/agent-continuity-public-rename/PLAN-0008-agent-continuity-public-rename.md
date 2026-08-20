@@ -1,6 +1,9 @@
 ---
 type: plan
-id: PLAN-0008
+document_format_version: 2
+id: 01a02039-7a66-7e24-8751-53bbf06018da
+aliases:
+  - "PLAN-0008"
 title: Agent Continuity Public Rename
 domain: repo-health
 status: completed

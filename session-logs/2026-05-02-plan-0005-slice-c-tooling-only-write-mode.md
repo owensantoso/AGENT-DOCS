@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-747e-894c-2375e752d061
+aliases: []
 title: PLAN-0005 Slice C Tooling-Only Write Mode
 domain: repo-health
 status: completed

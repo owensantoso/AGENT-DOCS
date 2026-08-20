@@ -1,6 +1,9 @@
 ---
 type: explainer
-id: EXPL-0001
+document_format_version: 2
+id: 01a02039-7a65-7e28-a799-5c377cda19d6
+aliases:
+  - "EXPL-0001"
 title: Agent Continuity Baseline Manifest
 domain: orientation
 status: draft

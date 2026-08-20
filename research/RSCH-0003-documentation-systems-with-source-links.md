@@ -1,6 +1,9 @@
 ---
 type: research-survey
-id: RSCH-0003
+document_format_version: 2
+id: 01a02039-7a68-729d-b46c-1914685ec7ee
+aliases:
+  - "RSCH-0003"
 title: Documentation Systems With Source Links
 domain: research
 status: completed

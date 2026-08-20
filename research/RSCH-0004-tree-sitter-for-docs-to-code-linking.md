@@ -1,6 +1,9 @@
 ---
 type: research-survey
-id: RSCH-0004
+document_format_version: 2
+id: 01a02039-7a68-7fb5-a73c-47bd79807822
+aliases:
+  - "RSCH-0004"
 title: Tree Sitter For Docs To Code Linking
 domain: research
 status: completed

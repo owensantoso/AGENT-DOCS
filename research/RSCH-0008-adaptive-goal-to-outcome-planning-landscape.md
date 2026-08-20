@@ -1,6 +1,9 @@
 ---
 type: research-survey
-id: RSCH-0008
+document_format_version: 2
+id: 01a02039-7a68-71be-a2b2-624187822473
+aliases:
+  - "RSCH-0008"
 title: Adaptive Goal-To-Outcome Planning Research Landscape
 domain: research
 status: completed

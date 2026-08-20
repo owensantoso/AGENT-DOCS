@@ -207,7 +207,11 @@ agent-continuity upgrade --dry-run /path/to/project
 
 `doctor` reports manifest health, missing owned tooling, checksum drift, safe
 automatic additions, candidate tooling updates, generated-view refreshes, project-owned manual
-review items, and refused or unknown shapes. Bare `agent-continuity upgrade` and
+review items, UUID migration state, and refused or unknown shapes. When the
+canonical migration plan exists, it verifies the matching receipt and reports
+`ready`, `in_progress`, or `completed`, including the exact resume command when
+work remains. A valid completion receipt closes the v1 compatibility window for
+that migrated corpus. Bare `agent-continuity upgrade` and
 `agent-continuity upgrade --dry-run` use the same read-only classifier and preview
 categories only.
 

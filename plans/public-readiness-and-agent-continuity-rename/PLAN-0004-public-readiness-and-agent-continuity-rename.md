@@ -1,6 +1,9 @@
 ---
 type: plan
-id: PLAN-0004
+document_format_version: 2
+id: 01a02039-7a67-71ef-b571-7e400b955174
+aliases:
+  - "PLAN-0004"
 title: Public Readiness And Agent Continuity Rename
 domain: repo-health
 status: completed

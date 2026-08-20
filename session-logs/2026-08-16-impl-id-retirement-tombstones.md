@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a6a-7bc6-b14b-c2fe3df71fcf
+aliases: []
 title: IMPL ID retirement tombstones
 status: completed
 created_at: "2026-08-16 05:47:52 JST +0900"

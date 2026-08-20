@@ -1,6 +1,9 @@
 ---
 type: implementation-brief
-id: IMPL-0008-01
+document_format_version: 2
+id: 01a02039-7a66-7956-bf6c-64e447637264
+aliases:
+  - "IMPL-0008-01"
 title: Command And Profile Rename
 domain: repo-health
 status: completed

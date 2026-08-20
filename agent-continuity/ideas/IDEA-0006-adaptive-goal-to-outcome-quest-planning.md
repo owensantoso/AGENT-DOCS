@@ -1,6 +1,9 @@
 ---
 type: idea
-id: IDEA-0006
+document_format_version: 2
+id: 01a02039-7a65-72fa-9ffb-9800cd55624b
+aliases:
+  - "IDEA-0006"
 title: Adaptive Goal-To-Outcome Quest Planning
 domain: agent-continuity
 status: captured

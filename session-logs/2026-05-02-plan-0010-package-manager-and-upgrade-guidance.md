@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-78f9-8b77-ad9c9eaa0be4
+aliases: []
 title: PLAN-0010 Package Manager And Upgrade Guidance
 domain: repo-health
 status: completed

@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-72f6-842f-4282e87b761b
+aliases: []
 title: PLAN-0005 Slice B Doctor And Upgrade Dry Run
 domain: repo-health
 status: completed

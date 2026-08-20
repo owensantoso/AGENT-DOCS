@@ -1616,15 +1616,50 @@ def require_ancestor(repo_root: Path, ancestor: str, label: str) -> None:
         raise SystemExit(f"Migration {label} {ancestor} is not an ancestor of HEAD")
 
 
-def migration_receipt_valid(receipt_path: Path, migration_id: str, plan_sha256: str) -> bool:
+def migration_receipt_valid(
+    receipt_path: Path,
+    migration_id: str,
+    plan_sha256: str,
+    plan_rel: str,
+    plan_commit: str,
+    document_count: int,
+    repo_root: Path,
+) -> bool:
     if not receipt_path.exists():
         return False
+    if receipt_path.is_symlink() or not receipt_path.is_file():
+        raise SystemExit(f"Migration receipt is not a regular file: {receipt_path}")
     try:
         receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise SystemExit(f"Invalid migration receipt JSON: {exc}") from exc
-    if receipt.get("migration_id") != migration_id or receipt.get("plan_sha256") != plan_sha256:
+    if not isinstance(receipt, dict):
+        raise SystemExit(f"Migration receipt must be a JSON object: {receipt_path}")
+    expected = {
+        "schema_version": 1,
+        "migration_type": DOCUMENT_MIGRATION_TYPE,
+        "migration_id": migration_id,
+        "plan_path": plan_rel,
+        "plan_sha256": plan_sha256,
+        "plan_commit": plan_commit,
+        "document_count": document_count,
+    }
+    mismatched = [key for key, value in expected.items() if receipt.get(key) != value]
+    applied_on_head = receipt.get("applied_on_head")
+    completed_at = receipt.get("completed_at")
+    if not isinstance(applied_on_head, str) or not re.fullmatch(r"[0-9a-f]{40}", applied_on_head):
+        mismatched.append("applied_on_head")
+    if not isinstance(completed_at, str) or not completed_at:
+        mismatched.append("completed_at")
+    else:
+        try:
+            dt.datetime.fromisoformat(completed_at.replace("Z", "+00:00"))
+        except ValueError:
+            mismatched.append("completed_at")
+    if mismatched:
         raise SystemExit(f"Migration receipt does not match plan: {receipt_path}")
+    assert isinstance(applied_on_head, str)
+    require_ancestor(repo_root, applied_on_head, "receipt applied_on_head")
     return True
 
 
@@ -1733,6 +1768,86 @@ def migration_document_states(repo_root: Path, plan: dict[str, object]) -> list[
     return states
 
 
+def completed_migration_states(repo_root: Path, root: Path, plan: dict[str, object]) -> list[dict[str, object]]:
+    excludes = plan.get("excludes", [])
+    assert isinstance(excludes, list)
+    docs = format_docs(root, [str(item) for item in excludes])
+    docs_by_path = {doc.path.resolve().relative_to(repo_root).as_posix(): doc for doc in docs}
+    errors = validate_identity_graph(docs)
+    for doc in docs:
+        if doc.document_format_version == 1:
+            errors.append(
+                f"Completed UUID migration requires document format v2; found v1 document {doc.relpath}"
+            )
+        errors.extend(validate_document_identity(doc))
+    states: list[dict[str, object]] = []
+    documents = plan["documents"]
+    assert isinstance(documents, list)
+    for entry in documents:
+        assert isinstance(entry, dict)
+        path_value = str(entry["path"])
+        doc = docs_by_path.get(path_value)
+        if doc is None:
+            errors.append(f"Completed UUID migration document is missing from the authored corpus: {path_value}")
+            continue
+        planned_uuid = str(entry["uuid"])
+        planned_aliases = {str(alias) for alias in entry.get("aliases", [])}
+        if doc.canonical_id != planned_uuid:
+            errors.append(f"Completed UUID migration identity drift in {path_value}: expected {planned_uuid}")
+        missing_aliases = sorted(planned_aliases - set(doc.aliases))
+        if missing_aliases:
+            errors.append(
+                f"Completed UUID migration lost planned aliases in {path_value}: {', '.join(missing_aliases)}"
+            )
+        current_hash = sha256_bytes(doc.path.read_bytes())
+        state = "postimage" if current_hash == entry.get("postimage_sha256") else "evolved"
+        states.append({"path": path_value, "state": state, "current_sha256": current_hash, "entry": entry})
+    if errors:
+        raise SystemExit("Completed UUID migration validation failed: " + "; ".join(errors))
+    return states
+
+
+def completed_migration_policy_errors(root: Path) -> list[str]:
+    try:
+        repo_root = git_repo_root(root)
+    except SystemExit:
+        return []
+    plan_rel = ".agent-continuity/migrations/document-format-v2.json"
+    plan_path = repo_root / plan_rel
+    if not plan_path.is_file():
+        return []
+    try:
+        plan = load_migration_plan(plan_path)
+        source_root = str(plan.get("source_root", "."))
+        if (repo_root / source_root).resolve() != root.resolve():
+            return []
+        receipt_value = plan.get("receipt_path")
+        if not isinstance(receipt_value, str):
+            return []
+        receipt_path, receipt_rel = repo_relative_path(receipt_value, repo_root)
+        if not receipt_path.exists():
+            return []
+        plan_bytes = plan_path.read_bytes()
+        plan_sha256 = sha256_bytes(plan_bytes)
+        validate_migration_plan(plan, repo_root, root, plan_rel, receipt_rel)
+        plan_commit = git_plan_commit(repo_root, plan_rel)
+        documents = plan["documents"]
+        assert isinstance(documents, list)
+        migration_receipt_valid(
+            receipt_path,
+            str(plan["migration_id"]),
+            plan_sha256,
+            plan_rel,
+            plan_commit,
+            len(documents),
+            repo_root,
+        )
+        completed_migration_states(repo_root, root, plan)
+    except SystemExit as exc:
+        return [str(exc)]
+    return []
+
+
 def apply_uuid_migration(root: Path, plan_value: str, write: bool) -> dict[str, object]:
     repo_root = git_repo_root(root)
     plan_path, plan_rel = repo_relative_path(plan_value, repo_root)
@@ -1748,13 +1863,35 @@ def apply_uuid_migration(root: Path, plan_value: str, write: bool) -> dict[str, 
         raise SystemExit("Migration plan is missing receipt_path")
     receipt_path, receipt_rel = repo_relative_path(receipt_value, repo_root)
     validate_migration_plan(plan, repo_root, root, plan_rel, receipt_rel)
+    migration_id = str(plan["migration_id"])
+    receipt_plan_commit = git_plan_commit(repo_root, plan_rel) if receipt_path.exists() else ""
+    documents = plan["documents"]
+    assert isinstance(documents, list)
+    receipt_valid = migration_receipt_valid(
+        receipt_path,
+        migration_id,
+        plan_sha256,
+        plan_rel,
+        receipt_plan_commit,
+        len(documents),
+        repo_root,
+    )
+    if receipt_valid:
+        states = completed_migration_states(repo_root, root, plan)
+        return {
+            "state": "completed",
+            "migration_id": migration_id,
+            "plan_path": plan_rel,
+            "plan_sha256": plan_sha256,
+            "receipt_path": receipt_rel,
+            "documents": [{"path": item["path"], "state": item["state"]} for item in states],
+        }
+
     states = migration_document_states(repo_root, plan)
     conflicts = [item for item in states if item["state"] == "conflict"]
     if conflicts:
         raise SystemExit("UUID migration preimage conflict: " + ", ".join(str(item["path"]) for item in conflicts))
 
-    migration_id = str(plan["migration_id"])
-    receipt_valid = migration_receipt_valid(receipt_path, migration_id, plan_sha256)
     remaining = sum(1 for item in states if item["state"] == "preimage")
     if remaining:
         state = "in_progress" if remaining < len(states) else "ready"
@@ -3835,6 +3972,7 @@ def update(root: Path, docs: list[Doc]) -> None:
 
 def check(root: Path, docs: list[Doc]) -> int:
     errors: list[str] = validate_identity_graph(docs)
+    errors.extend(completed_migration_policy_errors(root))
     seen: dict[str, str] = {}
     for doc in docs:
         doc_id = doc.primary_id
@@ -4633,7 +4771,7 @@ def validate_frontmatter(doc: Doc, docs: list[Doc] | None = None) -> list[str]:
 
     if doc_type == "repo-health-audit":
         doc_id = doc.primary_id
-        if not re.fullmatch(r"AUDT-\d{4}", doc_id):
+        if doc.document_format_version == 1 and not re.fullmatch(r"AUDT-\d{4}", doc_id):
             errors.append(f"Audit {doc.relpath} must use id AUDT-####")
         audit_kind = doc.frontmatter.get("audit_kind")
         if audit_kind not in AUDIT_KINDS:

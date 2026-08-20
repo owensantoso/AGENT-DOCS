@@ -1,6 +1,9 @@
 ---
 type: implementation-brief
-id: IMPL-0002-01
+document_format_version: 2
+id: 01a02039-7a67-7257-ba85-7b2ccd1587c1
+aliases:
+  - "IMPL-0002-01"
 title: Todo Parser, Checks, and Agent Guidance
 domain: docs-meta
 status: completed

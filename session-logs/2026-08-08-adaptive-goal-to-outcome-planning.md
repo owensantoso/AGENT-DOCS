@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7df8-a9f7-66ebbbffc542
+aliases: []
 title: Capture Adaptive Goal-To-Outcome Planning
 domain: agent-continuity
 status: completed

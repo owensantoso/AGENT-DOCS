@@ -1,6 +1,9 @@
 ---
 type: implementation-brief
-id: IMPL-0001-01
+document_format_version: 2
+id: 01a02039-7a66-7841-a406-109cd95c6b70
+aliases:
+  - "IMPL-0001-01"
 title: Link Graph and Safe Move Foundation
 domain: docs-meta
 status: completed

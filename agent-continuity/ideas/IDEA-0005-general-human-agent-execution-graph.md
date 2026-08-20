@@ -1,6 +1,9 @@
 ---
 type: idea
-id: IDEA-0005
+document_format_version: 2
+id: 01a02039-7a65-7ed7-ba2c-b1ffb1466060
+aliases:
+  - "IDEA-0005"
 title: General Human-Agent Execution Graph
 domain: agent-continuity
 status: captured

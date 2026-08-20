@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7638-bdd5-65328c8116d2
+aliases: []
 title: PLAN-0009 GitHub Repo Rename
 domain: repo-health
 status: completed

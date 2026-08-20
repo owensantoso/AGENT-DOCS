@@ -1,6 +1,9 @@
 ---
 type: concept
-id: CONC-0001
+document_format_version: 2
+id: 01a02039-7a65-7427-87e5-55bcd00b0b4c
+aliases:
+  - "CONC-0001"
 title: Read-Only SQLite Docs Index
 domain: structured-docs
 status: draft

@@ -1,6 +1,9 @@
 ---
 type: implementation-brief
-id: IMPL-0006-02
+document_format_version: 2
+id: 01a02039-7a66-75ad-8523-1236115078da
+aliases:
+  - "IMPL-0006-02"
 title: Generated View Upgrade Writes
 domain: repo-health
 status: completed

@@ -1,5 +1,8 @@
 ---
 type: session-log
+document_format_version: 2
+id: 01a02039-7a69-7be8-9bd5-ed5574749ac1
+aliases: []
 title: Capture Federated Document Library And Relationship Graph
 status: completed
 created_at: "2026-08-07 15:49:57 JST +0900"

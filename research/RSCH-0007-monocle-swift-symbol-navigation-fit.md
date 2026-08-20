@@ -1,6 +1,9 @@
 ---
 type: research-survey
-id: RSCH-0007
+document_format_version: 2
+id: 01a02039-7a68-730a-880e-3da1f49fc66a
+aliases:
+  - "RSCH-0007"
 title: Monocle Swift Symbol Navigation Fit
 domain: research
 status: completed
