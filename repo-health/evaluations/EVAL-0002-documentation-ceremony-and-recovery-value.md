@@ -3,9 +3,9 @@ type: evaluation
 id: EVAL-0002
 title: Documentation Ceremony And Recovery Value
 domain: repo-health
-status: draft
+status: archived
 created_at: "2026-08-20 17:13:32 JST +0900"
-updated_at: "2026-08-20 17:29:44 JST +0900"
+updated_at: "2026-08-20 22:33:40 JST +0900"
 owner: "Codex main agent"
 hypothesis: "An adaptive Agent Continuity packet improves accepted task outcomes, cold recovery, and provenance accuracy enough to repay its authoring, retrieval, and maintenance cost; a derived control plane further improves retrieval without becoming a second source of truth."
 artifact_root: artifacts/evaluations/EVAL-0002/
@@ -28,14 +28,20 @@ linked_paths:
   - agent-continuity/ideas/IDEA-0003-federated-document-library-and-relationship-graph.md
 repo_state:
   based_on_commit: 7ec866c4557e941e1cb5577e3c4be531ac46c940
-  last_reviewed_commit: 7ec866c4557e941e1cb5577e3c4be531ac46c940
+  last_reviewed_commit: 0de3c733c69f706dbd04ba6ce40879bb739f5f08
 ---
 
 # EVAL-0002 - Documentation Ceremony And Recovery Value
 
+## Parked - 2026-08-20
+
+This protocol is retained for a future ceremony or token-efficiency investigation, but no run is scheduled. Native Agent Continuity design continues without requiring this evaluation first.
+
+Reopen it only after a concrete signal such as repeated cold-recovery failure, measurable maintenance burden, retrieval overhead, or a deliberate simplification effort. Until then it should create no fixtures, harness work, or adoption obligation.
+
 ## Status And Decision Boundary
 
-This is a pre-run protocol. No results exist yet.
+This is a preserved pre-run protocol. No results exist.
 
 The evaluation may recommend that Agent Continuity document types remain core, become trigger-only, merge into another owner, or retire. It may also recommend a bounded Spec Kit or OpenSpec pilot. It does not authorize installing either tool, migrating repositories, deleting documents, or changing the ID schema.
 

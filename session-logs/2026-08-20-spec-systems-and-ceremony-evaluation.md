@@ -4,7 +4,7 @@ title: Spec Systems And Ceremony Evaluation
 domain: agent-continuity
 status: completed
 created_at: "2026-08-20 17:13:32 JST +0900"
-updated_at: "2026-08-20 17:29:44 JST +0900"
+updated_at: "2026-08-20 22:33:40 JST +0900"
 started_at: "2026-08-20 17:13:32 JST +0900"
 ended_at: "2026-08-20 17:29:44 JST +0900"
 timezone: "JST +0900"
@@ -121,3 +121,9 @@ These are research and protocol decisions. No durable product architecture decis
 - Use calibration results to classify document types as core, trigger-only, merge candidates, or retire candidates.
 - Pilot a live tool only if the artifact and surfacing comparisons identify a concrete gap.
 - Handle branch-safe IDs, aliases, and typed relationships as a separate schema and migration decision.
+
+## Follow-Up Correction - 2026-08-20 22:33 JST
+
+The breadth of the comparison became cognitively expensive before it produced a necessary implementation decision. Source: orchestration and presentation scope, not a failure of the underlying research.
+
+Owen selected the native Agent Continuity direction for continued design. `RSCH-0010` and `EVAL-0002` are now parked references with explicit reopen triggers rather than active gates. `IDEA-0003` now separates immutable UUID identity, mutable filename locators, Markdown content, document-node records, canonical relationship assertions, and derived graph projections. No schema or corpus migration was implemented in this follow-up.

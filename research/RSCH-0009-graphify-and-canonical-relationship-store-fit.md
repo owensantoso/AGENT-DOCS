@@ -5,7 +5,7 @@ title: Graphify And Canonical Relationship Store Fit
 domain: architecture
 status: completed
 created_at: "2026-08-08 18:34:41 JST +0900"
-updated_at: "2026-08-08 18:53:49 JST +0900"
+updated_at: "2026-08-20 22:33:40 JST +0900"
 owner: "Codex main agent"
 question: "Should Agent Continuity extract typed relationships from document frontmatter into a canonical graph, what role should Graphify play, and what is the smallest personal-first storage architecture?"
 source:
@@ -51,7 +51,7 @@ linked_paths:
   - agent-continuity/ideas/IDEA-0004-semantic-history-and-work-projections.md
 repo_state:
   based_on_commit: 9750871c50443d669e20be01e684fa8c1ce8b37b
-  last_reviewed_commit: 9750871c50443d669e20be01e684fa8c1ce8b37b
+  last_reviewed_commit: 0de3c733c69f706dbd04ba6ce40879bb739f5f08
 ---
 
 # RSCH-0009 - Graphify And Canonical Relationship Store Fit
@@ -68,7 +68,7 @@ The user's normalization instinct is correct, with one Graphify correction:
 
 Agent Continuity should store each explicit typed relationship once outside the two endpoint documents, then generate children, parents, inverse labels, backlinks, graph views, and health checks. This removes duplicated reciprocal assertions.
 
-The recommended personal-first architecture is:
+The original recommended personal-first architecture was:
 
 1. Markdown owns intrinsic document facts.
 2. Source-sharded YAML relation files own explicit typed relationships once.
@@ -77,6 +77,20 @@ The recommended personal-first architecture is:
 5. No graph database is needed initially.
 
 The storage mechanics are straightforward. The medium-difficulty work is defining predicates, authority, migration, privacy, validation, and one editable owner per fact.
+
+## 2026-08-20 Native-Design Refinement
+
+The graph-native direction now extends from relationships to the document-node metadata that participates in workflow. The refined ownership split is:
+
+1. Markdown keeps an embedded UUID binding reference, H1 title, body, inline links, and citations.
+2. A document node record owns immutable identity, kind, lifecycle status, current locator, legacy aliases, and graph-relevant provenance.
+3. A relationship assertion owns one typed edge between UUID-addressed entities.
+4. SQLite and user interfaces remain rebuildable projections.
+5. Graphify remains optional analysis and candidate-edge generation.
+
+The UUID binding is deliberately left in the Markdown. It is a foreign-key-style reference to the identity-owning node, not a second independently editable identity assertion. If both identity and locator lived only outside the file, a free filename change could sever the binding unless every rename used one transactional tool. The embedded reference lets a scan rediscover and rebind the same node after ordinary Git or filesystem moves.
+
+This refinement supersedes the ownership table below where it says all intrinsic metadata remains in frontmatter. It does not change the research conclusion that relationships should be stored once or that a graph database is unnecessary for the first implementation.
 
 ## Three Meanings Of “The Graph Is The Source Of Truth”
 
@@ -129,18 +143,21 @@ There is also a current representation mismatch: some `related_*` frontmatter va
 
 | Fact kind | Canonical owner | Example |
 |---|---|---|
-| Intrinsic document metadata | Markdown/frontmatter | `id`, `type`, `title`, lifecycle `status`, body |
-| Explicit authored relationship | Versioned relation source | `IMPL-0012-01 part_of PLAN-0012` |
+| Authored document content | Markdown | UUID binding reference, H1 title, body |
+| Document-node metadata | Versioned node record | UUID identity, kind, lifecycle status, current locator, legacy aliases |
+| Explicit authored relationship | Versioned assertion source | `brief-uuid part_of plan-uuid` |
 | Textual reference occurrence | Markdown body | A sentence links to an ADR |
-| Inverse or backlink | Generated index/view | PLAN-0012 shows child IMPL-0012-01 |
+| Inverse or backlink | Generated index/view | A plan view shows its child brief |
 | Extracted relationship | Generated index | Markdown file links to another file |
 | Inferred relationship | Candidate queue | Two concepts may describe the same subsystem |
 | Provider-native relationship | External provider | GitHub issue 12 is blocked by issue 9 |
 | Cross-provider semantic relationship | Agent Continuity relation source | Plan delivered by GitHub pull request 88 |
 
-Not every current field should move immediately:
+Do not move every current field at once:
 
-- Keep identity, type, title, status, timestamps, and likely document ownership in the document.
+- Add the UUID anchor first and retain current frontmatter during compatibility migration.
+- Move kind, lifecycle state, current locator, aliases, and graph-relevant provenance only after document-node records and rename recovery are proven.
+- Keep the human title and authored body in Markdown.
 - Move well-defined semantic edges such as `parent_plan`, `depends_on`, `promoted_to`, `supersedes`, `resolved_by`, `evidenced_by`, and delivery links.
 - Generate `superseded_by`, child lists, and backlinks.
 - Audit generic `related_*` fields because many are navigation hints without a precise predicate.
@@ -154,8 +171,9 @@ Not every current field should move immediately:
 flowchart TD
     subgraph SOURCES["Git-reviewable canonical sources"]
         direction LR
-        DOCS["Markdown documents<br/>identity, state, and content"]
-        RELS["Relation files<br/>explicit typed edges"]
+        DOCS["Markdown documents<br/>UUID anchor + authored content"]
+        NODES["Document-node files<br/>kind, state, locator, aliases"]
+        RELS["Assertion files<br/>explicit typed edges"]
     end
 
     PROVIDERS["External providers<br/>GitHub, agents, and services"]
@@ -165,6 +183,7 @@ flowchart TD
     REVIEW["Candidate review<br/>accept or reject"]
 
     DOCS -->|"Read and indexed"| INDEX
+    NODES -->|"Read and indexed"| INDEX
     RELS -->|"Read and indexed"| INDEX
     PROVIDERS -->|"Observed state"| INDEX
     INDEX -->|"Serves projections"| APP
@@ -175,42 +194,34 @@ flowchart TD
 
 The diagram shows data lineage, not a chosen live synchronization mechanism. File watching, refresh, provider polling, and webhooks remain implementation decisions.
 
-## Canonical Relationship Files
+## Canonical Graph Records
 
-Use one relation file per source entity to keep Git diffs readable and reduce unrelated conflicts:
+Keep document nodes and relationship assertions in simple Git-reviewable files. One relation file per subject keeps diffs readable and reduces unrelated conflicts:
 
 ```text
 .agent-continuity/
-  relations/
-    IMPL-0012-01.yaml
-    PLAN-0012.yaml
+  graph/
+    nodes/
+      019d2f60-7d3a-7bb0-bf46-ae03ee6b6472.yaml
+    relations/
+      019d2f62-a44e-75cb-98c9-38e95b8980d3.yaml
 ```
 
 Minimum candidate shape:
 
 ```yaml
 schema_version: 1
-subject:
-  project: tab-launcher
-  id: IMPL-0012-01
+subject: 019d2f62-a44e-75cb-98c9-38e95b8980d3
 
 edges:
-  - predicate: part_of
-    object:
-      project: tab-launcher
-      id: PLAN-0012
-
-  - predicate: implements
-    object:
-      project: tab-launcher
-      id: SPEC-0012
-    evidence:
-      - session: SESSION-0041
+  - id: 019d2f64-0b4c-79ca-880b-731480aa88b6
+    predicate: part_of
+    object: 019d2f60-7d3a-7bb0-bf46-ae03ee6b6472
 ```
 
 The file class already means these are explicit authored assertions, so an `authority: explicit` value need not be repeated on every edge. Git provides author, timestamp, commit identity, diff, and history.
 
-Use stable project IDs plus entity IDs for cross-repository references. A private edge to a public node must live only in the private source. Directed edges normally live with their subject. A genuinely symmetric relation should be stored once using canonical endpoint ordering or a workspace-owned assertion.
+Use stable project IDs plus entity UUIDs for cross-repository references. A private edge to a public node must live only in the private source. Directed edges normally live with their subject. A genuinely symmetric relation should be stored once using canonical endpoint ordering or a workspace-owned assertion.
 
 ## Generated SQLite Index
 

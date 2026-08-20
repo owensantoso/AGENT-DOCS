@@ -3,9 +3,9 @@ type: research-survey
 id: RSCH-0010
 title: Spec Systems And Agent Continuity Fit
 domain: architecture
-status: completed
+status: archived
 created_at: "2026-08-20 17:13:32 JST +0900"
-updated_at: "2026-08-20 17:29:44 JST +0900"
+updated_at: "2026-08-20 22:33:40 JST +0900"
 owner: "Codex main agent"
 question: "Which parts of Spec Kit, OpenSpec, and Agent Continuity solve distinct jobs, which parts overlap, and what should be retained, replaced, or evaluated before changing Agent Continuity?"
 source:
@@ -59,10 +59,23 @@ linked_paths:
   - repo-health/evaluations/EVAL-0002-documentation-ceremony-and-recovery-value.md
 repo_state:
   based_on_commit: 7ec866c4557e941e1cb5577e3c4be531ac46c940
-  last_reviewed_commit: 7ec866c4557e941e1cb5577e3c4be531ac46c940
+  last_reviewed_commit: 0de3c733c69f706dbd04ba6ce40879bb739f5f08
 ---
 
 # RSCH-0010 - Spec Systems And Agent Continuity Fit
+
+## Parked Reference - 2026-08-20
+
+This comparison is preserved but no longer drives an adoption path. The selected direction is to continue designing Agent Continuity's native identity and canonical graph model without adding OpenSpec or Spec Kit as a second workflow owner.
+
+Reopen this research only when at least one concrete pressure appears:
+
+- document ceremony or maintenance consumes enough time or tokens to measure
+- cold agents cannot find governing truth despite the control-plane work
+- collaboration requires an interoperable external workflow
+- a simpler baseline is needed for an evaluation or deliberate reduction pass
+
+The analysis below remains useful reference material, not a queued pilot or migration plan.
 
 ## Question
 
