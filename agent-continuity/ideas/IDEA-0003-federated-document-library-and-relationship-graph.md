@@ -5,7 +5,7 @@ title: Federated Document Library And Canonical Relationship Graph
 domain: agent-continuity
 status: captured
 created_at: "2026-08-07 15:49:57 JST +0900"
-updated_at: "2026-08-11 03:23:13 JST +0900"
+updated_at: "2026-08-20 17:29:44 JST +0900"
 owner: Codex main agent
 source:
   type: conversation
@@ -19,12 +19,16 @@ related_specs: []
 related_research:
   - ../../research/RSCH-0002-code-knowledge-graph-and-agent-context-tools.md
   - ../../research/RSCH-0009-graphify-and-canonical-relationship-store-fit.md
+  - ../../research/RSCH-0010-spec-systems-and-agent-continuity-fit.md
+related_evaluations:
+  - ../../repo-health/evaluations/EVAL-0002-documentation-ceremony-and-recovery-value.md
 related_issues: []
 related_prs: []
 related_sessions:
   - ../../session-logs/2026-08-07-federated-document-library-and-relationship-graph.md
   - ../../session-logs/2026-08-08-personal-first-research-and-relationship-store.md
   - ../../session-logs/2026-08-08-repository-boundary-and-graph-authority-clarification.md
+  - ../../session-logs/2026-08-20-spec-systems-and-ceremony-evaluation.md
 linked_paths: []
 promoted_to: []
 repo_state:
@@ -48,6 +52,26 @@ The proposed rule is **one canonical owner per fact**:
 - A relationship store owns each explicit typed edge exactly once.
 - Generated indexes and user interfaces derive both directions, backlinks, groups, and health warnings.
 - External systems continue to own their native facts, such as GitHub issue state or an agent session transcript.
+
+## Current Revamp Hypothesis - 2026-08-20
+
+The latest OpenSpec, Spec Kit, topology, and ceremony research narrows this idea without yet making an adoption decision.
+
+The leading hypothesis is to separate five responsibilities:
+
+1. A small Agent Continuity memory kernel owns current state, governing architecture, stable identity, and canonical-ownership rules.
+2. Exactly one delivery workflow owns each active spec/change, plan, and task set. Agent Continuity, Spec Kit, and OpenSpec are candidates for that role; they must not silently duplicate the same authority.
+3. Ideas, research, evaluations, diagnostics, decisions, learnings, and evidence receipts are trigger-only extensions whose value must be measured.
+4. The human control plane is a derived search, graph, readiness, history, and health projection. It may make rich provenance useful, but it cannot become a second source of truth.
+5. Storage follows authorization, retention, and project lifecycle: private project operations satellites by default, a thin portfolio hub only after multiple satellites prove its needed contents, and a separate personal vault outside ordinary project discovery.
+
+Spec Kit is now a serious lightweight execution baseline because it provides a constitution, feature spec, plan, tasks, cross-artifact analysis, implementation, convergence, and resumable review-gated workflows. OpenSpec remains the strongest candidate for current-spec versus proposed-change semantics and a private cross-repository planning Store. Neither is currently approved for broad adoption.
+
+The companion evaluation in [EVAL-0002](../../repo-health/evaluations/EVAL-0002-documentation-ceremony-and-recovery-value.md) will compare minimal, current/change, adaptive, and complete documentation packets; then separately test whether a control plane reduces retrieval cost on the same corpus. [RSCH-0010](../../research/RSCH-0010-spec-systems-and-agent-continuity-fit.md) holds the source-backed comparison and admission triggers.
+
+The identity direction is related but separate: immutable branch-safe identity should not encode workflow order. Human aliases may remain numeric, while typed relationships express containment, implementation, supersession, evidence, and dependency. Only the `depends_on` projection should be constrained as a directed acyclic graph.
+
+This section is a proposal checkpoint, not an architecture decision or migration plan.
 
 ## How The Idea Evolved
 
