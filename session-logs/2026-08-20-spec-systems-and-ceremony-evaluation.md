@@ -4,7 +4,7 @@ title: Spec Systems And Ceremony Evaluation
 domain: agent-continuity
 status: completed
 created_at: "2026-08-20 17:13:32 JST +0900"
-updated_at: "2026-08-21 00:14:44 JST +0900"
+updated_at: "2026-08-21 01:18:11 JST +0900"
 started_at: "2026-08-20 17:13:32 JST +0900"
 ended_at: "2026-08-20 17:29:44 JST +0900"
 timezone: "JST +0900"
@@ -163,3 +163,27 @@ Owen clarified why reciprocal relationship fields were originally attractive: en
 The proposed response separates authorship from presentation. Store one canonical directed edge, then require the resolved node view used for execution to include outgoing and incoming edges. Predicate-specific inverse labels present the same assertion from either endpoint; `depends_on` becomes static `depended_on_by` from the target, while `blocks` is reserved for a status-dependent presentation. The resolver can scan Markdown on demand, so a generated SQLite index remains an optimization.
 
 Raw single-file self-containment, single authorship, and the absence of any resolver or generated material cannot all hold simultaneously. The remaining open product decision is whether ordinary raw Markdown on a Git host must show incoming relationships. If so, use a mechanically refreshed, explicitly non-canonical generated block; otherwise the repository-scanning node view is the execution entry point. No tooling behavior changed in this follow-up.
+
+## Follow-Up Decisions - 2026-08-21 01:11 JST
+
+Owen accepted the planned-work frontier direction, requested explicit Agent Continuity versioning before UUID migration, and reopened the code-versus-docs repository boundary. Three bounded reviewers checked the current upgrade machinery, Agent Task Graph readiness semantics, and public/private topology.
+
+Current findings and decisions:
+
+- The rough sequence `Agent Meta > Agent Continuity > Agent Task Graph` is an orientation aid, not an authority hierarchy. Agent Meta owns harness policy and improvement, Agent Continuity owns durable project truth, Goal To Outcome owns selection and admission, and Agent Task Graph owns one live execution episode.
+- Agent Continuity `frontier` is proposed to report selected durable work whose represented prerequisites and gates permit consideration at a pinned source revision. Agent Task Graph `ready` already reports pending execution nodes whose incoming execution predecessors succeeded. A separate runtime preflight must still check capacity, tools, permissions, worktree isolation, authorization, external state, and human gates.
+- Agent Continuity already has manifest-schema version 1, source-commit and checksum records, `doctor`, read-only upgrade previews, and narrow tooling-only writes. It has no named tool release, scaffold/adopter version, or document-format version. The current upgrader deliberately does not mutate project-owned Markdown.
+- The UUID change therefore requires a distinct document format v2 and a separate resumable `migrate` workflow. The useful Agent Skills precedent is to separate release identity, schema identity, fingerprints, receipts, and installed state; per-document content revisions are unnecessary because Git already owns that history.
+- Random UUIDs prevent independent new-document allocation collisions but do not prevent two branches from assigning different UUIDs to the same existing document. Existing-doc migration requires one canonical committed plan with preimage hashes and UUIDv7 assignments, idempotent application, and a completion receipt written last.
+- Migrate one project repository at a time. The first identity pass preserves numeric aliases, paths, and existing relationship fields; precise relationship families and optional filename renames follow separately.
+- Do not move every document out of a code repository. Public product truth and contributor-critical docs remain with public code. Private operational memory moves to one private operations repository per coherent project and authorization/retention boundary; one such repository may coordinate several code repositories.
+- A later thin private hub may register projects and genuinely cross-project assertions but must not become a giant canonical docs vault. Private sources may point to public nodes; public sources must not reveal that private sources, backlinks, counts, or repository pointers exist.
+- UUID migration and repository extraction are separate changes. If content was already public, deleting or moving it does not erase Git history.
+
+The proposal and this session record were updated. No release system, manifest schema, migration command, UUID assignment, frontier command, Agent Task Graph adapter, repository move, or public/remote write was implemented.
+
+Verification:
+
+- `scripts/release-check` passed, including installer, init, doctor/upgrade, structured-document, changelog, compile, plan metadata, repo-root link, and diff checks.
+- The pre-existing ignored `scripts/__pycache__` directory was moved aside for the release hygiene gate and restored immediately afterward.
+- A direct subtree metadata check still reports the repository's previously recorded root-relative `linked_paths` debt; no new failure was introduced by this follow-up.
