@@ -7,7 +7,7 @@ title: Spec Systems And Ceremony Evaluation
 domain: agent-continuity
 status: completed
 created_at: "2026-08-20 17:13:32 JST +0900"
-updated_at: "2026-08-21 02:41:52 JST +0900"
+updated_at: "2026-08-21 04:32:03 JST +0900"
 started_at: "2026-08-20 17:13:32 JST +0900"
 ended_at: "2026-08-21 02:41:52 JST +0900"
 timezone: "JST +0900"
@@ -255,3 +255,28 @@ allowing ordinary later edits that retain planned identity and aliases.
 The visibility/repository-boundary question remains parked. No document
 repository split, relationship normalization, broad filename rename, graph
 database, public write, installation, or release publication was performed.
+
+## Follow-Up Correction - 2026-08-21 04:32 JST
+
+What happened: the UUID implementation was reported as done after it was
+committed to local `main`, installed through a local symlink, and verified
+locally, while `origin/main` remained eight commits behind. A replacement Mac
+or any other adopter would still have installed the older numbered-ID release.
+
+What led to it: local installation readiness was incorrectly treated as public
+release completion. Source: agent execution miss. The existing public installer
+already identifies GitHub `main` as its distribution source, so the durable
+recovery criterion was discoverable and should have been applied.
+
+What changed:
+
+- Adopter-facing work distributed from public `main` may be called done only
+  after the exact verified commit is present on `origin/main`, remote CI passes
+  for that commit, and a cold check succeeds through the public install path.
+- A clean local branch or byte-aligned local symlink establishes readiness to
+  publish, not recoverability or availability to other users.
+- If publication is not authorized or remains pending, closeout must say
+  `ready to publish` and identify the missing remote gate.
+
+Verification for the publication itself is recorded by the final remote commit,
+its GitHub Actions run, and the subsequent cold public-install receipt.
