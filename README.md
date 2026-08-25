@@ -13,6 +13,33 @@ symlink support. Native Windows is not first-class yet because the installer and
 command setup assume Unix-style shell behavior and symlinks; use WSL for the
 closest supported Windows path.
 
+For a brand-new project, preview one complete repository transaction:
+
+```bash
+agent-continuity project new orient-server \
+  --path /path/to/orient-server
+```
+
+The new-project command always uses the `complete` profile. It previews by
+default, creates nothing until `--write` is supplied, initializes `main`,
+installs the complete scaffold plus repository-local deterministic CI, verifies
+the result, writes a named root README and Agent Index, records a bootstrap
+receipt, and creates the initial commit. To also
+create a GitHub repository, make that external mutation explicit:
+
+```bash
+agent-continuity project new orient-server \
+  --path /path/to/orient-server \
+  --github OWNER/orient-server \
+  --visibility private \
+  --write
+```
+
+GitHub creation happens only after local verification passes. The command then
+pushes `main` and confirms the exact local commit at `origin/main`. It does not
+guess a language stack, license, or project-specific test command; add those
+once the project has made those choices.
+
 From the repo you want to document, install or update the CLI and preview the recommended standard footprint:
 
 ```bash
@@ -92,6 +119,7 @@ The point is not the folder tree. The point is making repo memory resumable: sou
 
 | Need | Go To |
 |---|---|
+| Create a complete new repository | `agent-continuity project new <name>` |
 | Install this workflow in another repo | [INSTALL.md](INSTALL.md) |
 | Ask an agent to upgrade an existing install | [guides/agent-upgrade-existing-install.md](guides/agent-upgrade-existing-install.md) |
 | Contribute a focused improvement | [CONTRIBUTING.md](CONTRIBUTING.md) |

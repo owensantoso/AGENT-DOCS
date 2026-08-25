@@ -59,6 +59,29 @@ require_contains "$tmpdir/small-dry-run.out" "docs/ROADMAP.md"
 require_contains "$tmpdir/small-dry-run.out" "Would create"
 require_absent "$small_target/AGENTS.md"
 
+python3 - "$installer" <<'PY'
+import importlib.machinery
+import importlib.util
+import sys
+
+loader = importlib.machinery.SourceFileLoader("agent_continuity_init_url_test", sys.argv[1])
+spec = importlib.util.spec_from_loader("agent_continuity_init_url_test", loader)
+module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = module
+previous = sys.dont_write_bytecode
+sys.dont_write_bytecode = True
+try:
+    spec.loader.exec_module(module)
+finally:
+    sys.dont_write_bytecode = previous
+
+assert module.sanitized_source_url("https://user:secret@example.com/owner/repo.git?token=secret#fragment") == "https://example.com/owner/repo.git"
+assert module.sanitized_source_url("ssh://person@example.com:2222/owner/repo.git") == "ssh://example.com:2222/owner/repo.git"
+assert module.sanitized_source_url("git@github.com:owner/repo.git") == "git@github.com:owner/repo.git"
+assert module.sanitized_source_url("/Users/person/private/agent-continuity") is None
+assert module.sanitized_source_url("file:///Users/person/private/agent-continuity") is None
+PY
+
 LC_ALL=C PYTHONUTF8=0 "$installer" "$tmpdir/ascii-app" --profile standard --dry-run >"$tmpdir/ascii-dry-run.out"
 require_contains "$tmpdir/ascii-dry-run.out" "Profile: standard"
 require_contains "$tmpdir/ascii-dry-run.out" "Would create: docs/CURRENT_STATE.md"
@@ -91,6 +114,8 @@ if manifest.get("schema_version") != 2:
 expected_release = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8").strip()
 if manifest.get("agent_continuity_release") != expected_release:
     raise SystemExit("Expected named Agent Continuity release")
+if "path" in manifest.get("source", {}):
+    raise SystemExit("Fresh manifests must not publish the installer's absolute local source path")
 if manifest.get("document_format_target") != 2:
     raise SystemExit("Expected document format target 2")
 if manifest.get("profile") != "core":
@@ -278,7 +303,10 @@ require_contains "$tmpdir/full-dry-run.out" "│   ├── product/"
 require_contains "$tmpdir/full-dry-run.out" "│   ├── repo-health/"
 require_contains "$tmpdir/full-dry-run.out" "│   └── research/"
 require_contains "$tmpdir/full-dry-run.out" "├── scripts/"
-require_contains "$tmpdir/full-dry-run.out" "│   └── agent-continuity-docs"
+require_contains "$tmpdir/full-dry-run.out" "agent-continuity-docs"
+require_contains "$tmpdir/full-dry-run.out" "agent-continuity-ci"
+require_contains "$tmpdir/full-dry-run.out" ".github/"
+require_contains "$tmpdir/full-dry-run.out" "agent-continuity.yml"
 if grep -Fq -- "areas:" "$tmpdir/full-dry-run.out"; then
   echo "Expected full profile preview to show docs areas as tree rows, not an inline areas list" >&2
   exit 1
@@ -298,9 +326,18 @@ if grep -Fq -- "tooling: scripts/agent-continuity-docs" "$tmpdir/full-no-meta-dr
   echo "Expected full profile without agent-continuity docs to hide tooling row" >&2
   exit 1
 fi
+if grep -Fq -- "agent-continuity-ci" "$tmpdir/full-no-meta-dry-run.out" || grep -Fq -- "agent-continuity.yml" "$tmpdir/full-no-meta-dry-run.out"; then
+  echo "Expected complete profile with --docs no to omit the continuity verifier and workflow" >&2
+  exit 1
+fi
 
 full_write_target="$tmpdir/full-write-app"
 "$installer" "$full_write_target" --profile complete --write >"$tmpdir/full-write.out"
+require_file "$full_write_target/scripts/agent-continuity-ci"
+require_file "$full_write_target/tests/agent-continuity-ci-smoke.sh"
+require_file "$full_write_target/.github/workflows/agent-continuity.yml"
+require_contains "$full_write_target/.github/workflows/agent-continuity.yml" "contents: read"
+require_contains "$full_write_target/.github/workflows/agent-continuity.yml" "scripts/agent-continuity-ci"
 if find "$full_write_target/docs" -name '*0000*' -print -quit | grep -q .; then
   echo "Expected a fresh complete repo to omit numbered placeholder documents" >&2
   exit 1
@@ -318,6 +355,23 @@ fi
 "$full_write_target/scripts/agent-continuity-docs" --root "$full_write_target/docs" format-status --json >"$tmpdir/full-write-format.json"
 require_contains "$tmpdir/full-write-format.json" '"v1": 0'
 require_contains "$tmpdir/full-write-format.json" '"invalid": 0'
+python3 - "$full_write_target/.agent-continuity/manifest.json" <<'PY'
+import json
+import sys
+
+manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+records = {record["path"]: record for record in manifest.get("files", [])}
+for path in (
+    "scripts/agent-continuity-ci",
+    "tests/agent-continuity-ci-smoke.sh",
+    ".github/workflows/agent-continuity.yml",
+):
+    record = records.get(path)
+    if not record or record.get("ownership") != "agent-continuity-owned":
+        raise SystemExit(f"Expected Agent Continuity-owned record for {path}")
+    if not record.get("checksum_sha256") or not record.get("mode"):
+        raise SystemExit(f"Expected checksum and mode for {path}")
+PY
 
 python3 - "$installer" "$tmpdir/interactive-app" >"$tmpdir/interactive-picker.out" <<'PY'
 import os

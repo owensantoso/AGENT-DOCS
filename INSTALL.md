@@ -4,6 +4,50 @@ Use this when you want a fresh human or agent on another computer to install thi
 
 The goal is not to copy every example. The goal is to give the target repo a clear agent read order, current-state docs, planning docs, session logs, ADRs, and optional deterministic metadata tooling.
 
+## Create A Complete New Project
+
+Use the new-project bootstrap when the target does not exist yet or is an empty
+directory:
+
+```bash
+agent-continuity project new orient-server \
+  --path /path/to/orient-server
+```
+
+Dry-run is the default. The preview shows the complete scaffold and transaction
+without creating the target. Write mode creates a local Git repository on
+`main`, installs the fixed `complete` profile, adds the vendored
+`scripts/agent-continuity-ci` verifier and GitHub Actions caller, runs the local
+checks, writes a named root README and Agent Index, records
+`.agent-continuity/bootstrap-receipt.json`, and creates the
+initial commit:
+
+```bash
+agent-continuity project new orient-server \
+  --path /path/to/orient-server \
+  --write
+```
+
+GitHub creation is a separate explicit part of the same transaction. Both the
+repository name and visibility are required:
+
+```bash
+agent-continuity project new orient-server \
+  --path /path/to/orient-server \
+  --github OWNER/orient-server \
+  --visibility private \
+  --write
+```
+
+The remote is not created until the local repository passes deterministic
+verification. Success is reported only after the current local `main` commit is
+confirmed at `origin/main`. The bootstrap does not choose a language, framework,
+license, package manager, or project-specific test command.
+
+Use the lower-level `agent-continuity init` flow below for an existing project
+or when you deliberately want a smaller documentation profile. `project new`
+does not accept a profile override: complete is the new-project baseline.
+
 ## Fast Answer
 
 1. Put this `agent-continuity` repo somewhere the target repo can read.

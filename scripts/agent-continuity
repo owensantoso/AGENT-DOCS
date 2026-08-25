@@ -116,7 +116,9 @@ def print_help(command_name: str) -> None:
         f"""Usage: {command_name} <command> [args]
 
 Commands:
+  project   Create a new complete local repository and optionally publish it to GitHub.
   init      Install an Agent Continuity scaffold profile into a target repository.
+  ci        Run deterministic Agent Continuity checks for an installed project.
   docs      Create, inspect, validate, and generate structured repository docs.
   doctor    Read-only install and drift report.
   upgrade   Safe upgrade preview, owned-tooling writes, or opt-in generated views.
@@ -1974,6 +1976,15 @@ def main(argv: list[str], command_name: str = "agent-continuity") -> int:
         print_help(command_name)
         return 0
     command, *args = argv
+    if command == "project":
+        project_command = SCRIPT_DIR / "agent-continuity-project"
+        if not project_command.is_file() or not project_command.stat().st_mode & 0o111:
+            print(f"Could not find executable agent-continuity-project next to {Path(__file__).name}.", file=sys.stderr)
+            print("Re-run install.sh or use scripts/agent-continuity-project from an Agent Continuity checkout.", file=sys.stderr)
+            return 1
+        env = os.environ.copy()
+        env["AGENT_CONTINUITY_PROJECT_PROG"] = f"{command_name} project"
+        return subprocess.call([str(project_command), *args], env=env)
     if command == "init":
         init_command = SCRIPT_DIR / "agent-continuity-init"
         if not init_command.is_file() or not init_command.stat().st_mode & 0o111:
@@ -1983,6 +1994,16 @@ def main(argv: list[str], command_name: str = "agent-continuity") -> int:
         env = os.environ.copy()
         env["AGENT_CONTINUITY_INIT_PROG"] = f"{command_name} init"
         return subprocess.call([str(init_command), *args], env=env)
+    if command == "ci":
+        ci_command = SCRIPT_DIR / "agent-continuity-ci"
+        if not ci_command.is_file() or not ci_command.stat().st_mode & 0o111:
+            print(f"Could not find executable agent-continuity-ci next to {Path(__file__).name}.", file=sys.stderr)
+            print("Re-run install.sh or use scripts/agent-continuity-ci from an Agent Continuity checkout.", file=sys.stderr)
+            return 1
+        env = os.environ.copy()
+        env["AGENT_CONTINUITY_CI_PROG"] = f"{command_name} ci"
+        ci_args = args or [str(Path.cwd())]
+        return subprocess.call([str(ci_command), *ci_args], env=env)
     if command == "docs":
         docs_command = SCRIPT_DIR / "agent-continuity-docs"
         if not docs_command.is_file() or not docs_command.stat().st_mode & 0o111:

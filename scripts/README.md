@@ -1,17 +1,43 @@
 # Agent Continuity Scripts
 
-This folder contains two main scripts:
+This folder contains the installed command and its deep modules:
 
 | Script | Purpose |
 |---|---|
 | `../install.sh` | bootstrap installer that puts `agent-continuity` plus compatibility commands on PATH |
 | `agent-docs` | compatibility command namespace for Agent Continuity workflows |
 | `agent-docs-init` | compatibility selected scaffold installer for target repos |
+| `agent-continuity-project` | complete new-project transaction behind `agent-continuity project` |
+| `agent-continuity-ci` | deterministic installed-project verifier behind `agent-continuity ci` |
 | `agent-continuity-docs` | implementation behind `agent-continuity docs` |
 | `changelog-check` | changelog gate for reusable adopter-facing surfaces |
 | `release-check` | local release-readiness wrapper used by CI |
 
 ## Agent Continuity Init
+
+Create a brand-new complete repository with a preview-first transaction:
+
+```bash
+agent-continuity project new orient-server --path /path/to/orient-server
+agent-continuity project new orient-server --path /path/to/orient-server --write
+```
+
+Add `--github OWNER/REPO --visibility private` to the write command only when
+the same transaction should create and push a GitHub repository. The remote
+phase runs after local verification and confirms the exact `origin/main`
+commit.
+
+Inside an installed project, the deterministic local and GitHub Actions contract
+is the same vendored command:
+
+```bash
+agent-continuity ci /path/to/project
+/path/to/project/scripts/agent-continuity-ci
+```
+
+It verifies Agent Continuity-owned checksums and modes, structured docs, local
+links, structured TODO metadata, generated-view freshness, and Git whitespace.
+It does not run project-specific tests that the bootstrap cannot infer.
 
 From the repo you want to document, install or update the command and preview the recommended standard footprint:
 
@@ -80,7 +106,10 @@ Schema version 2 contains:
 - `agent_continuity_release`: named Calendar Versioning release
 - `document_format_target`: currently `2`
 - `installed_at` and `updated_at`: UTC timestamps
-- `source`: Agent Continuity repository URL, ref, commit, and local source path when available
+- `source`: Agent Continuity repository URL, ref, and commit when available;
+  fresh manifests omit machine-local checkout paths so committing the manifest
+  does not publish a user's directory layout, and repository URLs are stripped
+  of userinfo, query strings, and fragments before storage
 - `profile`: selected canonical profile
 - `optional_components`: includes `agent-continuity-docs` when selected by a new install
 - `files`: installed file records

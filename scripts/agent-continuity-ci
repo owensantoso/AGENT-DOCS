@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+"""Run deterministic Agent Continuity checks for an installed project."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import stat
+import subprocess
+import sys
+from pathlib import Path
+
+
+MANIFEST_PATH = Path(".agent-continuity/manifest.json")
+OWNED_VALUES = {"agent-continuity-owned", "agent-docs-owned"}
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+MODE_PATTERN = re.compile(r"^[0-7]{3,4}$")
+
+
+class VerificationError(RuntimeError):
+    pass
+
+
+def parse_args() -> argparse.Namespace:
+    prog = os.environ.get("AGENT_CONTINUITY_CI_PROG") or Path(sys.argv[0]).name
+    parser = argparse.ArgumentParser(
+        prog=prog,
+        description="Verify Agent Continuity-owned tooling and structured repository memory without writing files.",
+    )
+    parser.add_argument(
+        "target",
+        nargs="?",
+        type=Path,
+        default=Path(__file__).resolve().parents[1],
+        help="Target repository. Default: the repository containing this vendored verifier.",
+    )
+    return parser.parse_args()
+
+
+def safe_relpath(value: object) -> Path:
+    if not isinstance(value, str) or not value:
+        raise VerificationError("manifest file record has an invalid empty path")
+    if any(ord(char) < 32 or ord(char) == 127 for char in value):
+        raise VerificationError("manifest file record path contains a control character")
+    relpath = Path(value)
+    if relpath == Path(".") or relpath.is_absolute() or ".." in relpath.parts:
+        raise VerificationError(f"manifest file record has an unsafe path: {value!r}")
+    return relpath
+
+
+def ensure_no_symlink(target: Path, relpath: Path) -> Path:
+    current = target
+    for part in relpath.parts:
+        current = current / part
+        if current.is_symlink():
+            raise VerificationError(f"{relpath}: path traverses symlink {current.relative_to(target)}")
+    return current
+
+
+def checksum(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_manifest(target: Path) -> dict:
+    manifest_path = ensure_no_symlink(target, MANIFEST_PATH)
+    if not manifest_path.is_file():
+        raise VerificationError(f"missing manifest: {MANIFEST_PATH}")
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise VerificationError(f"could not read valid JSON manifest: {error}") from error
+    if not isinstance(manifest, dict):
+        raise VerificationError("manifest root must be an object")
+    if manifest.get("schema_version") != 2:
+        raise VerificationError(f"unsupported manifest schema_version: {manifest.get('schema_version')!r}")
+    return manifest
+
+
+def verify_owned_files(target: Path, manifest: dict) -> int:
+    records = manifest.get("files")
+    if not isinstance(records, list):
+        raise VerificationError("manifest files field must be a list")
+    checked = 0
+    seen: set[Path] = set()
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise VerificationError(f"manifest files[{index}] must be an object")
+        if record.get("ownership") not in OWNED_VALUES:
+            continue
+        relpath = safe_relpath(record.get("path"))
+        if relpath in seen:
+            raise VerificationError(f"duplicate Agent Continuity-owned manifest path: {relpath}")
+        seen.add(relpath)
+        path = ensure_no_symlink(target, relpath)
+        try:
+            metadata = path.stat()
+        except (OSError, ValueError) as error:
+            raise VerificationError(f"{relpath}: missing Agent Continuity-owned file ({error})") from error
+        if not stat.S_ISREG(metadata.st_mode):
+            raise VerificationError(f"{relpath}: Agent Continuity-owned path is not a regular file")
+
+        expected_checksum = record.get("checksum_sha256")
+        if not isinstance(expected_checksum, str) or SHA256_PATTERN.fullmatch(expected_checksum) is None:
+            raise VerificationError(f"{relpath}: manifest checksum is missing or invalid")
+        actual_checksum = checksum(path)
+        if actual_checksum != expected_checksum:
+            raise VerificationError(
+                f"{relpath}: checksum mismatch (expected {expected_checksum}, got {actual_checksum})"
+            )
+
+        expected_mode = record.get("mode")
+        if not isinstance(expected_mode, str) or MODE_PATTERN.fullmatch(expected_mode) is None:
+            raise VerificationError(f"{relpath}: manifest mode is missing or invalid")
+        actual_mode = format(stat.S_IMODE(metadata.st_mode), "03o")
+        if actual_mode != expected_mode:
+            raise VerificationError(f"{relpath}: mode mismatch (expected {expected_mode}, got {actual_mode})")
+        checked += 1
+    if checked == 0:
+        raise VerificationError("manifest contains no Agent Continuity-owned files to verify")
+    return checked
+
+
+def run_check(label: str, command: list[str], target: Path) -> None:
+    print(f"Checking {label}...")
+    try:
+        result = subprocess.run(command, cwd=target, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError as error:
+        raise VerificationError(f"{label} could not run: {error}") from error
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    if result.returncode != 0:
+        raise VerificationError(f"{label} failed with exit code {result.returncode}")
+
+
+def verify(target_argument: Path) -> None:
+    if target_argument.is_symlink():
+        raise VerificationError(f"target repository must not be a symlink: {target_argument}")
+    try:
+        target = target_argument.expanduser().resolve(strict=True)
+    except OSError as error:
+        raise VerificationError(f"target repository does not exist: {target_argument}") from error
+    if not target.is_dir():
+        raise VerificationError(f"target repository is not a directory: {target}")
+
+    manifest = load_manifest(target)
+    owned_count = verify_owned_files(target, manifest)
+    print(f"Verified {owned_count} Agent Continuity-owned files.")
+
+    docs_command = ensure_no_symlink(target, Path("scripts/agent-continuity-docs"))
+    if not docs_command.is_file() or not os.access(docs_command, os.X_OK):
+        raise VerificationError("scripts/agent-continuity-docs is missing or not executable")
+    docs_root = target / "docs"
+    run_check("repository-local document links", [str(docs_command), "--root", str(docs_root), "check-links"], target)
+    run_check("structured TODO metadata", [str(docs_command), "--root", str(docs_root), "check-todos"], target)
+    run_check("structured documents and generated-view freshness", [str(docs_command), "--root", str(docs_root), "check"], target)
+
+    run_check("Git working-tree whitespace", ["git", "diff", "--check"], target)
+    run_check("Git staged whitespace", ["git", "diff", "--cached", "--check", "--root"], target)
+    run_check("Git repository", ["git", "rev-parse", "--is-inside-work-tree"], target)
+    print(f"Agent Continuity CI passed: {target}")
+
+
+def main() -> int:
+    args = parse_args()
+    try:
+        verify(args.target)
+    except VerificationError as error:
+        print(f"Agent Continuity CI failed: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

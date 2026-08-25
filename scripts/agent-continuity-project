@@ -1,0 +1,301 @@
+#!/usr/bin/env python3
+"""Create a new complete Agent Continuity project repository."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+INIT_COMMAND = SCRIPT_DIR / "agent-continuity-init"
+GITHUB_REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+
+
+class BootstrapError(RuntimeError):
+    pass
+
+
+def parser_for(prog: str) -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog=prog, description="Create complete, verified Agent Continuity project repositories.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    new_parser = subparsers.add_parser("new", help="Create a new complete local repository and optionally publish it to GitHub.")
+    new_parser.add_argument("name", help="Human-readable project name.")
+    new_parser.add_argument("--path", type=Path, help="Target path. Default: ./<name>.")
+    new_parser.add_argument("--github", help="Optional GitHub repository as OWNER/REPO.")
+    new_parser.add_argument("--visibility", choices=["private", "public", "internal"], help="GitHub visibility; required with --github.")
+    mode = new_parser.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="Preview without writing. This is the default.")
+    mode.add_argument("--write", action="store_true", help="Create the local repository and any explicitly requested GitHub repository.")
+    return parser
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def run(command: list[str], *, cwd: Path | None = None, capture: bool = False) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            command,
+            cwd=cwd,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE if capture else None,
+            stderr=subprocess.PIPE if capture else None,
+        )
+    except OSError as error:
+        raise BootstrapError(f"could not run {command[0]}: {error}") from error
+    except subprocess.CalledProcessError as error:
+        detail = ""
+        if capture:
+            detail = (error.stderr or error.stdout or "").strip()
+        suffix = f": {detail}" if detail else ""
+        raise BootstrapError(f"command failed ({' '.join(command)}), exit {error.returncode}{suffix}") from error
+
+
+def validate_request(args: argparse.Namespace) -> Path:
+    if not args.name.strip() or any(ord(char) < 32 or ord(char) == 127 for char in args.name):
+        raise BootstrapError("project name must be non-empty and contain no control characters")
+    if bool(args.github) != bool(args.visibility):
+        raise BootstrapError("--github and --visibility must be provided together")
+    if args.github and GITHUB_REPOSITORY_PATTERN.fullmatch(args.github) is None:
+        raise BootstrapError("--github must use OWNER/REPO with letters, digits, dot, underscore, or hyphen")
+    if not args.path and (args.name in {".", ".."} or "/" in args.name or "\\" in args.name):
+        raise BootstrapError("project name must be one path component when --path is omitted")
+
+    raw_target = args.path.expanduser() if args.path else Path.cwd() / args.name
+    if raw_target.is_symlink():
+        raise BootstrapError(f"target repository must not be a symlink: {raw_target}")
+    target = raw_target.resolve(strict=False)
+    if target.exists():
+        if not target.is_dir():
+            raise BootstrapError(f"target must be absent or empty, but is not a directory: {target}")
+        try:
+            has_entries = next(target.iterdir(), None) is not None
+        except OSError as error:
+            raise BootstrapError(f"could not inspect target directory {target}: {error}") from error
+        if has_entries:
+            raise BootstrapError(f"target must be absent or empty: {target}")
+    return target
+
+
+def receipt_payload(args: argparse.Namespace, target: Path) -> dict:
+    return {
+        "schema_version": 1,
+        "project": {"name": args.name, "path": "."},
+        "requested": {
+            "profile": "complete",
+            "default_branch": "main",
+            "github": args.github,
+            "visibility": args.visibility,
+        },
+        "completed": {
+            "local_repository": True,
+            "complete_scaffold": True,
+            "local_verification": True,
+            "initial_commit": True,
+            "github_created": False,
+            "remote_verified": False,
+        },
+        "result": {},
+        "updated_at": utc_now(),
+    }
+
+
+def write_receipt(target: Path, receipt: dict) -> None:
+    receipt["updated_at"] = utc_now()
+    path = target / ".agent-continuity/bootstrap-receipt.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def write_project_front_door(target: Path, name: str) -> None:
+    readme = target / "README.md"
+    readme.write_text(
+        f"""# {name}
+
+This repository was initialized with the complete Agent Continuity project baseline.
+
+## Start Here
+
+- [`docs/orientation/CURRENT_STATE.md`](docs/orientation/CURRENT_STATE.md) - what is true now
+- [`docs/orientation/ONBOARDING.md`](docs/orientation/ONBOARDING.md) - product or system walkthrough
+- [`docs/orientation/ARCHITECTURE.md`](docs/orientation/ARCHITECTURE.md) - boundaries and data flow
+- [`docs/orientation/ROADMAP.md`](docs/orientation/ROADMAP.md) - sequence and rationale
+
+## Verify Repository Memory
+
+```bash
+scripts/agent-continuity-ci
+```
+
+Record the project's actual purpose and stack here once those choices are made.
+""",
+        encoding="utf-8",
+    )
+
+    agents = target / "AGENTS.md"
+    text = agents.read_text(encoding="utf-8")
+    if text.startswith("# <Repo Name> - Agent Index\n"):
+        agents.write_text(text.replace("# <Repo Name> - Agent Index\n", f"# {name} - Agent Index\n", 1), encoding="utf-8")
+
+
+def git_head(target: Path) -> str:
+    result = run(["git", "rev-parse", "HEAD"], cwd=target, capture=True)
+    return result.stdout.strip()
+
+
+def remote_main(target: Path) -> str:
+    result = run(["git", "ls-remote", "--exit-code", "origin", "refs/heads/main"], cwd=target, capture=True)
+    line = result.stdout.strip().splitlines()
+    if len(line) != 1 or not line[0].split():
+        raise BootstrapError("origin/main did not resolve to exactly one remote commit")
+    return line[0].split()[0]
+
+
+def preview(args: argparse.Namespace, target: Path, prog: str) -> int:
+    print(f"Project: {args.name}")
+    print(f"Target: {target}")
+    print("Profile: complete (fixed)")
+    print("Default branch: main")
+    print("\nComplete scaffold preview:\n")
+    env = os.environ.copy()
+    env["AGENT_CONTINUITY_INIT_PROG"] = f"{prog} internal-init"
+    result = subprocess.run(
+        [str(INIT_COMMAND), str(target), "--profile", "complete", "--docs", "yes", "--dry-run"],
+        env=env,
+    )
+    if result.returncode != 0:
+        return result.returncode
+    print("\nTransaction preview:")
+    print("1. git init --initial-branch main")
+    print("2. install the fixed complete Agent Continuity scaffold")
+    print("3. write the named root README and Agent Index front door")
+    print("4. stage generated files and run local deterministic verification")
+    print("5. write .agent-continuity/bootstrap-receipt.json")
+    print("6. create the initial commit")
+    if args.github:
+        print(f"7. create GitHub repository {args.github} with {args.visibility} visibility")
+        print("8. push main and verify the exact remote commit")
+    else:
+        print("7. GitHub creation not requested")
+    print("\nDry run only. Re-run with --write to create the project.")
+    return 0
+
+
+def create_project(args: argparse.Namespace, target: Path) -> int:
+    if shutil.which("git") is None:
+        raise BootstrapError("git is required but was not found on PATH")
+    if args.github and shutil.which("gh") is None:
+        raise BootstrapError("GitHub CLI (gh) is required for --github but was not found on PATH")
+    if not INIT_COMMAND.is_file() or not os.access(INIT_COMMAND, os.X_OK):
+        raise BootstrapError(f"missing executable initializer next to the installed command: {INIT_COMMAND}")
+
+    target.mkdir(parents=True, exist_ok=True)
+    if next(target.iterdir(), None) is not None:
+        raise BootstrapError(f"target must still be empty when write mode begins: {target}")
+    receipt: dict | None = None
+    phase = "Git repository initialization"
+    try:
+        run(["git", "init", "--initial-branch", "main"], cwd=target)
+
+        phase = "complete Agent Continuity scaffold installation"
+        run([str(INIT_COMMAND), str(target), "--profile", "complete", "--docs", "yes", "--write"])
+        write_project_front_door(target, args.name)
+
+        phase = "local deterministic verification"
+        run(["git", "add", "--all"], cwd=target)
+        verifier = target / "scripts/agent-continuity-ci"
+        run([str(verifier), str(target)], cwd=target)
+
+        phase = "bootstrap receipt and initial commit"
+        receipt = receipt_payload(args, target)
+        write_receipt(target, receipt)
+        run(["git", "add", ".agent-continuity/bootstrap-receipt.json"], cwd=target)
+        run(["git", "diff", "--cached", "--check", "--root"], cwd=target)
+        run(["git", "commit", "--no-gpg-sign", "-m", f"Initialize {args.name}"], cwd=target)
+        initial_commit = git_head(target)
+
+        if args.github:
+            phase = "GitHub repository creation"
+            visibility_flag = f"--{args.visibility}"
+            run(["gh", "repo", "create", args.github, visibility_flag, "--source", str(target), "--remote", "origin"])
+            receipt["completed"]["github_created"] = True
+
+            phase = "initial GitHub push and verification"
+            run(["git", "push", "--set-upstream", "origin", "main"], cwd=target)
+            if remote_main(target) != initial_commit:
+                raise BootstrapError("origin/main did not match the locally verified initial commit")
+
+            phase = "final bootstrap receipt"
+            receipt["completed"]["remote_verified"] = True
+            receipt["result"]["initial_commit"] = initial_commit
+            receipt["result"]["remote_verified_commit"] = initial_commit
+            write_receipt(target, receipt)
+            run(["git", "add", ".agent-continuity/bootstrap-receipt.json"], cwd=target)
+            run(["git", "diff", "--cached", "--check", "--root"], cwd=target)
+            run(["git", "commit", "--no-gpg-sign", "-m", "Record bootstrap completion"], cwd=target)
+            final_commit = git_head(target)
+
+            phase = "final GitHub push and exact-commit verification"
+            run(["git", "push", "origin", "main"], cwd=target)
+            if remote_main(target) != final_commit:
+                raise BootstrapError("origin/main did not match the final local main commit")
+        else:
+            final_commit = initial_commit
+
+    except BootstrapError:
+        if receipt is not None:
+            if phase == "bootstrap receipt and initial commit":
+                receipt["completed"]["initial_commit"] = False
+            if phase != "final GitHub push and exact-commit verification":
+                receipt["completed"]["remote_verified"] = False
+            write_receipt(target, receipt)
+        raise
+
+    print(f"Created complete project: {target}")
+    print("Profile: complete")
+    print("Branch: main")
+    print(f"Commit: {final_commit}")
+    if args.github:
+        print(f"GitHub: {args.github} ({args.visibility})")
+        print(f"Verified origin/main: {final_commit}")
+    else:
+        print("GitHub: not requested")
+    print(f"Run again: {target / 'scripts/agent-continuity-ci'}")
+    return 0
+
+
+def main() -> int:
+    prog = os.environ.get("AGENT_CONTINUITY_PROJECT_PROG") or Path(sys.argv[0]).name
+    parser = parser_for(prog)
+    args = parser.parse_args()
+    try:
+        target = validate_request(args)
+        if not args.write:
+            return preview(args, target, prog)
+        return create_project(args, target)
+    except BootstrapError as error:
+        print(f"Project bootstrap failed: {error}", file=sys.stderr)
+        raw_target = args.path.expanduser() if getattr(args, "path", None) else Path.cwd() / getattr(args, "name", "project")
+        target = raw_target.resolve(strict=False)
+        if target.exists():
+            print(f"Preserved local project: {target}", file=sys.stderr)
+            verifier = target / "scripts/agent-continuity-ci"
+            if verifier.is_file():
+                print(f"Next diagnostic: {verifier} {target}", file=sys.stderr)
+            elif (target / ".git").is_dir():
+                print(f"Next diagnostic: git -C {target} status --short", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

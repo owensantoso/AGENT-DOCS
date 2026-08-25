@@ -27,11 +27,13 @@ echo "Checking $root_doc_count Markdown docs under repo root"
 
 run tests/install-smoke.sh
 run tests/agent-continuity-init-smoke.sh
+run tests/agent-continuity-ci-smoke.sh
+run tests/agent-continuity-project-smoke.sh
 run tests/agent-continuity-doctor-upgrade-smoke.sh
 run tests/agent-continuity-docs-smoke.sh
 run tests/changelog-check-smoke.sh
 pycache_dir="$(mktemp -d)"
-run env PYTHONPYCACHEPREFIX="$pycache_dir" python3 -m py_compile scripts/agent-continuity scripts/agent-continuity-init scripts/agent-continuity-docs
+run env PYTHONPYCACHEPREFIX="$pycache_dir" python3 -m py_compile scripts/agent-continuity scripts/agent-continuity-init scripts/agent-continuity-docs scripts/agent-continuity-ci scripts/agent-continuity-project
 rm -rf "$pycache_dir"
 run scripts/changelog-check
 

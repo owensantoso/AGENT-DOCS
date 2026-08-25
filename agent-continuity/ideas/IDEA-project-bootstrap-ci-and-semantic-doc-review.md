@@ -7,7 +7,7 @@ title: Project Bootstrap, CI, And Semantic Documentation Review
 domain: agent-continuity
 status: captured
 created_at: "2026-08-24 20:10:36 JST +0900"
-updated_at: "2026-08-24 20:10:36 JST +0900"
+updated_at: "2026-08-25 03:33:59 JST +0900"
 owner: Owen
 source:
   type: conversation
@@ -26,7 +26,8 @@ related_prs: []
 related_ideas:
   - 01a02039-7a65-7579-b782-7b433cd8e001
 related_explainers: []
-related_sessions: []
+related_sessions:
+  - 01a03500-7324-7f48-bb3c-707b1259ba75
 linked_paths:
   - install.sh
   - INSTALL.md
@@ -35,7 +36,8 @@ linked_paths:
   - scripts/agent-continuity-docs
   - scripts/release-check
   - .github/workflows/ci.yml
-promoted_to: []
+promoted_to:
+  - 01a034dd-eefc-7038-a814-ce4e28164af3
 repo_state:
   based_on_commit: 25fd891b7a242d3e45a35382c6fcd7f3f565fe96
   last_reviewed_commit: 25fd891b7a242d3e45a35382c6fcd7f3f565fe96
@@ -99,9 +101,9 @@ GitHub Actions, Jenkins, a pre-commit hook, or a local agent can all call that s
 agent-continuity project new orient-server
 ```
 
-Opinionated defaults:
+Accepted new-project defaults:
 
-- profile: `complete`
+- profile: `complete` for every project created by this bootstrap
 - local branch: `main`
 - CI provider: GitHub Actions
 - deterministic checks: enabled
@@ -623,7 +625,9 @@ This idea does not require Agent Continuity to:
 ## Main Open Questions
 
 - Should `project new` create a GitHub repository by default, or require `--github`?
-- Should complete become the universal initializer default or only the `project new` default?
+- `complete` is the accepted universal baseline for `project new`; lighter
+  profiles remain available only through the lower-level `agent-continuity init`
+  workflow for deliberately smaller/manual adoption.
 - Should the generated workflow call a reusable upstream workflow or run the committed local CLI directly?
 - How should branch protection be installed across free personal repositories, organizations, and private repositories with different GitHub feature availability?
 - Should the first semantic review live entirely in Codex `AGENTS.md` rules before Agent Continuity defines its own provider contract?

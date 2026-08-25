@@ -8,6 +8,20 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ### For adopters
 
+- Added preview-first `agent-continuity project new`. It fixes the new-project
+  baseline at `complete`, initializes `main`, installs repository-local
+  deterministic CI plus a least-privilege GitHub Actions caller, verifies before
+  the initial commit, writes a named root README and Agent Index, records a
+  bootstrap receipt, and optionally creates and
+  pushes an explicitly named GitHub repository after local checks pass.
+- Added `agent-continuity ci [target]` and the vendored
+  `scripts/agent-continuity-ci` contract for manifest-owned checksums and modes,
+  structured docs, local links, structured TODOs, generated-view freshness, and
+  Git whitespace. Project-specific build and test commands remain project-owned.
+- Fresh manifests and bootstrap receipts no longer embed absolute local checkout
+  paths, so committing or publishing a generated repository does not disclose
+  the initializer's machine-local directory layout. Stored repository provenance
+  also strips URL userinfo, queries, and fragments that could contain credentials.
 - Fresh project instructions and the structured-doc workflow now require a
   read-only `agent-continuity doctor .` preflight before the first Agent
   Continuity docs or tooling mutation in a task. Stale release, owned-tooling,

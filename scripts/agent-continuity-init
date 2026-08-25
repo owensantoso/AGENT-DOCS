@@ -19,6 +19,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -36,6 +37,9 @@ DETAIL_GAP = 4
 AGENT_CONTINUITY_OWNED_PATHS = {
     Path("scripts/agent-continuity-docs"),
     Path("tests/agent-continuity-docs-smoke.sh"),
+    Path("scripts/agent-continuity-ci"),
+    Path("tests/agent-continuity-ci-smoke.sh"),
+    Path(".github/workflows/agent-continuity.yml"),
     Path("scripts/docs-meta"),
     Path("tests/docs-meta-smoke.sh"),
 }
@@ -224,7 +228,7 @@ PROFILES = {
             "Best for multi-surface or long-running repos.",
             "Installs Agent Continuity document tooling by default.",
         ),
-        structure=("AGENTS.md", "docs/", "scripts/agent-continuity-docs", "tests/agent-continuity-docs-smoke.sh"),
+        structure=("AGENTS.md", "docs/", ".github/workflows/agent-continuity.yml", "scripts/agent-continuity-docs", "scripts/agent-continuity-ci"),
         docs_tooling_default=True,
     ),
 }
@@ -427,6 +431,21 @@ def docs_tooling_actions(include_legacy_docs_meta: bool = False) -> list[Action]
     return actions
 
 
+def continuity_ci_actions() -> list[Action]:
+    return [
+        Action(Path("scripts/agent-continuity-ci"), source=REPO_ROOT / "scripts" / "agent-continuity-ci", executable=True),
+        Action(
+            Path("tests/agent-continuity-ci-smoke.sh"),
+            source=SCAFFOLD / "tests" / "agent-continuity-ci-smoke.sh",
+            executable=True,
+        ),
+        Action(
+            Path(".github/workflows/agent-continuity.yml"),
+            source=SCAFFOLD / ".github" / "workflows" / "agent-continuity.yml",
+        ),
+    ]
+
+
 def profile_actions(
     profile: Profile,
     include_docs_tooling: bool,
@@ -441,6 +460,8 @@ def profile_actions(
     actions = builders[profile.key](profile)
     if include_docs_tooling:
         actions.extend(docs_tooling_actions(include_legacy_docs_meta))
+        if profile.key == "complete" and not include_legacy_docs_meta:
+            actions.extend(continuity_ci_actions())
     return actions
 
 
@@ -471,6 +492,30 @@ def git_output(args: list[str]) -> str | None:
     return value or None
 
 
+def sanitized_source_url(value: str | None) -> str | None:
+    if not value or any(ord(char) < 32 or ord(char) == 127 for char in value):
+        return None
+    if value.startswith(("/", "./", "../", "~", "file:")):
+        return None
+    if "://" not in value:
+        if "@" in value and ":" in value.split("@", 1)[1]:
+            user, remainder = value.split("@", 1)
+            return value if user == "git" else remainder
+        return value
+    try:
+        parsed = urlsplit(value)
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError:
+        return None
+    if parsed.scheme not in {"http", "https", "ssh", "git"} or not hostname:
+        return None
+    host = hostname
+    if port:
+        host = f"{host}:{port}"
+    return urlunsplit((parsed.scheme, host, parsed.path, "", ""))
+
+
 def action_ownership(action: Action) -> str:
     if action.relpath in AGENT_CONTINUITY_OWNED_PATHS:
         return "agent-continuity-owned"
@@ -485,7 +530,7 @@ def manifest_for(
     legacy_docs_meta: bool = False,
 ) -> dict:
     timestamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    source_url = git_output(["config", "--get", "remote.origin.url"])
+    source_url = sanitized_source_url(git_output(["config", "--get", "remote.origin.url"]))
     source_ref = git_output(["symbolic-ref", "--quiet", "--short", "HEAD"])
     source_commit = git_output(["rev-parse", "--verify", "HEAD"])
     records = []
@@ -510,7 +555,6 @@ def manifest_for(
             "repository": source_url,
             "ref": source_ref,
             "commit": source_commit,
-            "path": str(REPO_ROOT),
         },
         "profile": profile.key,
         "optional_components": ["docs-meta" if legacy_docs_meta else "agent-continuity-docs"] if include_docs_tooling else [],
@@ -684,7 +728,15 @@ def picker_preview_entries(profile: Profile, include_docs_tooling: bool | None =
     ]
     entries = ["AGENTS.md", *doc_areas]
     if include_docs_tooling:
-        entries.extend(["scripts/agent-continuity-docs", "tests/agent-continuity-docs-smoke.sh"])
+        entries.extend(
+            [
+                ".github/workflows/agent-continuity.yml",
+                "scripts/agent-continuity-docs",
+                "scripts/agent-continuity-ci",
+                "tests/agent-continuity-docs-smoke.sh",
+                "tests/agent-continuity-ci-smoke.sh",
+            ]
+        )
     return entries
 
 
