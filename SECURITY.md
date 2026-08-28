@@ -6,9 +6,13 @@ project-owned Markdown without explicit user intent.
 
 ## Supported Versions
 
-Until Agent Continuity publishes tagged releases, security fixes apply to the `main`
-branch. After tagged releases exist, this file should be updated with the
-supported release range.
+Security fixes apply to the latest tagged release and to `main`, where a fix may
+land before the next release.
+
+| Version | Supported |
+|---|---|
+| `2026.08.26.1` | Yes |
+| Earlier versions | No |
 
 ## Reporting A Vulnerability
 

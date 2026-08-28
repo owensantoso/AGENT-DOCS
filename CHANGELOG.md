@@ -6,10 +6,12 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ## Unreleased
 
+No adopter-facing changes yet.
+
+## 2026.08.26.1
+
 ### For adopters
 
-- Added named release `2026.08.26.1` for the complete new-project bootstrap and
-  deterministic repository-local CI contract.
 - Added preview-first `agent-continuity project new`. It fixes the new-project
   baseline at `complete`, initializes `main`, installs repository-local
   deterministic CI plus a least-privilege GitHub Actions caller, verifies before

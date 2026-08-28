@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "How Agent Continuity Keeps Work Resumable",
+    "output": "agent-continuity-overview.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/owensantoso/agent-continuity",
+      "revision": "042388e198df836fbed013dcd72f1bf188b52954"
+    },
+    "viewBox": [950, 500],
+    "views": [
+      {
+        "id": "truth-path",
+        "label": "From signals to truth",
+        "focus": ["signals", "source-docs"],
+        "note": "Project reality becomes durable only when it lands in an owning source document."
+      },
+      {
+        "id": "deterministic-layer",
+        "label": "Deterministic layer",
+        "focus": ["source-docs", "cli-manifest", "views-checks"],
+        "note": "The command layer validates ownership and derives views without replacing source truth."
+      },
+      {
+        "id": "continuity-loop",
+        "label": "Continuity loop",
+        "focus": ["views-checks", "next-actor", "work-receipt", "source-docs"],
+        "note": "A fresh actor resumes safely, verifies the result, and returns current evidence to the repository."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "signals",
+      "type": "external",
+      "label": "Work signals",
+      "sublabel": "conversation / code / observations",
+      "pos": [40, 110],
+      "size": [150, 76],
+      "sources": [
+        { "path": "README.md", "label": "Why this exists" }
+      ]
+    },
+    {
+      "id": "source-docs",
+      "type": "database",
+      "label": "Canonical project memory",
+      "sublabel": "current state / decisions / plans / evidence",
+      "tag": "source of truth",
+      "pos": [245, 100],
+      "size": [185, 96],
+      "sources": [
+        { "path": "guides/doc-types-and-responsibilities.md", "label": "Document ownership" },
+        { "path": "guides/workflow-overview.md", "label": "Workflow overview" }
+      ]
+    },
+    {
+      "id": "cli-manifest",
+      "type": "backend",
+      "label": "CLI + manifest",
+      "sublabel": "preview / ownership / safe writes",
+      "pos": [490, 100],
+      "size": [170, 96],
+      "sources": [
+        { "path": "scripts/agent-continuity", "label": "Command dispatcher" },
+        { "path": "scripts/agent-continuity-docs", "label": "Structured docs tooling" }
+      ]
+    },
+    {
+      "id": "views-checks",
+      "type": "frontend",
+      "label": "Generated views + checks",
+      "sublabel": "indexes / review queues / CI",
+      "tag": "derived, not authored",
+      "pos": [720, 100],
+      "size": [185, 96],
+      "sources": [
+        { "path": "scripts/agent-continuity-ci", "label": "Repository CI" },
+        { "path": "docs/DOCS-REGISTRY.md", "label": "Generated registry" }
+      ]
+    },
+    {
+      "id": "next-actor",
+      "type": "external",
+      "label": "Fresh human or agent",
+      "sublabel": "resume without old chat",
+      "pos": [735, 295],
+      "size": [170, 76],
+      "sources": [
+        { "path": "AGENTS.md", "label": "Agent entry point" }
+      ]
+    },
+    {
+      "id": "work-receipt",
+      "type": "security",
+      "label": "Verified work receipt",
+      "sublabel": "result / evidence / provenance",
+      "pos": [490, 290],
+      "size": [180, 84],
+      "sources": [
+        { "path": "scaffold/docs/repo-health/session-logs/README.md", "label": "Session receipts" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Deterministic continuity layer",
+      "wraps": ["source-docs", "cli-manifest", "views-checks"],
+      "pad": 24
+    }
+  ],
+  "connections": [
+    {
+      "id": "capture-truth",
+      "from": "signals",
+      "to": "source-docs",
+      "label": "capture durable truth",
+      "labelDy": 72,
+      "variant": "emphasis"
+    },
+    {
+      "id": "scan-sources",
+      "from": "source-docs",
+      "to": "cli-manifest",
+      "label": "scan sources",
+      "labelDx": 80,
+      "labelDy": 79
+    },
+    {
+      "id": "derive-views",
+      "from": "cli-manifest",
+      "to": "views-checks",
+      "label": "derive + verify",
+      "labelDy": 72
+    },
+    {
+      "id": "orient-next-actor",
+      "from": "views-checks",
+      "to": "next-actor",
+      "label": "orient + bound next action",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "variant": "emphasis"
+    },
+    {
+      "id": "produce-receipt",
+      "from": "next-actor",
+      "to": "work-receipt",
+      "label": "work + evidence",
+      "labelDy": 68,
+      "variant": "security"
+    },
+    {
+      "id": "return-evidence",
+      "from": "work-receipt",
+      "to": "source-docs",
+      "label": "update truth",
+      "variant": "dashed"
+    }
+  ]
+}
