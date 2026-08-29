@@ -8,8 +8,9 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ### For adopters
 
-- Reframed the README architecture visual as a canonical diagram export so its
-  system flow remains readable without promotional share-card chrome.
+- Reframed the README architecture visual as a canonical diagram export with
+  larger primary node labels and a compact bottom-left legend, without
+  promotional share-card chrome.
 
 ## 2026.08.26.1
 
