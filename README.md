@@ -11,6 +11,8 @@ Keep current truth, decisions, evidence, and safe next actions inside the reposi
 
 [Quick start](#quick-start) · [How it works](#how-it-works) · [Choose a footprint](#choose-a-footprint) · [Documentation](#documentation) · [Contributing](CONTRIBUTING.md)
 
+## How Agent Continuity Keeps Work Resumable
+
 ![Agent Continuity architecture: work signals become canonical project memory, deterministic tooling derives views and checks, and a fresh actor returns verified evidence to the source of truth.](.github/assets/agent-continuity-overview.png)
 
 _Architecture source: [Archify specification](.github/assets/agent-continuity-overview.architecture.json)_

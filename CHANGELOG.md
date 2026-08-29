@@ -6,7 +6,10 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ## Unreleased
 
-No adopter-facing changes yet.
+### For adopters
+
+- Reframed the README architecture visual as a canonical diagram export so its
+  system flow remains readable without promotional share-card chrome.
 
 ## 2026.08.26.1
 

@@ -9,7 +9,8 @@
       "url": "https://github.com/owensantoso/agent-continuity",
       "revision": "042388e198df836fbed013dcd72f1bf188b52954"
     },
-    "viewBox": [950, 500],
+    "legend": { "mode": "hidden" },
+    "viewBox": [950, 390],
     "views": [
       {
         "id": "truth-path",
@@ -37,7 +38,7 @@
       "type": "external",
       "label": "Work signals",
       "sublabel": "conversation / code / observations",
-      "pos": [40, 110],
+      "pos": [40, 60],
       "size": [150, 76],
       "sources": [
         { "path": "README.md", "label": "Why this exists" }
@@ -49,7 +50,7 @@
       "label": "Canonical project memory",
       "sublabel": "current state / decisions / plans / evidence",
       "tag": "source of truth",
-      "pos": [245, 100],
+      "pos": [245, 50],
       "size": [185, 96],
       "sources": [
         { "path": "guides/doc-types-and-responsibilities.md", "label": "Document ownership" },
@@ -61,7 +62,7 @@
       "type": "backend",
       "label": "CLI + manifest",
       "sublabel": "preview / ownership / safe writes",
-      "pos": [490, 100],
+      "pos": [490, 50],
       "size": [170, 96],
       "sources": [
         { "path": "scripts/agent-continuity", "label": "Command dispatcher" },
@@ -74,7 +75,7 @@
       "label": "Generated views + checks",
       "sublabel": "indexes / review queues / CI",
       "tag": "derived, not authored",
-      "pos": [720, 100],
+      "pos": [720, 50],
       "size": [185, 96],
       "sources": [
         { "path": "scripts/agent-continuity-ci", "label": "Repository CI" },
@@ -86,7 +87,7 @@
       "type": "external",
       "label": "Fresh human or agent",
       "sublabel": "resume without old chat",
-      "pos": [735, 295],
+      "pos": [735, 245],
       "size": [170, 76],
       "sources": [
         { "path": "AGENTS.md", "label": "Agent entry point" }
@@ -97,7 +98,7 @@
       "type": "security",
       "label": "Verified work receipt",
       "sublabel": "result / evidence / provenance",
-      "pos": [490, 290],
+      "pos": [490, 240],
       "size": [180, 84],
       "sources": [
         { "path": "scaffold/docs/repo-health/session-logs/README.md", "label": "Session receipts" }
