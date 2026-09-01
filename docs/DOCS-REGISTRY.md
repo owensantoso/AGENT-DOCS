@@ -2,7 +2,7 @@
 type: generated-view
 title: Docs Registry
 status: generated
-updated_at: "2026-09-01 12:27:54 JST +0900"
+updated_at: "2026-09-01 13:46:56 JST +0900"
 ---
 
 # Docs Registry
@@ -14,6 +14,8 @@ updated_at: "2026-09-01 12:27:54 JST +0900"
 | 01a0211d-8e63-709e-9528-26425072b798 | learning | Workflow Failure - Stale Project Tooling Created Legacy Numbered Docs | active | `decisions/learnings/LRN-workflow-failure-stale-project-tooling-created-legacy-numbered-docs.md` |
 | 01a05af3-a18a-72d6-9dad-83fd39ff27d3 | learning | Workflow Failure - UUIDv7 Creation Path Bypass | active | `decisions/learnings/LRN-workflow-failure-uuidv7-creation-path-bypass.md` |
 | 01a05af8-6ca8-7b57-a5f0-f4e6a81e9736 | session-log | UUIDv7 Session Log Creation Path | completed | `repo-health/session-logs/2026-09-01-uuidv7-session-log-creation-path.md` |
+| 01a05b47-fae7-7aac-acbc-288de294e646 | repo-health-audit | Agent Continuity Determinism Audit | completed | `repo-health/audits/AUDT-agent-continuity-determinism-audit.md` |
+| 01a05b47-fb80-78a2-9baa-3c118f5a7434 | session-log | Record Agent Continuity Determinism Audit | completed | `repo-health/session-logs/2026-09-01-record-agent-continuity-determinism-audit.md` |
 | EXPL-0001 | explainer | Agent Continuity Baseline Manifest | draft | `orientation/explainers/EXPL-0001-agent-docs-baseline-manifest.md` |
 | EXPL-0002 | explainer | Documents, Work, Delivery, And Semantic History | draft | `orientation/explainers/EXPL-0002-documents-work-delivery-and-semantic-history.md` |
 | EXPL-0003 | explainer | Agent Continuity, Jira, Linear, And General Execution | draft | `orientation/explainers/EXPL-0003-agent-continuity-jira-linear-and-general-execution.md` |
