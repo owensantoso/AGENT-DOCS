@@ -1,0 +1,55 @@
+{
+  "generatedAt": "2026-09-01T03:08:35.666Z",
+  "formatVersion": 3,
+  "contentVersion": "2026-09-01.1-proposed",
+  "status": "passed",
+  "schema": {
+    "passed": true,
+    "validator": "python-jsonschema Draft 2020-12"
+  },
+  "build": {
+    "conceptCount": 31,
+    "aliasCount": 468,
+    "normalizedAliasEntryCount": 457,
+    "ambiguityCount": 8,
+    "outputVariantCount": 496,
+    "shareRouteCount": 496,
+    "maximumCopiumEnabledConceptCount": 31,
+    "privacyInvariants": {
+      "persistRawInput": false,
+      "includeRawInputInUrls": false,
+      "includeRawInputInAnalytics": false,
+      "shareRoutesContainRawUserInput": false
+    },
+    "integrityErrors": []
+  },
+  "tests": {
+    "normalization": { "passed": 22, "total": 22, "propertyChecks": 943 },
+    "golden": { "passed": 78, "total": 78 },
+    "adversarial": { "passed": 70, "total": 70 },
+    "maximumCopium": { "passed": 3, "total": 3 },
+    "share": { "routes": 496, "uniqueRoutes": 496, "privacyAndEscapingChecks": 8 },
+    "runtimeNetwork": { "filesScanned": 7, "forbiddenCalls": 0 },
+    "performance": { "fuzzyBudgetMs": 750 }
+  },
+  "cleanRoomVerification": {
+    "sourceArchiveRegeneratedPages": 496,
+    "sourceArchiveRegeneratedCards": 496,
+    "sourceArchiveCheck": "passed",
+    "gitPatchApplyCheck": "passed",
+    "gitPatchRegeneratedPages": 496,
+    "gitPatchRegeneratedCards": 496,
+    "gitPatchCheck": "passed"
+  },
+  "decisions": {
+    "maximumCopiumForOrdinaryRejection": "enabled_with_disclaimer",
+    "severeSafetyContexts": "literal_boundary_bypass",
+    "runtimeLLM": "none",
+    "runtimeNetwork": "none"
+  },
+  "downloadHashes": {
+    "rejection-translator-v3-source-packet.zip": "2cb265c6a718c2f7823f120153cfcc206971b7520dc1e4d2f78e763f3caf3bc1",
+    "rejection-translator-v3-full-verified.zip": "ee5b8463b92a91e35b2291ecd6aa057e6787020d3db4ed1110bb010dd1f875b4",
+    "rejection-translator-v3-source.patch": "a645733d61a1dc6078d28b368dee9d5c52f5b37c5b79fc5bd358c9473a3efd64"
+  }
+}
