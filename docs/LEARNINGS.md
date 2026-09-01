@@ -2,7 +2,7 @@
 type: generated-view
 title: Learning Registry
 status: generated
-updated_at: "2026-09-01 13:46:56 JST +0900"
+updated_at: "2026-09-01 16:32:26 JST +0900"
 ---
 
 # Learning Registry

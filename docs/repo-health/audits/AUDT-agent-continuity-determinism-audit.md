@@ -7,7 +7,7 @@ title: Agent Continuity Determinism Audit
 status: completed
 audit_kind: paper-trail
 created_at: "2026-09-01 13:43:59 JST +0900"
-updated_at: "2026-09-01 13:44:03 JST +0900"
+updated_at: "2026-09-01 15:55:27 JST +0900"
 audit_started_at: "2026-09-01 13:43:59 JST +0900"
 audit_ended_at: "2026-09-01 13:43:59 JST +0900"
 owner:
@@ -22,8 +22,10 @@ checks:
   - declared configured observed enforcing separation
   - evaluator trigger reach authority proof drift separation
   - deterministic report repeatability
-related_specs: []
-related_plans: []
+related_specs:
+  - 01a05bbf-bc0f-7cab-9527-aee9ab9194c2
+related_plans:
+  - 01a05bbf-bcc2-78c2-84f0-153477fae16f
 related_adrs: []
 related_sessions:
   - 01a05b47-fb80-78a2-9baa-3c118f5a7434
@@ -91,14 +93,14 @@ recommendations; the sibling repository owns the reusable methodology.
 
 | ID | Severity | Status | Finding | Route | Follow-up | Resolution |
 |---|---|---|---|---|---|---|
-| AC-DET-01 | high | open | Commit title and provenance-trailer conventions are prose-only (`E0 T0 R0 A0 P1 D0`). Existing history contains inconsistent raw versus Git-parseable trailers. | contract | Add commit-message and pushed-range validation with passing/failing fixtures. | Not implemented in this audit. |
-| AC-DET-02 | medium | open | Structured-document construction is a strong contract, but invocation still depends on selecting the supported command (`E3 T1 R2 A2 P2 D1`). | harden | Detect or prevent unsupported fresh document construction at the owning transition. | Constructor exists; invocation coverage remains open. |
-| AC-DET-03 | high | open | Repository CI is event-triggered and revision-bound, but its coverage has false-negative paths and no demonstrated merge-blocking authority (`E2 T2 R1 A0 P2 D1`). | contract | Expand fixtures and declared roots, then bind the stable check to protected-branch policy. | CI exists; protection is not implemented here. |
-| AC-DET-04 | high | open | `doctor` is a deterministic preflight whose ignition remains prose-owned (`E3 T1 R2 A0 P1 D1`). The mutation command does not itself prove the preflight ran. | contract | Bind version/format preflight to the structured-doc mutation boundary and emit a revision-bound receipt. | Evaluator exists; automatic trigger does not. |
-| AC-DET-05 | high | open | A failed or absent CI run can be observed without preventing entry to `main`; the audited default branch had no required ruleset (`E2 T2 R1 A0 P2 D0`). | external policy | After local evaluator stabilization, configure and audit required remote checks with controlled break-glass. | Requires a separate authorized GitHub policy change. |
-| AC-DET-06 | medium | open | No registered adopter denominator or scheduled drift control detects missing hooks, stale installations, removed workflows, absent rulesets, or missed runs (`E0 T0 R0 A0 P0 D0`). | recurring audit | Define an explicit registry, a read-only drift command, freshness receipts, and missed-run detection. | No recurring mechanism exists. |
-| AC-DET-07 | high | open | Session creation is deterministic, but whether a qualifying change set has exactly one receipt or justified exemption is only weakly evaluated (`E1 T1 R1 A0 P1 D0`). | contract | Validate receipt cardinality and commit linkage at the change-set boundary. | Session constructor exists; lifecycle gate does not. |
-| AC-DET-08 | informational | accepted boundary | `CURRENT_STATE` truth is semantic. Syntax can require an impact declaration and cited evidence, but cannot prove the prose is true (`E0 T1 R0 A0 P1 D0`). | keep reasoning | Keep semantic review human/model-owned; automate evidence presence and freshness only. | Correctly excluded from a numeric target profile. |
+| AC-DET-01 | high | open | Commit title and provenance-trailer conventions are prose-only (`E0 T0 R0 A0 P1 D0`). Existing history contains inconsistent raw versus Git-parseable trailers. | none | Not routed. | Add commit-message and pushed-range validation only after exact convention semantics exist. |
+| AC-DET-02 | medium | open | Structured-document construction is a strong contract, but invocation still depends on selecting the supported command (`E3 T1 R2 A2 P2 D1`). | none | Not routed. | Constructor exists; unsupported direct construction remains a separate future control. |
+| AC-DET-03 | high | open | Repository CI is event-triggered and revision-bound, but its coverage has false-negative paths and no demonstrated merge-blocking authority (`E2 T2 R1 A0 P2 D1`). | none | Not routed. | Expand fixtures and declared roots before raising remote authority. |
+| AC-DET-04 | high | routed | `doctor` is a deterministic preflight whose ignition remains prose-owned (`E3 T1 R2 A0 P1 D1`). The mutation command does not itself prove the preflight ran. | none | repo-health/plans/PLAN-agent-continuity-determinism-hardening/IMPL-bind-doctor-to-document-mutations.md | Pilot target is `E3 T2 R2 A2 P1 D1`; implementation in progress. |
+| AC-DET-05 | high | open | A failed or absent CI run can be observed without preventing entry to `main`; the audited default branch had no required ruleset (`E2 T2 R1 A0 P2 D0`). | none | Not routed. | Requires a separate authorized GitHub policy change after local stabilization. |
+| AC-DET-06 | medium | open | No registered adopter denominator or scheduled drift control detects missing hooks, stale installations, removed workflows, absent rulesets, or missed runs (`E0 T0 R0 A0 P0 D0`). | none | Not routed. | Define an explicit registry before recurring drift work. |
+| AC-DET-07 | high | open | Session creation is deterministic, but whether a qualifying change set has exactly one receipt or justified exemption is only weakly evaluated (`E1 T1 R1 A0 P1 D0`). | none | Not routed. | Specify qualifying-change and exemption semantics before implementation. |
+| AC-DET-08 | info | resolved | `CURRENT_STATE` truth is semantic. Syntax can require an impact declaration and cited evidence, but cannot prove the prose is true (`E0 T1 R0 A0 P1 D0`). | none | No follow-up required. | Semantic review remains human/model-owned; evidence presence may be automated separately. |
 
 ## Recommendations
 

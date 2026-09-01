@@ -2,7 +2,7 @@
 type: generated-view
 title: Spec Registry
 status: generated
-updated_at: "2026-09-01 13:46:56 JST +0900"
+updated_at: "2026-09-01 16:32:26 JST +0900"
 ---
 
 # Spec Registry
@@ -13,3 +13,4 @@ Global registry for durable specs. The repo tree and frontmatter are the source 
 
 | ID | Title | Type | Domain | Status | Path | Source |
 |---|---|---|---|---|---|---|
+| 01a05bbf-bc0f-7cab-9527-aee9ab9194c2 | Automatic Document Mutation Preflight | repo-health | repo-health | approved | `repo-health/specs/SPEC-automatic-document-mutation-preflight.md` | conversation / codex://threads/01a05af8-157d-7423-9abc-216d2842f4c8 |

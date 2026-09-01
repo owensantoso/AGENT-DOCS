@@ -8,6 +8,13 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ### For adopters
 
+- Supported write-capable `agent-continuity docs` commands now run a silent,
+  machine-stable doctor policy automatically before mutating a canonical
+  manifest-backed repository. Release, owned-tooling, incompatible-shape, and
+  document-format drift refuse before writes, while generated-view repair,
+  UUID migration, and read-only diagnosis retain their explicit paths. Direct
+  helper invocation uses a compatible installed dispatcher from `PATH` and
+  fails closed when none is available.
 - Added `agent-continuity docs new session` / `session-log`. Fresh session logs
   now receive UUIDv7 identity, `aliases: []`, a dated slug path, valid
   lifecycle fields, and exact local timestamps through the same deterministic

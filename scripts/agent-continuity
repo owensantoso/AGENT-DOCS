@@ -95,6 +95,25 @@ WARNING_CATEGORIES = {
 }
 REFUSED_CATEGORIES = {"refused/unknown/incompatible shapes"}
 BASELINE_REFUSED_CATEGORIES = {"manual-review/refused"}
+DOCTOR_POLICIES = {"docs-write", "docs-migration-write"}
+POLICY_INVALID_CATEGORIES = {
+    "missing manifest/legacy/manual review",
+    "refused/unknown/incompatible shapes",
+}
+POLICY_ACTIONABLE_CATEGORIES = {
+    "legacy manifest schema",
+    "document format migration",
+    "missing Agent Continuity-owned tooling",
+    "checksum drift/local modification",
+    "candidate tooling updates available",
+    "safe automatic additions",
+}
+POLICY_ALLOWED_CATEGORIES = {
+    "healthy/current",
+    "generated view refreshes",
+    "missing project-owned manifest records",
+    "project-owned/manual-review items",
+}
 SUPPORTED_GENERATORS = {CANONICAL_DOCS_GENERATOR, LEGACY_DOCS_GENERATOR}
 DOCS_TOOLING_UPDATE_OUTPUTS = {
     "docs/IDEAS.md",
@@ -526,7 +545,7 @@ def classify_uuid_migration(report: Report) -> Path:
     return source_root
 
 
-def classify_document_format(report: Report, manifest: dict) -> None:
+def classify_document_format(report: Report, manifest: dict, document_root: Path | None = None) -> None:
     if manifest.get("schema_version") == MANIFEST_SCHEMA_VERSION:
         release = manifest.get("agent_continuity_release")
         if not isinstance(release, str) or not release:
@@ -548,9 +567,14 @@ def classify_document_format(report: Report, manifest: dict) -> None:
                 report.manifest_path,
                 f"manifest document_format_target {target!r} does not match supported target {DOCUMENT_FORMAT_TARGET}",
             )
-    docs_root = classify_uuid_migration(report)
+    migration_root = classify_uuid_migration(report)
+    docs_root = document_root if document_root is not None else migration_root
     if not docs_root.is_dir():
         return
+    try:
+        root_label = docs_root.relative_to(report.target).as_posix()
+    except ValueError:
+        root_label = docs_root.as_posix()
     command = [
         sys.executable,
         str(SCRIPT_DIR / "agent-continuity-docs"),
@@ -561,30 +585,30 @@ def classify_document_format(report: Report, manifest: dict) -> None:
     ]
     result = subprocess.run(command, cwd=report.target, capture_output=True, text=True)
     if result.returncode != 0:
-        report.add("refused/unknown/incompatible shapes", "docs", "document-format scan failed")
+        report.add("refused/unknown/incompatible shapes", root_label, "document-format scan failed")
         return
     try:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError:
-        report.add("refused/unknown/incompatible shapes", "docs", "document-format scan returned invalid JSON")
+        report.add("refused/unknown/incompatible shapes", root_label, "document-format scan returned invalid JSON")
         return
     counts = payload.get("counts", {})
     if not isinstance(counts, dict):
-        report.add("refused/unknown/incompatible shapes", "docs", "document-format scan omitted counts")
+        report.add("refused/unknown/incompatible shapes", root_label, "document-format scan omitted counts")
         return
     invalid = counts.get("invalid", 0)
     v1 = counts.get("v1", 0)
     if isinstance(invalid, int) and invalid:
-        report.add("refused/unknown/incompatible shapes", "docs", f"{invalid} document(s) use an invalid or unsupported format")
+        report.add("refused/unknown/incompatible shapes", root_label, f"{invalid} document(s) use an invalid or unsupported format")
     if isinstance(v1, int) and v1:
         report.add(
             "document format migration",
-            "docs",
+            root_label,
             f"{v1} authored document(s) still use v1; prepare a committed UUIDv7 migration plan before content writes",
         )
 
 
-def classify_target(target: Path) -> Report:
+def classify_target(target: Path, document_root: Path | None = None) -> Report:
     report = Report(target=target.resolve())
     if not report.target.exists():
         report.add("refused/unknown/incompatible shapes", report.target, "target path does not exist")
@@ -614,7 +638,7 @@ def classify_target(target: Path) -> Report:
         report.source_commit = source.get("commit") if isinstance(source.get("commit"), str) else None
     report.installed_at = manifest.get("installed_at") if isinstance(manifest.get("installed_at"), str) else None
     report.updated_at = manifest.get("updated_at") if isinstance(manifest.get("updated_at"), str) else None
-    classify_document_format(report, manifest)
+    classify_document_format(report, manifest, document_root)
 
     init_module = load_init_module()
     upstream_actions = {}
@@ -866,6 +890,36 @@ def report_exit_code(report: Report) -> int:
     if report.has_any(WARNING_CATEGORIES):
         return 1
     return 0
+
+
+def doctor_policy_result(report: Report, policy: str) -> tuple[int, list[str]]:
+    if policy not in DOCTOR_POLICIES:
+        return 2, [f"unknown policy {policy!r}"]
+
+    present = {category for category, findings in report.categories.items() if findings}
+    invalid = present & POLICY_INVALID_CATEGORIES
+    if invalid:
+        return 2, sorted(invalid)
+
+    known = POLICY_INVALID_CATEGORIES | POLICY_ACTIONABLE_CATEGORIES | POLICY_ALLOWED_CATEGORIES
+    unknown = present - known
+    if unknown:
+        return 2, [f"unclassified doctor category: {category}" for category in sorted(unknown)]
+
+    actionable = present & POLICY_ACTIONABLE_CATEGORIES
+    if policy == "docs-migration-write":
+        actionable.discard("document format migration")
+    if actionable:
+        return 1, sorted(actionable)
+    return 0, []
+
+
+def print_doctor_policy_failure(policy: str, report: Report, reasons: list[str]) -> None:
+    print(f"Agent Continuity policy {policy} refused document mutation.", file=sys.stderr)
+    for reason in reasons:
+        print(f"- {reason}", file=sys.stderr)
+        for finding in report.categories.get(reason, []):
+            print(f"  - {finding.path}: {finding.reason}", file=sys.stderr)
 
 
 def status_label(report: Report) -> str:
@@ -1338,11 +1392,43 @@ def baseline(args: list[str], command_name: str = "agent-continuity") -> int:
     return 0
 
 
+def resolve_policy_document_root(target: Path, requested: Path) -> tuple[Path | None, str | None]:
+    target = target.resolve(strict=False)
+    candidate = requested.expanduser()
+    if not candidate.is_absolute():
+        candidate = target / candidate
+    candidate = candidate.resolve(strict=False)
+    try:
+        candidate.relative_to(target)
+    except ValueError:
+        return None, f"policy root resolves outside target: {candidate}"
+    if candidate.exists() and not candidate.is_dir():
+        return None, f"policy root is not a directory: {candidate}"
+    return candidate, None
+
+
 def doctor(args: list[str], command_name: str = "agent-continuity") -> int:
     parser = argparse.ArgumentParser(prog=f"{command_name} doctor", description="Read-only install and drift report.")
+    parser.add_argument("--policy", choices=sorted(DOCTOR_POLICIES), help=argparse.SUPPRESS)
+    parser.add_argument("--policy-root", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("target", nargs="?", type=Path, default=Path.cwd(), help="Target repository root. Defaults to the current directory.")
     parsed = parser.parse_args(args)
-    report = classify_target(parsed.target.expanduser())
+    if bool(parsed.policy) != bool(parsed.policy_root):
+        parser.error("--policy and --policy-root must be provided together")
+    target = parsed.target.expanduser().resolve(strict=False)
+    policy_root = None
+    if parsed.policy_root is not None:
+        policy_root, refusal = resolve_policy_document_root(target, parsed.policy_root)
+        if refusal is not None:
+            print(f"Agent Continuity policy {parsed.policy} refused document mutation.", file=sys.stderr)
+            print(f"- {refusal}", file=sys.stderr)
+            return 2
+    report = classify_target(target, policy_root)
+    if parsed.policy:
+        result, reasons = doctor_policy_result(report, parsed.policy)
+        if result != 0:
+            print_doctor_policy_failure(parsed.policy, report, reasons)
+        return result
     print_report("doctor", report, command_name)
     return report_exit_code(report)
 
@@ -2012,6 +2098,7 @@ def main(argv: list[str], command_name: str = "agent-continuity") -> int:
             return 1
         env = os.environ.copy()
         env["AGENT_CONTINUITY_DOCS_PROG"] = f"{command_name} docs"
+        env["AGENT_CONTINUITY_DISPATCHER_PATH"] = str(Path(__file__).resolve())
         return subprocess.call([str(docs_command), *args], env=env)
     if command == "doctor":
         return doctor(args, command_name)

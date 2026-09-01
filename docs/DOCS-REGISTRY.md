@@ -2,7 +2,7 @@
 type: generated-view
 title: Docs Registry
 status: generated
-updated_at: "2026-09-01 13:46:56 JST +0900"
+updated_at: "2026-09-01 16:32:26 JST +0900"
 ---
 
 # Docs Registry
@@ -16,6 +16,11 @@ updated_at: "2026-09-01 13:46:56 JST +0900"
 | 01a05af8-6ca8-7b57-a5f0-f4e6a81e9736 | session-log | UUIDv7 Session Log Creation Path | completed | `repo-health/session-logs/2026-09-01-uuidv7-session-log-creation-path.md` |
 | 01a05b47-fae7-7aac-acbc-288de294e646 | repo-health-audit | Agent Continuity Determinism Audit | completed | `repo-health/audits/AUDT-agent-continuity-determinism-audit.md` |
 | 01a05b47-fb80-78a2-9baa-3c118f5a7434 | session-log | Record Agent Continuity Determinism Audit | completed | `repo-health/session-logs/2026-09-01-record-agent-continuity-determinism-audit.md` |
+| 01a05bbf-bc0f-7cab-9527-aee9ab9194c2 | spec | Automatic Document Mutation Preflight | approved | `repo-health/specs/SPEC-automatic-document-mutation-preflight.md` |
+| 01a05bbf-bcc2-78c2-84f0-153477fae16f | plan | Agent Continuity Determinism Hardening | in_progress | `repo-health/plans/PLAN-agent-continuity-determinism-hardening/PLAN-agent-continuity-determinism-hardening.md` |
+| 01a05bbf-bd70-7c1b-ad48-31887886423e | evaluation | Automatic Document Preflight Pilot | active | `repo-health/evaluations/EVAL-automatic-document-preflight-pilot.md` |
+| 01a05bbf-be12-736c-a65b-f0d88f8bac82 | session-log | Automatic Document Mutation Preflight Pilot | in_progress | `repo-health/session-logs/2026-09-01-automatic-document-mutation-preflight-pilot.md` |
+| 01a05bbf-f319-75db-adab-c61cd891be5a | implementation-brief | Bind Doctor to Document Mutations | in_progress | `repo-health/plans/PLAN-agent-continuity-determinism-hardening/IMPL-bind-doctor-to-document-mutations.md` |
 | EXPL-0001 | explainer | Agent Continuity Baseline Manifest | draft | `orientation/explainers/EXPL-0001-agent-docs-baseline-manifest.md` |
 | EXPL-0002 | explainer | Documents, Work, Delivery, And Semantic History | draft | `orientation/explainers/EXPL-0002-documents-work-delivery-and-semantic-history.md` |
 | EXPL-0003 | explainer | Agent Continuity, Jira, Linear, And General Execution | draft | `orientation/explainers/EXPL-0003-agent-continuity-jira-linear-and-general-execution.md` |

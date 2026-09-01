@@ -33,6 +33,24 @@ DOCUMENT_MIGRATION_SCHEMA_VERSION = 1
 DOCUMENT_MIGRATION_TYPE = "agent-continuity-document-uuid-v2"
 DEFAULT_MIGRATION_EXCLUDES = ["scaffold/**"]
 MIGRATION_SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+CANONICAL_MANIFEST_PATH = Path(".agent-continuity/manifest.json")
+ALWAYS_WRITE_COMMANDS = {"new", "set-status", "update", "view"}
+CONDITIONAL_WRITE_COMMANDS = {"retire-id", "normalize-links", "move", "health", "roadmap"}
+MIGRATION_WRITE_COMMANDS = {"migrate-uuids"}
+READ_ONLY_COMMANDS = {
+    "next",
+    "format-status",
+    "status",
+    "show",
+    "todos",
+    "check",
+    "check-todos",
+    "review",
+    "links",
+    "backlinks",
+    "check-links",
+    "orphans",
+}
 
 ID_PATTERNS = {
     "idea": re.compile(r"\bIDEA-(\d{4})\b"),
@@ -680,6 +698,131 @@ def docs_root(value: str) -> Path:
     if not root.exists() and Path.cwd().name == "docs":
         root = Path.cwd()
     return root
+
+
+def document_mutation_policy(args: argparse.Namespace) -> str | None:
+    command = args.command
+    if command in ALWAYS_WRITE_COMMANDS:
+        return "docs-write"
+    if command in CONDITIONAL_WRITE_COMMANDS:
+        return "docs-write" if bool(getattr(args, "write", False)) else None
+    if command in MIGRATION_WRITE_COMMANDS:
+        return "docs-migration-write" if bool(getattr(args, "write", False)) else None
+    if command in READ_ONLY_COMMANDS:
+        return None
+    return "docs-write"
+
+
+def manifest_path_exists(repo_root: Path) -> bool:
+    manifest = repo_root / CANONICAL_MANIFEST_PATH
+    return manifest.exists() or manifest.is_symlink()
+
+
+def preflight_repository_root(root: Path) -> Path | None:
+    resolved_root = root.resolve(strict=False)
+    git_start = resolved_root if resolved_root.is_dir() else resolved_root.parent
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(git_start), "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        result = None
+    if result is not None and result.returncode == 0:
+        value = result.stdout.strip()
+        if value:
+            candidate = Path(value).resolve(strict=False)
+            if candidate.is_dir():
+                return candidate
+
+    for candidate in (resolved_root, *resolved_root.parents):
+        if candidate.is_dir() and manifest_path_exists(candidate):
+            return candidate
+    return None
+
+
+def preflight_dispatcher_path() -> Path | None:
+    configured = os.environ.get("AGENT_CONTINUITY_DISPATCHER_PATH")
+    if configured:
+        candidates = [Path(configured)]
+    else:
+        candidates = [Path(__file__).resolve().with_name("agent-continuity")]
+        installed = shutil.which("agent-continuity")
+        if installed:
+            candidates.append(Path(installed))
+    for candidate in candidates:
+        try:
+            if candidate.is_file() and os.access(candidate, os.X_OK):
+                return candidate.resolve()
+        except OSError:
+            continue
+    return None
+
+
+def run_document_mutation_preflight(args: argparse.Namespace, root: Path) -> int:
+    policy = document_mutation_policy(args)
+    if policy is None:
+        return 0
+
+    repo_root = preflight_repository_root(root)
+    if repo_root is None or not manifest_path_exists(repo_root):
+        return 0
+
+    dispatcher = preflight_dispatcher_path()
+    if dispatcher is None:
+        print(
+            "Document mutation preflight refused: no compatible Agent Continuity dispatcher is available.",
+            file=sys.stderr,
+        )
+        return 2
+
+    result = subprocess.run(
+        [
+            str(dispatcher),
+            "doctor",
+            "--policy",
+            policy,
+            "--policy-root",
+            str(root.resolve(strict=False)),
+            str(repo_root),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode not in {0, 1, 2}:
+        print(
+            f"Document mutation preflight refused: compatible dispatcher returned unsupported exit {result.returncode}.",
+            file=sys.stderr,
+        )
+        return 2
+    if result.stdout:
+        print(
+            "Document mutation preflight refused: compatible dispatcher emitted unexpected standard output.",
+            file=sys.stderr,
+        )
+        return 2
+    if result.returncode == 0:
+        if result.stderr:
+            print(
+                "Document mutation preflight refused: compatible dispatcher emitted unexpected standard error.",
+                file=sys.stderr,
+            )
+            return 2
+        return 0
+
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+        if not result.stderr.endswith("\n"):
+            sys.stderr.write("\n")
+    else:
+        print(
+            f"Document mutation preflight refused: compatible dispatcher returned {result.returncode} without a policy reason.",
+            file=sys.stderr,
+        )
+    return result.returncode
 
 
 def read_docs(root: Path, *, skip_decode_errors: bool = False, skip_symlinks: bool = False) -> list[Doc]:
@@ -4872,6 +5015,9 @@ def validate_linked_paths(doc: Doc, root: Path) -> list[str]:
 def main() -> int:
     args = parse_args()
     root = docs_root(args.root)
+    preflight_result = run_document_mutation_preflight(args, root)
+    if preflight_result != 0:
+        return preflight_result
     if args.command == "format-status":
         payload = format_status_payload(root, args.exclude)
         print_json_or_text(payload, format_status_text(payload), args.json)

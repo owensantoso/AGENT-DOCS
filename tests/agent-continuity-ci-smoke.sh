@@ -5,6 +5,10 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 installer="$repo_root/scripts/agent-continuity-init"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
+dispatcher_bin="$tmpdir/installed-bin"
+mkdir -p "$dispatcher_bin"
+ln -s "$repo_root/scripts/agent-continuity" "$dispatcher_bin/agent-continuity"
+export PATH="$dispatcher_bin:$PATH"
 
 require_file() {
   if [[ ! -f "$1" ]]; then

@@ -30,6 +30,7 @@ run tests/agent-continuity-init-smoke.sh
 run tests/agent-continuity-ci-smoke.sh
 run tests/agent-continuity-project-smoke.sh
 run tests/agent-continuity-doctor-upgrade-smoke.sh
+run tests/agent-continuity-docs-preflight-smoke.sh
 run tests/agent-continuity-docs-smoke.sh
 run tests/changelog-check-smoke.sh
 pycache_dir="$(mktemp -d)"
