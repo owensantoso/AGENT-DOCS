@@ -8,7 +8,7 @@ domain: workflow
 status: active
 learning_type: lesson
 created_at: "2026-09-01 12:11:51 JST +0900"
-updated_at: "2026-09-01 12:24:00 JST +0900"
+updated_at: "2026-09-01 12:27:26 JST +0900"
 owner: Codex
 source:
   type: codex-task
@@ -36,7 +36,7 @@ linked_paths:
   - scaffold/docs/repo-health/session-logs/YYYY-MM-DD-session-title.md
 repo_state:
   based_on_commit: 55f9b242f1bbed6888e21ec8fac9e62217967a0b
-  last_reviewed_commit: 55f9b242f1bbed6888e21ec8fac9e62217967a0b
+  last_reviewed_commit: 895d293
 ---
 
 # Workflow Failure - UUIDv7 Creation Path Bypass
@@ -136,6 +136,7 @@ this slice into migration or arbitrary document-family generation.
 - A disposable cold adopter used the installed public command to create a
   session with UUID version 7, document format 2, `aliases: []`, an
   `in_progress` lifecycle, and a passing `agent-continuity docs check`.
+- The verified local release candidate is commit `895d293`.
 - Publication and remote continuous integration remain pending explicit
   authority. Local verification does not imply public release.
 

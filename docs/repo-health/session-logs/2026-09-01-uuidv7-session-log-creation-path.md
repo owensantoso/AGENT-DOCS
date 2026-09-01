@@ -5,13 +5,14 @@ id: 01a05af8-6ca8-7b57-a5f0-f4e6a81e9736
 aliases: []
 title: UUIDv7 Session Log Creation Path
 domain: agent-continuity
-status: in_progress
+status: completed
 created_at: "2026-09-01 12:17:05 JST +0900"
-updated_at: "2026-09-01 12:24:00 JST +0900"
+updated_at: "2026-09-01 12:27:26 JST +0900"
 started_at: "2026-09-01 12:17:05 JST +0900"
-ended_at:
+ended_at: "2026-09-01 12:27:26 JST +0900"
 timezone: "JST +0900"
 participants:
+  - Owen
   - Codex
 areas: []
 related_plans: []
@@ -21,7 +22,8 @@ related_adrs: []
 related_todos: []
 related_issues: []
 related_prs: []
-commits: []
+commits:
+  - 895d293
 ---
 
 # 2026-09-01 - UUIDv7 Session Log Creation Path
@@ -29,9 +31,9 @@ commits: []
 ## Session metadata
 
 - Started: 2026-09-01 12:17:05 JST +0900
-- Ended: in progress
+- Ended: 2026-09-01 12:27:26 JST +0900
 - Timezone: JST +0900
-- Participants: Codex
+- Participants: Owen, Codex
 - Todo-backed work: none recorded
 
 ## Goal
@@ -49,6 +51,8 @@ command.
   the UUIDv7/UUIDv4 regression cases.
 - 2026-09-01 12:23 JST +0900 - Passed the focused smoke suite, full release
   gate, local installation, and disposable cold-adopter check.
+- 2026-09-01 12:27 JST +0900 - Committed the verified local release candidate
+  as `895d293` and closed the receipt.
 
 ## Context read
 
@@ -88,6 +92,5 @@ command.
 
 ## Follow-ups
 
-- Commit the local release candidate and close this receipt with that commit.
 - Publish to `origin/main` and observe remote continuous integration only after
   explicit authorization.

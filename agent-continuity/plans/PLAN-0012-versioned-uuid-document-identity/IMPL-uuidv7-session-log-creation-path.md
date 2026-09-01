@@ -5,9 +5,9 @@ id: 01a05af3-a06e-7ac7-a0ce-b6d0440460bf
 aliases: []
 title: UUIDv7 Session Log Creation Path
 domain: agent-continuity
-status: in_progress
+status: completed
 created_at: "2026-09-01 12:11:50 JST +0900"
-updated_at: "2026-09-01 12:24:00 JST +0900"
+updated_at: "2026-09-01 12:27:26 JST +0900"
 parent_plan: PLAN-0012
 task_refs: []
 owner: Codex
@@ -22,7 +22,7 @@ related_prs: []
 linked_paths: []
 repo_state:
   based_on_commit: 55f9b242f1bbed6888e21ec8fac9e62217967a0b
-  last_reviewed_commit: 55f9b242f1bbed6888e21ec8fac9e62217967a0b
+  last_reviewed_commit: 895d293
 ---
 
 # UUIDv7 Session Log Creation Path
@@ -81,8 +81,8 @@ structured-doc checks as every other generated family.
 
 - [x] Implementation complete
 - [x] Verification complete
-- [x] Workflow learning and session receipt drafted
-- [ ] Local release candidate committed
+- [x] Workflow learning and session receipt complete
+- [x] Local release candidate committed as `895d293`
 - [x] Publication/remote CI is explicitly reported as pending authority
 
 ## Publication Boundary
