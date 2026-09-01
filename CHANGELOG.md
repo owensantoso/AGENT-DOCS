@@ -8,6 +8,8 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ### For adopters
 
+- Added named release `2026.09.01.1` for UUIDv7 session-log construction and
+  automatic document-mutation preflight.
 - Supported write-capable `agent-continuity docs` commands now run a silent,
   machine-stable doctor policy automatically before mutating a canonical
   manifest-backed repository. Release, owned-tooling, incompatible-shape, and
