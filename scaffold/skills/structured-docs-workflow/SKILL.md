@@ -9,20 +9,15 @@ Use this skill when the task is about how Agent Continuity structured docs fit t
 
 This skill is a router and quick-start guide. The source of truth still lives in the repo docs and `agent-continuity docs`.
 
-## Version Preflight
+## Mutation Guard
 
-Before the first structured-document or Agent Continuity tooling mutation in a
-task, run this read-only check when `.agent-continuity/manifest.json` exists:
-
-```bash
-agent-continuity doctor .
-```
-
-If it reports installed-release, owned-tooling, or document-format drift, do not
-use a repo-local `scripts/agent-continuity-docs` or compatibility `scripts/docs-meta`
-command to create, rename, or mutate structured docs yet. Follow the reported
-upgrade or migration path. If another task owns uncommitted docs, coordinate a
-clean handoff before migration. Unrelated read-only or code work may continue.
+Use the installed `agent-continuity docs` command for structured-document
+writes. In a manifest-backed repository, supported write commands automatically
+run the mutation preflight and refuse unsafe release, tooling, or format drift
+before writing. Do not bypass a refusal or substitute a stale repo-local helper.
+Use `agent-continuity doctor .` to diagnose it, follow the reported upgrade or
+migration path, and coordinate before migrating another task's uncommitted docs.
+Direct editor or shell writes remain outside this guard.
 
 ## Fast Path
 
@@ -36,9 +31,9 @@ If you are implementing:
 
 If you are planning or drafting docs:
 
-1. complete the version preflight above
-2. choose the owning doc type
-3. use `agent-continuity docs` for UUID identity, status, and generated views
+1. choose the owning doc type
+2. use `agent-continuity docs` for UUID identity, status, and generated views
+3. diagnose and resolve any automatic mutation-guard refusal before continuing
 
 If you are adopting the workflow in another repo:
 

@@ -8,6 +8,11 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ### For adopters
 
+- Added named release `2026.09.01.2` for post-proof mutation-preflight prose
+  retirement in generated Agent Continuity guidance.
+- Replaced repeated manual doctor-before-write procedure with the automatic
+  mutation-guard invariant and refusal-recovery guidance after cold release
+  verification. Direct editor and shell writes remain an explicit boundary.
 - Added named release `2026.09.01.1` for UUIDv7 session-log construction and
   automatic document-mutation preflight.
 - Supported write-capable `agent-continuity docs` commands now run a silent,

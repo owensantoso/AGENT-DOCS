@@ -260,10 +260,12 @@ def tiny_files(profile: Profile) -> list[Action]:
 
 Read `docs/CURRENT_STATE.md` first. Keep docs small and truthful.
 
-Before the first Agent Continuity docs or tooling mutation in a task, run
-`agent-continuity doctor .` when `.agent-continuity/manifest.json` exists. If it
-reports release, tooling, or document-format drift, upgrade or migrate before
-creating or mutating structured docs.
+Use the installed `agent-continuity docs` command. In a manifest-backed
+repository, supported write commands automatically run the mutation preflight
+and refuse unsafe release, tooling, or format drift before writing. Do not
+bypass a refusal; diagnose it with `agent-continuity doctor .`, then upgrade or
+migrate through the reported path. Direct editor or shell writes are outside
+this guard.
 
 ## Rules
 
