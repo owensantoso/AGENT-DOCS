@@ -5,16 +5,18 @@ id: 01a05bbf-be12-736c-a65b-f0d88f8bac82
 aliases: []
 title: Automatic Document Mutation Preflight Pilot
 domain: repo-health
-status: in_progress
+status: completed
 created_at: "2026-09-01 15:54:47 JST +0900"
-updated_at: "2026-09-01 15:55:27 JST +0900"
+updated_at: "2026-09-01 16:43:44 JST +0900"
 started_at: "2026-09-01 15:54:47 JST +0900"
-ended_at:
+ended_at: "2026-09-01 16:43:44 JST +0900"
 timezone: "JST +0900"
 participants:
   - Codex root task
   - determinism audit-to-roadmap reviewer
   - Agent Continuity code-path explorer
+  - Agent Continuity implementation worker
+  - independent preflight reviewer
 areas: []
 related_plans:
   - 01a05bbf-bcc2-78c2-84f0-153477fae16f
@@ -26,7 +28,10 @@ related_adrs: []
 related_todos: []
 related_issues: []
 related_prs: []
-commits: []
+commits:
+  - 1f2dbc9f8801077f6d5c5e567c4792158fde7d77
+  - 3311ee1784d33b18516f9abbc99ed1f1a888e179
+  - 0ae69937e805307cc385af6e8da518d56ba12215
 ---
 
 # 2026-09-01 - Automatic Document Mutation Preflight Pilot
@@ -34,7 +39,7 @@ commits: []
 ## Session metadata
 
 - Started: 2026-09-01 15:54:47 JST +0900
-- Ended: in progress
+- Ended: 2026-09-01 16:43:44 JST +0900
 - Timezone: JST +0900
 - Participants: Codex root task; determinism audit-to-roadmap reviewer; Agent
   Continuity code-path explorer
@@ -53,6 +58,16 @@ into one proportional, evaluated Agent Continuity contract pilot.
   repair exceptions, and prose-retirement boundary.
 - 2026-09-01 15:55 JST +0900 - Created the owning spec, staged hardening plan,
   first implementation brief, and focused evaluation record.
+- 2026-09-01 16:05-16:25 JST +0900 - Implemented the automatic policy and
+  focused fixtures. Independent review found dispatcher masking, wrong-root
+  inspection, and shallow non-Git discovery; all three were fixed and re-tested.
+- 2026-09-01 16:31 JST +0900 - Committed the bounded implementation as
+  `1f2dbc9f8801077f6d5c5e567c4792158fde7d77`.
+- 2026-09-01 16:33 JST +0900 - Named release `2026.09.01.1` and verified the
+  exact committed release from a clean detached cold worktree.
+- 2026-09-01 16:40 JST +0900 - Replaced the manual preflight procedure in the
+  generated scaffold and workflow skill with the automatic guard invariant,
+  named release `2026.09.01.2`, and repeated the clean cold release check.
 
 ## Context read
 
@@ -66,7 +81,15 @@ into one proportional, evaluated Agent Continuity contract pilot.
 
 ## Changes
 
-- Durable planning and evaluation artifacts created; implementation pending.
+- Added machine-stable `docs-write` and `docs-migration-write` policies.
+- Bound supported document mutations to the exact target repository and
+  document root before reads or writes.
+- Added fail-closed current/future command classification, installed dispatcher
+  discovery, nested non-Git manifest discovery, and repair exceptions.
+- Added focused pass, refusal, unchanged-tree, custom-root, dispatcher,
+  migration, diagnosis, and compatibility fixtures to the full release gate.
+- Reduced repeated manual invocation prose only after the first cold release
+  passed. Diagnosis, recovery, concurrency, and direct-write boundaries remain.
 
 ## Decisions
 
@@ -79,9 +102,20 @@ into one proportional, evaluated Agent Continuity contract pilot.
 
 ## Verification
 
-Pending implementation.
+- `tests/agent-continuity-docs-preflight-smoke.sh` - passed.
+- `tests/agent-continuity-ci-smoke.sh` without dispatcher injection - passed.
+- `tests/agent-continuity-doctor-upgrade-smoke.sh` - passed.
+- `tests/agent-continuity-docs-smoke.sh` - passed.
+- `scripts/release-check` - passed repeatedly, including clean detached cold
+  worktrees at `3311ee1784d33b18516f9abbc99ed1f1a888e179` and
+  `0ae69937e805307cc385af6e8da518d56ba12215`.
+- Installed command symlink resolves to the canonical source and reports Agent
+  Continuity `2026.09.01.2`.
 
 ## Follow-ups
 
-- Implement and run the focused evaluation.
-- Rerun the audit before choosing the next control.
+- Keep the parent hardening plan open for the next bounded control.
+- Add revision-bound per-execution receipts only through a separate proof-layer
+  spec; this pilot intentionally remains `P1`.
+- Attempt a second bounded audit outside Agent Continuity before installing a
+  global Determinism Audit routing skill or recurring registry.

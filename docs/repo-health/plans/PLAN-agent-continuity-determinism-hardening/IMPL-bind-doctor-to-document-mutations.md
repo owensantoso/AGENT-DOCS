@@ -5,9 +5,9 @@ id: 01a05bbf-f319-75db-adab-c61cd891be5a
 aliases: []
 title: Bind Doctor to Document Mutations
 domain: repo-health
-status: in_progress
+status: completed
 created_at: "2026-09-01 15:55:01 JST +0900"
-updated_at: "2026-09-01 15:55:27 JST +0900"
+updated_at: "2026-09-01 16:43:44 JST +0900"
 parent_plan: 01a05bbf-bcc2-78c2-84f0-153477fae16f
 task_refs: []
 owner:
@@ -21,10 +21,14 @@ related_sessions:
   - 01a05bbf-be12-736c-a65b-f0d88f8bac82
 related_issues: []
 related_prs: []
-linked_paths: []
+linked_paths:
+  - scripts/agent-continuity
+  - scripts/agent-continuity-docs
+  - tests/agent-continuity-docs-preflight-smoke.sh
+  - scripts/release-check
 repo_state:
   based_on_commit: 56ce042f774de556b3dae50e5333faae3430a303
-  last_reviewed_commit: 56ce042f774de556b3dae50e5333faae3430a303
+  last_reviewed_commit: 0ae69937e805307cc385af6e8da518d56ba12215
 ---
 
 # Bind Doctor to Document Mutations
@@ -78,5 +82,5 @@ policy exit codes in the evaluation.
 
 ## Done Checklist
 
-- [ ] Implementation complete
-- [ ] Verification complete
+- [x] Implementation complete
+- [x] Verification complete

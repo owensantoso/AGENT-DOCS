@@ -7,7 +7,7 @@ title: Agent Continuity Determinism Audit
 status: completed
 audit_kind: paper-trail
 created_at: "2026-09-01 13:43:59 JST +0900"
-updated_at: "2026-09-01 15:55:27 JST +0900"
+updated_at: "2026-09-01 16:43:44 JST +0900"
 audit_started_at: "2026-09-01 13:43:59 JST +0900"
 audit_ended_at: "2026-09-01 13:43:59 JST +0900"
 owner:
@@ -31,7 +31,7 @@ related_sessions:
   - 01a05b47-fb80-78a2-9baa-3c118f5a7434
 repo_state:
   based_on_commit: ac446cc725a749c73801087b56c60553652abb98
-  last_reviewed_commit: ac446cc725a749c73801087b56c60553652abb98
+  last_reviewed_commit: 0ae69937e805307cc385af6e8da518d56ba12215
 ---
 
 # Agent Continuity Determinism Audit
@@ -40,9 +40,11 @@ repo_state:
 
 This audit reviews how Agent Continuity requirements are evaluated, invoked,
 applied, evidenced, and kept current. It covers the canonical source repository
-at `ac446cc725a749c73801087b56c60553652abb98`, the complete-profile scaffold,
-and evidence from existing adopter runs. It does not claim live coverage over
-an enumerated adopter fleet because no such registry exists.
+from the baseline at `ac446cc725a749c73801087b56c60553652abb98` through local
+release `2026.09.01.2` at `0ae69937e805307cc385af6e8da518d56ba12215`,
+the complete-profile scaffold, and evidence from existing adopter runs. It does
+not claim live coverage over an enumerated adopter fleet because no such
+registry exists.
 
 ## Questions
 
@@ -58,6 +60,7 @@ an enumerated adopter fleet because no such registry exists.
 ## Sources Reviewed
 
 - Current repo state: `ac446cc725a749c73801087b56c60553652abb98`
+- Pilot release state: `0ae69937e805307cc385af6e8da518d56ba12215`
 - `scripts/agent-continuity-docs`
 - `scripts/agent-continuity-ci`
 - `scaffold/AGENTS.md`
@@ -96,7 +99,7 @@ recommendations; the sibling repository owns the reusable methodology.
 | AC-DET-01 | high | open | Commit title and provenance-trailer conventions are prose-only (`E0 T0 R0 A0 P1 D0`). Existing history contains inconsistent raw versus Git-parseable trailers. | none | Not routed. | Add commit-message and pushed-range validation only after exact convention semantics exist. |
 | AC-DET-02 | medium | open | Structured-document construction is a strong contract, but invocation still depends on selecting the supported command (`E3 T1 R2 A2 P2 D1`). | none | Not routed. | Constructor exists; unsupported direct construction remains a separate future control. |
 | AC-DET-03 | high | open | Repository CI is event-triggered and revision-bound, but its coverage has false-negative paths and no demonstrated merge-blocking authority (`E2 T2 R1 A0 P2 D1`). | none | Not routed. | Expand fixtures and declared roots before raising remote authority. |
-| AC-DET-04 | high | routed | `doctor` is a deterministic preflight whose ignition remains prose-owned (`E3 T1 R2 A0 P1 D1`). The mutation command does not itself prove the preflight ran. | none | repo-health/plans/PLAN-agent-continuity-determinism-hardening/IMPL-bind-doctor-to-document-mutations.md | Pilot target is `E3 T2 R2 A2 P1 D1`; implementation in progress. |
+| AC-DET-04 | high | resolved | Supported manifest-backed document mutations now invoke a deterministic doctor policy and refuse unsafe state before writing (`E3 T2 R2 A2 P1 D2`). | none | No follow-up required. | Releases `2026.09.01.1` and `2026.09.01.2` passed exact-commit cold worktree checks. Direct editor/shell writes and per-run receipts remain explicitly outside this control. |
 | AC-DET-05 | high | open | A failed or absent CI run can be observed without preventing entry to `main`; the audited default branch had no required ruleset (`E2 T2 R1 A0 P2 D0`). | none | Not routed. | Requires a separate authorized GitHub policy change after local stabilization. |
 | AC-DET-06 | medium | open | No registered adopter denominator or scheduled drift control detects missing hooks, stale installations, removed workflows, absent rulesets, or missed runs (`E0 T0 R0 A0 P0 D0`). | none | Not routed. | Define an explicit registry before recurring drift work. |
 | AC-DET-07 | high | open | Session creation is deterministic, but whether a qualifying change set has exactly one receipt or justified exemption is only weakly evaluated (`E1 T1 R1 A0 P1 D0`). | none | Not routed. | Specify qualifying-change and exemption semantics before implementation. |
@@ -104,9 +107,8 @@ recommendations; the sibling repository owns the reusable methodology.
 
 ## Recommendations
 
-1. Implement contract checks in failure-order, not prose-order:
-   commit/range metadata, document-root coverage, doctor-at-mutation, and session
-   receipt linkage.
+1. Continue contract checks in failure-order, not prose-order: commit/range
+   metadata, broader document-root validation, and session receipt linkage.
 2. Give local CI broader evaluator coverage and explicit failing fixtures before
    raising its authority. A deterministic false negative is still a trapdoor in
    a lab coat.
@@ -124,9 +126,29 @@ recommendations; the sibling repository owns the reusable methodology.
 
 ## Follow-Ups
 
-- Create a dedicated Agent Continuity hardening plan from `AC-DET-01` through
-  `AC-DET-07`; this audit does not authorize implementation or GitHub mutation.
+- Continue the dedicated Agent Continuity hardening plan one bounded control at
+  a time; this audit does not authorize GitHub mutation.
 - Use the sibling `determinism-audit` repository for the reusable framework and
   the future Interface Toolbox / Visual Design Director comparison.
 - Refresh this audit before implementation if the source revision, remote
   policy, installed release, or adopter set changes.
+
+## Pilot Re-audit
+
+`AC-DET-04` moved from `E3 T1 R2 A0 P1 D1` to
+`E3 T2 R2 A2 P1 D2`.
+
+- Trigger rose because every supported write-capable document command is
+  classified and invokes the policy automatically.
+- Authority rose because unsafe release, tooling, incompatible, and
+  document-format state blocks before repository bytes change.
+- Drift rose because the trigger lives in versioned, checksum-tracked tooling
+  and release/install drift is itself part of the gate.
+- Proof remains `P1` because ordinary successful executions are silent and do
+  not emit revision- and policy-bound receipts.
+- Reach remains `R2` because direct editor and shell writes, old unupgraded
+  helpers, and unknown fleet members are not intercepted.
+
+Only duplicated invocation procedure was reduced. The scaffold and structured
+docs skill still explain intent, refusal diagnosis, upgrade/migration recovery,
+concurrent-doc ownership, and the direct-write boundary.

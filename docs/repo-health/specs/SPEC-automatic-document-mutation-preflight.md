@@ -8,7 +8,7 @@ spec_type: repo-health
 domain: repo-health
 status: approved
 created_at: "2026-09-01 15:54:47 JST +0900"
-updated_at: "2026-09-01 15:55:27 JST +0900"
+updated_at: "2026-09-01 16:43:44 JST +0900"
 owner:
 source:
   type: conversation
@@ -24,10 +24,13 @@ related_sessions:
   - 01a05bbf-be12-736c-a65b-f0d88f8bac82
 supersedes: []
 superseded_by: []
-linked_paths: []
+linked_paths:
+  - scripts/agent-continuity
+  - scripts/agent-continuity-docs
+  - tests/agent-continuity-docs-preflight-smoke.sh
 repo_state:
   based_on_commit: 56ce042f774de556b3dae50e5333faae3430a303
-  last_reviewed_commit: 56ce042f774de556b3dae50e5333faae3430a303
+  last_reviewed_commit: 0ae69937e805307cc385af6e8da518d56ba12215
 ---
 
 # Automatic Document Mutation Preflight

@@ -2,7 +2,7 @@
 type: generated-view
 title: Docs Todos
 status: generated
-updated_at: "2026-09-01 16:32:26 JST +0900"
+updated_at: "2026-09-01 16:45:57 JST +0900"
 ---
 
 # Docs Todos
@@ -19,10 +19,6 @@ No structured `TODO-*` items found.
 
 | State | Source | Line | Task |
 |---|---|---:|---|
-| open | 01a05bbf-f319-75db-adab-c61cd891be5a | 51 | Implementation complete |
-| open | 01a05bbf-f319-75db-adab-c61cd891be5a | 53 | Verification complete |
-| open | 01a05bbf-bcc2-78c2-84f0-153477fae16f | 39 | Pilot `AC-DET-04`: bind doctor policy to every supported document mutation |
-| open | 01a05bbf-bcc2-78c2-84f0-153477fae16f | 42 | Re-audit `AC-DET-04`, record the achieved vector and remaining bypasses, |
 | open | 01a05bbf-bcc2-78c2-84f0-153477fae16f | 44 | Harden document validation reach and generated-view presence from |
 | open | 01a05bbf-bcc2-78c2-84f0-153477fae16f | 46 | Specify commit/range metadata semantics for `AC-DET-01` before adding |
 | open | 01a05bbf-bcc2-78c2-84f0-153477fae16f | 48 | Specify qualifying-change and exemption semantics for session receipts in |

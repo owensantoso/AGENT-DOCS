@@ -5,17 +5,17 @@ id: 01a05bbf-bd70-7c1b-ad48-31887886423e
 aliases: []
 title: Automatic Document Preflight Pilot
 domain: repo-health
-status: active
+status: completed
 created_at: "2026-09-01 15:54:47 JST +0900"
-updated_at: "2026-09-01 15:55:27 JST +0900"
+updated_at: "2026-09-01 16:43:44 JST +0900"
 owner:
 hypothesis: Automatic mutation-boundary preflight blocks unsafe document writes without blocking healthy, repair, or read-only paths.
 artifact_root: artifacts/evaluations/01a05bbf-bd70-7c1b-ad48-31887886423e/
-dataset_version:
-fixture_digest:
+dataset_version: agent-continuity-2026.09.01.2
+fixture_digest: git:0ae69937e805307cc385af6e8da518d56ba12215
 run_command: tests/agent-continuity-docs-preflight-smoke.sh
 metrics_version: automatic-document-preflight-v1
-baseline_eval:
+baseline_eval: E3 T1 R2 A0 P1 D1
 related_research: []
 related_diagnostics: []
 related_adrs: []
@@ -25,10 +25,14 @@ related_plans:
   - 01a05bbf-bcc2-78c2-84f0-153477fae16f
 related_sessions:
   - 01a05bbf-be12-736c-a65b-f0d88f8bac82
-linked_paths: []
+linked_paths:
+  - scripts/agent-continuity
+  - scripts/agent-continuity-docs
+  - tests/agent-continuity-docs-preflight-smoke.sh
+  - scripts/release-check
 repo_state:
   based_on_commit: 56ce042f774de556b3dae50e5333faae3430a303
-  last_reviewed_commit: 56ce042f774de556b3dae50e5333faae3430a303
+  last_reviewed_commit: 0ae69937e805307cc385af6e8da518d56ba12215
 ---
 
 # Automatic Document Preflight Pilot
@@ -90,18 +94,41 @@ by the test harness.
 
 ## Results
 
-Pending implementation.
+- Every current document subcommand has an asserted mutation classification;
+  unknown future commands enter the guarded write class.
+- Healthy top-level and direct-installed-helper writes passed without changing
+  existing successful output.
+- Release, owned-tooling, canonical-root, custom-root, and nested non-Git drift
+  fixtures refused before mutation. Stable before/after tree digests matched.
+- Generated-view refresh, UUID migration, and read-only diagnosis remained
+  reachable.
+- An independent review found three pre-release gaps: a dispatcher injected
+  only by the release harness, policy inspection of the wrong document root,
+  and shallow non-Git manifest discovery. Regression fixtures were added after
+  all three were fixed; re-review found no remaining P1/P2 code issue.
+- `scripts/release-check` passed from clean detached worktrees at releases
+  `2026.09.01.1` and `2026.09.01.2`. The second release includes the post-proof
+  prose reduction.
+
+Achieved assurance: `E3 T2 R2 A2 P1 D2`.
+
+Proof remains `P1`: the evaluation is revision-bound, but ordinary successful
+preflight executions are silent and do not emit their own revision- and
+policy-bound receipts. Reach remains `R2`: supported manifest-backed command
+paths are covered, while direct editor and shell writes are outside the guard.
 
 ## Recommendation / ADR Input
 
-Pending. If any write occurs before refusal or a repair path is blocked, keep
-the manual preflight prose and revise the policy boundary before proceeding.
+Accept the pilot. It exceeds the proportional target on drift and meets the
+trigger and local-authority goals without overstating proof, fleet reach, or
+remote enforcement. Keep run receipts and direct-write interception as separate
+future controls rather than enlarging this slice.
 
 ## Reproduction Notes
 
-Run from the Agent Continuity repository root. The focused script owns only
-temporary repositories and must not mutate installed skills or downstream
-projects.
+Check out `0ae69937e805307cc385af6e8da518d56ba12215` and run from the Agent
+Continuity repository root. The focused and full suites own only temporary
+fixtures; they do not mutate installed skills or downstream projects.
 
 ## Artifact Policy
 
