@@ -2,7 +2,7 @@
 type: generated-view
 title: Spec Registry
 status: generated
-updated_at: "2026-08-21 02:31:21 JST +0900"
+updated_at: "2026-09-01 12:25:05 JST +0900"
 ---
 
 # Spec Registry

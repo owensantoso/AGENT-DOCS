@@ -310,9 +310,12 @@ agent-continuity docs new adr "Use Append-Only Worktree Journal"
 agent-continuity docs new learning "Why plans and specs are separate" --domain repo-health
 agent-continuity docs new explainer "How specs and plans fit together" --domain orientation
 agent-continuity docs new question "Should specs and plans be one-to-one?" --domain repo-health
+agent-continuity docs new session "Implement provenance expansion" --domain repo-health
 ```
 
-Fresh documents use document format v2, receive UUIDv7 identity, write
+Supported fresh documents must begin through `agent-continuity docs new`; do
+not generate their identity separately. They use document format v2, receive
+UUIDv7 identity, write
 `aliases: []`, and use type-plus-slug locators. Inspect or migrate formats with:
 
 ```bash
@@ -672,8 +675,8 @@ Use this to understand which repository state a spec, plan, or implementation br
 
 Install Agent Continuity document tooling in a repo that uses this workflow. Then:
 
-1. Ensure idea, research, evaluation, diagnostic, spec, plan, implementation brief, and ADR templates have `id`, `type`, `status`, `created_at`, `updated_at`, and relationship frontmatter.
-2. Prefer `agent-continuity docs new ...` for new ideas, research surveys, evaluations, diagnostics, specs, plans, implementation briefs, and ADRs.
+1. Ensure idea, research, evaluation, diagnostic, spec, plan, implementation brief, ADR, and session-log templates have `id`, `type`, `status`, `created_at`, `updated_at`, and relationship frontmatter.
+2. Use `agent-continuity docs new ...` for every supported fresh document, including session logs. Do not generate the document ID separately.
 3. Run `agent-continuity docs update` after meaningful doc changes.
 4. Run `agent-continuity docs check` before committing docs workflow changes.
 5. Run `agent-continuity docs check-todos` when the repo uses structured `TODO-*` items for durable coordination.

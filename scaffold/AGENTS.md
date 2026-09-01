@@ -61,6 +61,9 @@ tooling mutations; unrelated read-only or code work may continue.
 - Update `docs/orientation/CURRENT_STATE.md` at the end of any plan or multi-task change.
 - Keep `docs/orientation/CURRENT_STATE.md` short; move detailed history to state snapshots.
 - Add a timestamped session log for meaningful implementation, planning, or debugging sessions.
+- Start every supported fresh structured document through
+  `agent-continuity docs new`; do not generate its identity separately. Create
+  session receipts with `agent-continuity docs new session "Title"`.
 - Use commit trailers for meaningful commits: `Plan:`, `Brief:`, `Spec:`, `ADR:`, `Todo:`, `Session:`, `Area:`, and `Verification:` as applicable.
 - Capture early, fuzzy, or future-facing thoughts as `IDEA-*` docs instead of bloating specs or plans.
 - Capture semi-mature domain models, taxonomy, ontology, naming, or source-of-truth sketches as `CONC-*` docs before promoting them into specs, ADRs, plans, architecture docs, or explainers.

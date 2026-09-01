@@ -109,9 +109,10 @@ Detailed syntax and lifecycle rules live in `scripts/README.md` and `scaffold/do
 ## Agent Continuity Document Commands
 
 Use `agent-continuity docs` for mechanical workflow tasks instead of inventing
-identity or hand-maintaining registries. Fresh documents receive UUIDv7
-identity and `aliases: []`; numbered aliases are retained only by migration or
-explicit legacy ID-retirement records.
+identity or hand-maintaining registries. Every supported fresh document must
+begin through `docs new`; do not generate its identity separately. Fresh
+documents receive UUIDv7 identity and `aliases: []`; numbered aliases are
+retained only by migration or explicit legacy ID-retirement records.
 
 Common commands:
 
@@ -120,6 +121,7 @@ agent-continuity docs next todo
 agent-continuity docs new spec "Title" --domain product
 agent-continuity docs new plan "Title" --domain product --spec <spec UUID>
 agent-continuity docs new impl "Slice" --plan <plan UUID>
+agent-continuity docs new session "Session title" --domain repo-health
 agent-continuity docs retire-id IMPL-0001-02 --plan PLAN-0001 --reason "Reason" --source-type conversation --source-notes "Provenance"
 agent-continuity docs todos --status ready
 agent-continuity docs review

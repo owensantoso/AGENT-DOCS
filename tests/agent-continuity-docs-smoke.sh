@@ -89,11 +89,26 @@ eval_path="$(run_meta new eval "Embedding Model Bakeoff" --domain repo-health)"
 diag_path="$(run_meta new diag "Simulator Freeze Investigation" --domain repo-health)"
 spec_path="$(run_meta new spec "Shared Capture Workflow" --domain product --spec-type improvement)"
 plan_path="$(run_meta new plan "Shared Capture Implementation" --domain product --spec SPEC-0001)"
+session_path="$(run_meta new session "Cold UUID Session" --domain repo-health)"
+completed_session_path="$(run_meta new session-log "Completed UUID Session" --domain repo-health --status completed)"
 
-for fresh_path in "$idea_path" "$rsch_path" "$eval_path" "$diag_path" "$spec_path" "$plan_path"; do
+for fresh_path in "$idea_path" "$rsch_path" "$eval_path" "$diag_path" "$spec_path" "$plan_path" "$session_path" "$completed_session_path"; do
   require_contains "$fresh_path" "document_format_version: 2"
   require_contains "$fresh_path" "aliases: []"
+  require_uuid7 "$(frontmatter_id "$fresh_path")"
 done
+session_created_date="$(awk -F\" '$1 == "created_at: " { print substr($2, 1, 10); exit }' "$session_path")"
+expected_session_path="$docs_root/repo-health/session-logs/$session_created_date-cold-uuid-session.md"
+if [[ "$session_path" != "$expected_session_path" ]]; then
+  echo "Expected dated session path $expected_session_path, got $session_path" >&2
+  exit 1
+fi
+require_contains "$session_path" "type: session-log"
+require_contains "$session_path" "status: in_progress"
+require_contains "$session_path" "started_at: \""
+require_contains "$session_path" "ended_at:"
+require_contains "$completed_session_path" "status: completed"
+require_contains "$completed_session_path" "ended_at: \""
 plan_uuid="$(frontmatter_id "$plan_path")"
 require_uuid7 "$plan_uuid"
 add_legacy_alias "$idea_path" IDEA-0001
@@ -137,6 +152,8 @@ require_file "$eval_path"
 require_file "$diag_path"
 require_file "$spec_path"
 require_file "$plan_path"
+require_file "$session_path"
+require_file "$completed_session_path"
 require_file "$impl_path"
 require_file "$adr_path"
 require_file "$lrn_path"
@@ -198,6 +215,42 @@ require_contains "$completed_audit_path" "  - AUDT-0002"
 require_contains "$completed_audit_path" "status: completed"
 require_contains "$completed_audit_path" "audit_started_at: \""
 require_contains "$completed_audit_path" "audit_ended_at: \""
+
+uuid4_session_path="$docs_root/repo-health/session-logs/2026-01-01-invalid-uuid4.md"
+cat >"$uuid4_session_path" <<'EOF'
+---
+type: session-log
+document_format_version: 2
+id: 550e8400-e29b-41d4-a716-446655440000
+aliases: []
+title: Invalid UUID4 Session
+domain: repo-health
+status: in_progress
+created_at: "2026-01-01 00:00:00 UTC +0000"
+updated_at: "2026-01-01 00:00:00 UTC +0000"
+started_at: "2026-01-01 00:00:00 UTC +0000"
+ended_at:
+timezone: "UTC +0000"
+participants: []
+areas: []
+related_plans: []
+related_briefs: []
+related_specs: []
+related_adrs: []
+related_todos: []
+related_issues: []
+related_prs: []
+commits: []
+---
+
+# 2026-01-01 - Invalid UUID4 Session
+EOF
+if run_meta check >$tmpdir/docs-meta-invalid-uuid4.out 2>&1; then
+  echo "Expected document-format-v2 session log with UUIDv4 identity to fail" >&2
+  exit 1
+fi
+require_contains $tmpdir/docs-meta-invalid-uuid4.out "requires an RFC UUIDv7 id"
+rm "$uuid4_session_path"
 
 retirement_id="IMPL-0001-02"
 retirement_path="$docs_root/id-retirements/$retirement_id.md"

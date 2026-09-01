@@ -220,6 +220,12 @@ Do not create `QST-*` records for ordinary clarification. Ask short-lived questi
 
 ## Session log
 
+Create one through the identity-safe command rather than copying a template:
+
+```bash
+agent-continuity docs new session "Session title" --domain repo-health
+```
+
 Purpose:
 
 - leave a short timestamped receipt for meaningful human/agent work

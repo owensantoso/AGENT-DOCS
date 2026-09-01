@@ -8,6 +8,13 @@ another repository installs, runs, verifies, or reuses Agent Continuity.
 
 ### For adopters
 
+- Added `agent-continuity docs new session` / `session-log`. Fresh session logs
+  now receive UUIDv7 identity, `aliases: []`, a dated slug path, valid
+  lifecycle fields, and exact local timestamps through the same deterministic
+  creation path as other structured documents.
+- Replaced copy-first session-log template guidance with the supported command
+  and strengthened the structured-doc workflow: supported document families
+  must begin through `docs new` rather than generating identity separately.
 - Reframed the README architecture visual as a canonical diagram export with
   larger primary node labels and a compact bottom-left legend, without
   promotional share-card chrome.

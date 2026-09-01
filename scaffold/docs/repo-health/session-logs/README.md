@@ -35,11 +35,21 @@ YYYY-MM-DD-<short-slug>.md
 
 ## Required Shape
 
-Start from the nearby `YYYY-MM-DD-session-title.md` example.
+Create the record through the supported command:
+
+```bash
+agent-continuity docs new session "Session title" --domain repo-health
+```
+
+Do not copy the nearby example or generate an ID separately. The command chooses
+the dated path and writes document format v2, UUIDv7 identity, `aliases: []`,
+valid lifecycle fields, and exact local timestamps.
 
 New session logs should start with YAML frontmatter:
 
 - `type: session-log`
+- `document_format_version: 2`
+- UUIDv7 `id` and `aliases: []`
 - `status`: `in_progress`, `completed`, or `archived`
 - `created_at`, `updated_at`, `started_at`, and `ended_at`
 - `timezone`

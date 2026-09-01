@@ -526,7 +526,7 @@ def parse_args() -> argparse.Namespace:
 
     new_cmd = sub.add_parser(
         "new",
-        help="Create a new idea, research survey, evaluation, diagnostic, spec, plan, impl doc, ADR, learning, explainer, question, concept, or audit.",
+        help="Create a new idea, research survey, evaluation, diagnostic, spec, plan, impl doc, ADR, learning, explainer, question, concept, audit, or session log.",
     )
     new_cmd.add_argument(
         "family",
@@ -551,6 +551,8 @@ def parse_args() -> argparse.Namespace:
             "concept",
             "conc",
             "audit",
+            "session",
+            "session-log",
         ],
     )
     new_cmd.add_argument("title")
@@ -2426,6 +2428,10 @@ def new_doc(args: argparse.Namespace, root: Path, docs: list[Doc]) -> Path:
     elif args.family in {"explainer", "expl"}:
         path = root / "orientation" / "explainers" / f"EXPL-{slug}.md"
         body = explainer_doc(doc_id, title, args, timestamp, commit)
+    elif args.family in {"session", "session-log"}:
+        session_date = timestamp[:10]
+        path = root / "repo-health" / "session-logs" / f"{session_date}-{slug}.md"
+        body = session_log_doc(doc_id, title, args, timestamp, commit)
     else:
         path = root / "decisions" / "questions" / f"QST-{slug}.md"
         body = question_doc(doc_id, title, args, timestamp, commit)
@@ -2452,6 +2458,8 @@ def status_for_new(args: argparse.Namespace, doc_type: str) -> str:
         status = "investigating"
     if doc_type == "repo-health-audit" and status == "draft":
         status = "planned"
+    if doc_type == "session-log" and status == "draft":
+        status = "in_progress"
     allowed = STATUS_BY_TYPE.get(doc_type, COMMON_STATUSES)
     if status not in allowed:
         raise SystemExit(f"Status {status!r} is not valid for {doc_type}; choose one of: {', '.join(sorted(allowed))}")
@@ -3011,6 +3019,76 @@ repo_state:
 ## Where This Should Change Behavior
 
 ## Related Open Questions
+"""
+
+
+def session_log_doc(
+    doc_id: str,
+    title: str,
+    args: argparse.Namespace,
+    timestamp: str,
+    commit: str,
+) -> str:
+    status = status_for_new(args, "session-log")
+    ended_at_line = f'ended_at: "{timestamp}"' if status == "completed" else "ended_at:"
+    ended_display = (
+        timestamp
+        if status == "completed"
+        else "in progress"
+        if status in {"in_progress", "in-progress"}
+        else "not recorded"
+    )
+    timezone = timestamp.split(" ", 2)[2]
+    participants = [args.owner] if args.owner else []
+    session_date = timestamp[:10]
+    return f"""---
+type: session-log
+id: {doc_id}
+title: {title}
+domain: {args.domain}
+status: {status}
+created_at: "{timestamp}"
+updated_at: "{timestamp}"
+started_at: "{timestamp}"
+{ended_at_line}
+timezone: "{timezone}"
+participants: {yaml_list(participants)}
+areas: []
+related_plans: []
+related_briefs: []
+related_specs: {yaml_list(args.spec)}
+related_adrs: []
+related_todos: []
+related_issues: []
+related_prs: []
+commits: []
+---
+
+# {session_date} - {title}
+
+## Session metadata
+
+- Started: {timestamp}
+- Ended: {ended_display}
+- Timezone: {timezone}
+- Participants: {", ".join(participants) if participants else "not recorded"}
+- Todo-backed work: none recorded
+
+## Goal
+
+## Timeline
+
+- {timestamp} - Session started.
+
+## Context read
+
+## Changes
+
+## Decisions
+
+## Verification
+
+## Follow-ups
 """
 
 

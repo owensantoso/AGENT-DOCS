@@ -35,6 +35,9 @@ Use this pack when you want to bootstrap a repo that supports:
 - Keep `CURRENT_STATE.md` accurate. It is the first reality check for future agents.
 - Keep `CURRENT_STATE.md` short. Move detailed historical ledgers to state snapshots.
 - Add timestamped session logs for meaningful implementation, planning, debugging, or docs workflow sessions.
+- Start every supported fresh structured document through
+  `agent-continuity docs new`; do not generate its identity separately. Create
+  session receipts with `agent-continuity docs new session "Title"`.
 - Use YAML frontmatter in new durable docs so status, timestamps, links, and domain can be queried later.
 - Use structured `TODO-*` items for durable cross-session or delegated work. Source docs own TODO state; generated `TODOS.md` is only a dashboard.
 - Use `CONC-*` docs for semi-mature domain models, taxonomy, ontology, naming, and source-of-truth sketches. Use `LRN-*` records for lessons learned, `EXPL-*` docs for reusable human-facing explanations, and `QST-*` docs only for durable unresolved questions that need status, ownership, links, or resolution history across sessions. Ask ordinary clarification questions in chat.

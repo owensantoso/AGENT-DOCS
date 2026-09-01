@@ -34,10 +34,12 @@ agent-continuity docs new spec "<title>" --domain product
 agent-continuity docs new learning "<title>" --domain repo-health
 agent-continuity docs new explainer "<title>" --domain orientation
 agent-continuity docs new question "<title>" --domain repo-health
+agent-continuity docs new session "<title>" --domain repo-health
 agent-continuity docs update
 agent-continuity docs health --write
 agent-continuity docs roadmap --write
 agent-continuity docs check
 ```
 
-The example artifact files use `0000` IDs. Replace them with real IDs before committing real project docs.
+The example artifact files use `0000` IDs. Create real supported documents
+through `agent-continuity docs new`; do not copy an example and invent its ID.

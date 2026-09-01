@@ -2,7 +2,7 @@
 type: generated-view
 title: Learning Registry
 status: generated
-updated_at: "2026-08-21 06:40:24 JST +0900"
+updated_at: "2026-09-01 12:25:05 JST +0900"
 ---
 
 # Learning Registry
@@ -14,4 +14,5 @@ Global registry for durable learning records. Learning records preserve lessons 
 | ID | Title | Type | Domain | Status | Path | Related Questions |
 |---|---|---|---|---|---|---|
 | 01a0211d-8e63-709e-9528-26425072b798 | Workflow Failure - Stale Project Tooling Created Legacy Numbered Docs | lesson | workflow | active | `decisions/learnings/LRN-workflow-failure-stale-project-tooling-created-legacy-numbered-docs.md` |  |
+| 01a05af3-a18a-72d6-9dad-83fd39ff27d3 | Workflow Failure - UUIDv7 Creation Path Bypass | lesson | workflow | active | `decisions/learnings/LRN-workflow-failure-uuidv7-creation-path-bypass.md` |  |
 | LRN-0001 | Workflow Failure - Hardening Before Usefulness Proof | lesson | workflow | active | `decisions/learnings/LRN-0001-workflow-failure-hardening-before-usefulness-proof.md` |  |
